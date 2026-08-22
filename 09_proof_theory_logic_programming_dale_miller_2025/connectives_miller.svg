@@ -1,0 +1,45 @@
+<svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif" font-size="15">
+  <style>
+    text { fill: #3a3a3a; }
+    .hdr { font-weight: bold; fill: #2a2a2a; }
+    .sym { font-size: 20px; }
+  </style>
+  <rect x="0" y="0" width="760" height="260" fill="none" stroke="#888888" stroke-width="1"/>
+  <!-- column headers -->
+  <text x="30" y="30" class="hdr">Classical</text>
+  <text x="170" y="30" class="hdr">Additive (Linear)</text>
+  <text x="400" y="30" class="hdr">Multiplicative (Linear)</text>
+  <text x="620" y="30" class="hdr">Reading</text>
+  <line x1="10" y1="42" x2="750" y2="42" stroke="#888888" stroke-width="1"/>
+
+  <!-- row: true / top / one -->
+  <text x="30" y="72" class="sym">⊤ / t</text>
+  <text x="170" y="72" class="sym">⊤ (top)</text>
+  <text x="400" y="72" class="sym">1 (one)</text>
+  <text x="620" y="68" font-size="13">unit for &amp;: always available</text>
+  <text x="620" y="84" font-size="13">unit for ⊗: zero-cost bundle</text>
+
+  <!-- row: false / zero / bottom -->
+  <text x="30" y="112" class="sym">f</text>
+  <text x="170" y="112" class="sym">0 (zero)</text>
+  <text x="400" y="112" class="sym">⊥ (bottom)</text>
+  <text x="620" y="108" font-size="13">unit for ⊕: unreachable option</text>
+  <text x="620" y="124" font-size="13">unit for ⅋: idle process</text>
+
+  <!-- row: and / with / tensor -->
+  <text x="30" y="152" class="sym">∧</text>
+  <text x="170" y="152" class="sym">&amp; (with)</text>
+  <text x="400" y="152" class="sym">⊗ (tensor)</text>
+  <text x="620" y="148" font-size="13">external choice / trait bound</text>
+  <text x="620" y="164" font-size="13">simultaneous, both consumed</text>
+
+  <!-- row: or / plus / par -->
+  <text x="30" y="192" class="sym">∨</text>
+  <text x="170" y="192" class="sym">⊕ (o-plus)</text>
+  <text x="400" y="192" class="sym">⅋ (par)</text>
+  <text x="620" y="188" font-size="13">internal choice / enum variant</text>
+  <text x="620" y="204" font-size="13">parallel synchronization</text>
+
+  <line x1="10" y1="212" x2="750" y2="212" stroke="#888888" stroke-width="1"/>
+  <text x="30" y="238" font-size="13" font-style="italic">Rows are De Morgan duals of each other: ⊤↔0, 1↔⊥, &amp;↔⊕, ⊗↔⅋.</text>
+</svg>

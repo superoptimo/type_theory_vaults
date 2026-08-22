@@ -1,0 +1,314 @@
+---
+title: "Formal Definitions in Type Theory"
+source: "Type Theory and Formal Proof: An Introduction (Nederpelt & Geuvers, 2014)"
+chapters: "8–10 (Definitions; Extension of λC with definitions; Rules and properties of λD)"
+pages: "165–224"
+tags: [type-theory, lambda-calculus, definitions, lambda-d, delta-reduction, axioms, rust, lean]
+---
+
+# Formal Definitions in Type Theory
+
+[[book-guidelines|↩ Back to guidelines]]
+
+## What's missing if all you have is $\lambda C$
+
+Every system built up through Chapter 6 — $\lambda\to$, $\lambda 2$, $\lambda\omega$, $\lambda P$, and their join $\lambda C$, the Calculus of Constructions — gives you exactly one way to introduce a name: bind a variable with $\lambda$ or $\Pi$. That's enough to *state and prove* things. It is not enough to *write mathematics*, and the book spends three chapters (8, 9, 10) making that gap precise and then closing it.
+
+Here's the gap, concretely. Suppose you've proved, in raw $\lambda C$, that a certain relation is total, using the term
+$$\text{formalproof} : \forall_{x,y \in \mathbb N} (x \le y \lor y \le x).$$
+You now want to reuse this fact under the name "totality of $\le$." You cannot. There is no primitive in $\lambda C$ that lets you say "call this thing $t$" and then use $t$ later — a $\lambda C$ term just *is* its own expansion, everywhere, always. Two consequences follow, and both are fatal for real formalization:
+
+1. **Unreadable size.** Without names, expressions that build on earlier results have to inline those results in full, every time they're used. The book states this isn't a stylistic nicety — a "worst-case" formalization without definitions has been shown experimentally to blow up worse than exponentially in size as a theory grows (§8.1). This is the same phenomenon a compiler engineer knows as failing to factor out a function: without abstraction, every call site becomes a copy-paste of the callee's body, and nested calls multiply that copying at every level.
+2. **No way to apply a theorem.** Mathematics constantly proves a general fact and then *specializes* it — Bézout's Lemma proved for arbitrary coprime $m, n$, then invoked at $m=55, n=28$. In raw $\lambda C$, "using" the general proof at specific values means substituting into the *entire* proof term by hand, rebuilding a variant proof from scratch. There's no way to package "the general proof" as a reusable, instantiable unit.
+
+Both problems have the same shape: $\lambda C$ has variables (arbitrary, freely substitutable placeholders) but nothing for the *other* kind of name — one that stands for one fixed thing, reusable everywhere, and expandable on demand. That second kind of name is a **definition**, and formalizing it — its syntax, its typing rules, its interaction with reduction — is the entire content of this stretch of the book. The system that results, obtained by extending $\lambda C$ first with *descriptive* definitions (giving $\lambda D_0$) and then with *primitive* definitions (giving the book's final system, $\lambda D$), is the vehicle for everything from Chapter 11 onward: natural deduction, sets, arithmetic, and the capstone proof of Bézout's Lemma.
+
+```rust
+// The variable/definition distinction, in terms a compiler engineer
+// already has intuitions for:
+fn increasing<F: Fn(f64) -> f64>(f: F) -> bool { /* ... an arbitrary f ... */ todo!() }
+//             ^^^^^^^^^^^^^^^^^ a *parameter*: ranges over all F
+
+const C: f64 = 1.618_033_988_749_895; // golden ratio
+//    ^ a *defined constant*: denotes one fixed value, reusable by name,
+//      and (conceptually) always replaceable by its definition
+```
+
+---
+
+## The nature of a definition: definiendum, definiens, and why "inductive" doesn't make the cut
+
+The book starts from ordinary mathematical practice before touching formalism (§8.1). A definition like "a rectangle is a quadrilateral with four right angles" has two parts, and the book gives them fixed names (Definition 8.3.1):
+
+- The **definiendum** — "the thing to be defined" — the new name, here `rectangle`.
+- The **definiens** — "the thing that defines" — the expression it stands for, here "quadrilateral with four right angles."
+
+Written with the standard mathematical shorthand $a := E$, this is $\texttt{rectangle} := \texttt{quadrilateral with four right angles}$. A defined name differs sharply from a bound variable even though both look like "new symbols": a variable like $x$ in "let $x$ be a real number" ranges over *arbitrary* members of a collection, while a defined name like $c := \frac{1+\sqrt5}{2}$ stands for *one specific* thing, permanently (§8.1). This is exactly the const-vs-parameter distinction above, and it is worth sitting with, because the whole formal apparatus in Chapters 9–10 is built to preserve it precisely.
+
+One thing the book deliberately leaves out: **inductive and recursive definitions are not primitive** in this system (§8.2). No built-in "define $\mathbb N$ as generated by $0$ and successor," no built-in "$\mathit{fac}(0) = 1$, $\mathit{fac}(n{+}1) = \mathit{fac}(n)\cdot(n{+}1)$" recursion scheme. The book's reasons are pragmatic, not ideological: inductive types can be *encoded* as predicates in higher-order logic, or assumed axiomatically (as is done for the integers in Chapter 14); recursive definitions can be handled later via the $\iota$-descriptor (Chapter 12, covered in [[Formalising-Elementary-Mathematics]]), which names the unique object satisfying a property rather than computing it by an algorithm. The tradeoff is explicit and important: a function defined this way is *not a program* — it cannot be executed — so a fact like $\mathit{fac}(3) = 6$ requires an actual proof, not a run of the recursion. In exchange, the system stays simpler and avoids having to verify termination and well-definedness for every recursive scheme a user might write. This is a genuine design fork worth flagging for anyone building a checker: Coq's Calculus of *Inductive* Constructions makes the opposite choice, baking in inductive types and getting recursion (and its termination obligations) for free; $\lambda D$ pushes that entire concern out to the definition-and-proof layer instead.
+
+```python
+# The "no recursion, only description" trade in miniature.
+# λD-style: define fac(3) by asserting a proof that it equals 6 —
+# the "computation" below is the informal justification for that proof,
+# not something the type theory itself executes.
+def fac_reference(n):  # ordinary Python, standing in for the informal proof
+    return 1 if n == 0 else n * fac_reference(n - 1)
+
+assert fac_reference(3) == 6  # this is what the λD proof term would certify
+```
+
+---
+
+## Contexts, parameter lists, and instantiation
+
+A definition rarely stands alone; usually it needs a *setting*. "Increasing" needs some function $f : \mathbb R \to \mathbb R$ already in hand; "total" needs a set $S$ and a relation $R$ on it. The book formalizes this setting as a **context**, exactly the flag-style contexts from earlier chapters, and attaches it to the definition (§8.3–8.5):
+
+$$
+\begin{array}{l}
+f : \mathbb R \to \mathbb R \\
+\quad \mathit{increasing}(f) := \forall_{x,y\in\mathbb R}(x<y \Rightarrow f(x) < f(y))
+\end{array}
+$$
+
+The list of subject variables collected from the flags — here just $(f)$ — is the **parameter list**. The general format the book settles on (Definition, §8.5) is:
+$$
+x_1 : A_1, \ldots, x_n : A_n \Vdash a(x_1,\ldots,x_n) := M : N,
+$$
+abbreviated with the "overlining" convention $\overline x : \overline A \Vdash a(\overline x) := M : N$ — a context, a defined constant with its parameter list (together the definiendum), a body $M$ (the definiens), and a type $N$ shared by both $M$ and $a(\overline x)$. The symbol $\Vdash$ separates the context from the rest; it is chosen deliberately distinct from $\vdash$ because a definition is not a typing judgement, it's a declaration that gets added to a running list of them.
+
+Two conventions worth internalizing because they recur constantly in the book's later chapters:
+
+- **Empty parameter lists are still written with parentheses.** A definition made in the empty context, like $c := \frac{1+\sqrt5}{2}$, is formally $c() := \ldots$, though the book usually drops the empty parens for readability (Notation 8.3.3).
+- **Parameter lists are technically redundant** — you could always reconstruct $(x_1,\ldots,x_n)$ by reading off the context — but the book keeps them anyway (Remark 8.3.2), because $f(x, y) := x^2+y^2$ reads far more naturally than the parameter-less $f := x^2+y^2$.
+
+**Instantiation** is what happens when you *use* a definition: substituting concrete expressions for its parameters (§8.4). Given $\mathit{total}(S,R)$, defined over $S : *$, $R : (S\times S)\to *$, you can instantiate with $S := \mathbb R$, $R := {\le}$ to get $\mathit{total}(\mathbb R, {\le})$ — a legitimate, well-typed proposition (which happens to be true). Instantiate instead with $S := \mathbb N^+$, $R := {\mid}$ (divisibility) and you get $\mathit{total}(\mathbb N^+, \mid)$ — equally well-formed as an instantiation, even though as a *proposition* it happens to be false (since neither $3\mid 5$ nor $5\mid 3$). Well-formedness of the substitution and truth of the resulting proposition are entirely separate questions — the type system only ever checks the former.
+
+The subtle part is that instantiations are **cumulative**: later parameters' types can mention earlier ones, so substituting into $A_2$ requires you to have already substituted into it whatever you put in for $x_1$. Formally, instantiating $x_i$ with $U_i$ requires
+$$
+U_i : A_i[x_1 := U_1, \ldots, x_{i-1} := U_{i-1}],
+$$
+which the book then argues (Remark 9.4.1) is safe to write as the *simultaneous* substitution $U_i : A_i[\overline x := \overline U]$, since no $x_j$ for $j \ge i$ can occur free in $A_i$ anyway — the "extra" substitutions are vacuous. This cumulative-typing bookkeeping is exactly what a compiler's type checker does when checking a call `f(a, b)` against a dependent signature `fn f(x: A, y: B(x)) -> C(x, y)`: the type of the second argument literally depends on the value bound to the first, so you must substitute before you can check.
+
+```lean
+-- Lean, unsurprisingly, is close to a literal transcription: a dependent
+-- function type is exactly a parameterized definition's context made explicit.
+def total {S : Type} (R : S → S → Prop) : Prop :=
+  ∀ x y : S, R x y ∨ R y x
+
+-- "Instantiation" is just ordinary application — S and R get substituted,
+-- and Lean's elaborator checks the cumulative typing conditions for you:
+example : Prop := total (S := ℝ) (· ≤ ·)
+example : Prop := total (S := ℕ) (· ∣ ·)   -- well-formed; happens to be false
+```
+
+```rust
+// The same cumulative-instantiation discipline shows up whenever a generic
+// function's later type parameters are constrained in terms of earlier ones:
+fn total<S, R>(rel: R) -> bool
+where
+    R: Fn(&S, &S) -> bool,
+{
+    // 'S' must be resolved (instantiated) before 'R: Fn(&S, &S) -> bool'
+    // is even a meaningful bound to check — exactly A_2[x1 := U1].
+    todo!()
+}
+```
+
+A constant thus has **two life stages** (§8.4): its *birth*, when it's introduced with its full parameter list in a definition, and its *path of life*, when it gets called with varying instantiations. This distinction — declaration site vs. every call site — is precisely the declaration/invocation split every programmer already has intuitions for; the book is just naming it formally so the derivation rules in the next section can be stated cleanly.
+
+### What breaks without cumulative-typing discipline
+
+If instantiation didn't respect this order — if you were allowed to substitute for $x_2$ without first updating $A_2$'s occurrences of $x_1$ — you could type-check nonsense: instantiate $R : (S\times S)\to *$ with a relation over the *wrong* set, because the check against $(S\times S)\to *$ used the old, un-substituted $S$ instead of whatever you just plugged in for it. Respecting the cumulative order is what keeps "the relation must actually be on the set you just chose" enforced rather than merely intended.
+
+---
+
+## Naming proofs: the fourth kind of definition
+
+Sections 8.1–8.6 build up three flavors of definitions, organized by what kind of type the constant lands in (§8.7, Figure 8.4):
+
+- **sets**, with type $*_s$ (sugar for $*$, used when the intended reading is "set");
+- **objects**, with some set $S$ as type;
+- **propositions**, with type $*_p$ (again sugar for $*$).
+
+The book then makes a small but consequential observation: this table is missing a row. A **proof** of a proposition $P$ also deserves a name, $b(\ldots) := E_4 : P$ (Figure 8.5). Nothing about the formal apparatus so far excludes it — a proof term is just another well-typed expression under Propositions-as-Types — but until you name proofs deliberately, you have no way to *apply* a theorem, only to restate it.
+
+The worked example is Bézout's Lemma: "let $m,n$ be coprime positive naturals; then $\exists x,y\in\mathbb Z.\,(mx+ny=1)$." Formalized with context $m:\mathbb N^+,\ n:\mathbb N^+,\ u:\mathit{coprime}(m,n)$, a hypothetical proof term `formalproof` gives
+$$
+p(m,n,u) := \text{formalproof} : \exists x,y\in\mathbb Z.\,(mx+ny=1).
+$$
+Now "applying the theorem at $m=55, n=28$" is nothing but instantiation: $[m{:=}55][n{:=}28][u{:=}U]$ turns $p(m,n,u)$ into $p(55,28,U) : \exists x,y\in\mathbb Z.\,(55x+28y=1)$ — a single substitution, not a from-scratch reconstruction of the proof (§8.7–8.8). The book is explicit that the alternative — writing out the specialized proof by hand, substituting $55$ and $28$ throughout a whole proof-in-words — works but is "very cumbersome"; naming the proof and instantiating the name is what a mathematician actually does when citing a lemma, made precise.
+
+This closes the loop from the opening motivation: naming proofs is exactly the missing mechanism that turns "prove it once, cite it everywhere" from an informal habit into a formal operation with a derivation rule.
+
+Section 8.9 draws the final unifying move of the chapter: since *any* judgement $\Gamma \vdash M : N$ can be rewritten as a definition $\Gamma \Vdash a(\ldots) := M : N$ (just prepend a fresh name and parameter list), statements and definitions collapse into one format. A formalized mathematical text, in this light, is nothing more than an ordered list of well-formed definitions — a "book," in the vocabulary the book borrows from de Bruijn's Automath project, built line by line, each line allowed to use every constant defined in an earlier line.
+
+---
+
+## Making it formal: environments and extended judgements ($\lambda D_0$)
+
+Chapter 9 is where the informal apparatus of Chapter 8 gets actual derivation rules, yielding a system the book calls $\lambda D_0$ — $\lambda C$ plus **descriptive** definitions only (primitive/axiomatic definitions are held back for Chapter 10). The key move: since expressions can now mention defined constants, a bare judgement $\Gamma \vdash M : N$ is no longer enough context — you also need to know *which definitions are in scope*. That list of definitions is called an **environment**, $\Delta$, and judgements become **extended judgements**:
+$$
+\Delta \,;\, \Gamma \vdash M : N \qquad \text{(“$M$ has type $N$ in environment $\Delta$ and context $\Gamma$”).}
+$$
+
+This is the direct formal analogue of a module system: $\Delta$ is the list of top-level definitions currently visible (think: everything imported/declared so far in a file), and $\Gamma$ is the local variable context (think: the current function's parameters and lets). The book is explicit (Remark 9.2.2) about the **accumulated dependency** discipline this requires: a constant $a_i$ defined in $D_i$ may appear in any later $D_{i+1},\ldots,D_k$ and in the types/terms of the judgement, but never in an earlier $D_1,\ldots,D_{i-1}$ — definitions form a strict, acyclic dependency order, exactly like forward-reference rules in a single-pass compiler.
+
+### Adding a definition: the `(def)` rule
+
+To append a new, well-formed definition $D \equiv \overline x:\overline A \Vdash a(\overline x):=M:N$ to an environment $\Delta$ that already supports some judgement $\Delta;\Gamma \vdash K:L$, you need the definiens itself to check out against the extended environment and its own context (Definition 9.3.1):
+$$
+(\text{def})\quad
+\dfrac{\Delta;\Gamma \vdash K:L \qquad \Delta;\overline x:\overline A \vdash M:N}
+      {\Delta, D \,;\, \Gamma \vdash K:L}
+\quad\text{($a$ fresh w.r.t. }\Delta\text{)}
+$$
+The freshness side-condition is what a compiler calls "no shadowing/redefinition" — it guarantees every reference to $a$ inside $\Delta, D$ is unambiguous.
+
+### Using a definition: the `(inst)` rule
+
+Instantiating $a(\overline x)$'s parameter list with $\overline U$ requires each $U_i$ to check against the cumulatively-substituted type, exactly as derived informally in §8.4:
+$$
+(\text{inst-pos})\quad
+\dfrac{\Delta;\Gamma \vdash \overline U : \overline A[\overline x := \overline U]}
+      {\Delta;\Gamma \vdash a(\overline U) : N[\overline x := \overline U]}
+$$
+There's a wrinkle for *empty* parameter lists: with no $x_i$ to instantiate, the premise list is empty, and the rule would let you derive $\Delta;\Gamma \vdash a() : N$ for *any* $\Delta,\Gamma$ whatsoever — including ill-formed ones, since nothing in the (vacuous) premises checks their correctness. The fix (Definition 9.4.6) is to demand the simplest possible well-formedness witness instead: $\Delta;\Gamma \vdash * : \Box$. Combined, the two cases merge into one rule (Definition 9.4.7):
+$$
+(\text{inst})\quad
+\dfrac{\Delta;\Gamma \vdash *:\Box \qquad \Delta;\Gamma \vdash \overline U : \overline A[\overline x:=\overline U]}
+      {\Delta;\Gamma \vdash a(\overline U) : N[\overline x := \overline U]}
+$$
+— the extra $* : \Box$ premise is redundant (implied by the other premises) whenever the parameter list is non-empty, so it costs nothing there; it only does real work in the empty-list case. This is a nice piece of engineering economy: one rule, two behaviors, no separate code path needed for the "zero-argument function" special case — a pattern any API designer who has special-cased the nullary version of something will recognize.
+
+The book flags two structural correspondences worth remembering as a study aid (§9.9): `(weak)` and `(def)` both *weaken* — one extends $\Gamma$, the other extends $\Delta$ — and `(var)` and `(inst)` both *look up a name's type* — one for a bound variable, the other for an instantiated constant. A derived rule, `(par)` (Figure 9.4), packages the common "instantiate with exactly the original parameters" case, $\Delta,D;\overline x:\overline A \vdash a(\overline x):N$, since it turns out to be provable directly from `(def)` plus the Start Lemma rather than needing its own primitive status.
+
+---
+
+## Unfolding: $\delta$-reduction and $\beta\delta$-conversion
+
+None of the rules above yet say that $a(\overline x)$ and its definiens $M$ *mean the same thing*. That equation — the whole point of a definition — is what $\delta$-reduction formalizes (§9.5). It is deliberately modeled on the $\beta$-reduction machinery from Chapter 1:
+
+$$
+(\text{Basis})\quad a(\overline U) \xrightarrow{\Delta} M[\overline x := \overline U]
+\qquad\qquad
+(\text{Compatibility})\quad \text{lifts this to subterms, as usual.}
+$$
+
+The reverse direction is **folding**; zero-or-more steps give $\delta$-reduction $\twoheadrightarrow_\Delta$; the symmetric-transitive closure gives $\delta$-conversion $=_\Delta$; an expression with no unfoldable constants left is in **$\delta$-normal form**.
+
+The one place $\delta$-reduction diverges sharply from $\beta$-reduction — and this is worth sitting with, because it's easy to conflate the two — is *how much gets replaced at once* (Remark 9.5.3). $\beta$-reduction, $(\lambda x.M)\,N \to M[x:=N]$, substitutes $N$ for *every* bound occurrence of $x$ in $M$ simultaneously, because $x$ is a single binder controlling all its uses. $\delta$-reduction unfolds *one occurrence* of a constant $a$ at a time; other occurrences of the same $a(\overline U)$ elsewhere in the expression are left untouched. The book's own worked example (Figure 9.1, §9.6) makes this vivid: given
+$$
+D_1: a(x,y):=x^2+y^2,\quad D_2: b(x,y):=2(x\cdot y),\quad D_3: c(x,y):=a(x,y)+b(x,y),
+$$
+the expression $E \equiv a(a(x,x), a(y,y))$ has *three* independent single-step unfoldings available — you can unfold the outer $a$, or either inner $a(x,x)$/$a(y,y)$, each producing a different intermediate term, all of which eventually confluence down to the same $\delta$-normal form $(x^2+x^2)^2+(y^2+y^2)^2$. This "unfold one call site at a time, in any order, same answer" behavior is exactly what a compiler's inliner does when it inlines call sites of a function independently rather than being forced to inline every call simultaneously.
+
+With $\delta$-conversion in hand, the Conversion rule from $\lambda C$ gets upgraded to cover both notions of "same meaning" at once — $\beta\delta$-conversion, $=_{\beta}^\Delta$ (Definition 9.7.2), a single equivalence relation generated by mixing $\to_\beta$ and $\to_\Delta$ steps in either direction:
+$$
+(\text{conv})\quad
+\dfrac{\Delta;\Gamma \vdash A:B \qquad \Delta;\Gamma \vdash B':s}{\Delta;\Gamma \vdash A:B'}
+\quad\text{if } B =_\beta^\Delta B'.
+$$
+
+This is, precisely, the notion a proof assistant's kernel calls **definitional equality**: two expressions the type checker accepts as interchangeable *without* an explicit proof, purely by unfolding definitions and reducing redexes. It is worth naming explicitly, because it's the exact mechanism that later underlies `isDefEq` in Lean's elaborator and the `Eq.refl`/`rfl` tactic's silent success — both are asking, at bottom, "are these two terms $\beta\delta$-convertible?"
+
+```lean
+-- Lean's kernel performs β-reduction and δ-unfolding (of `def`s, not
+-- `theorem`s, by default) as part of definitional equality checking.
+-- This is *exactly* the (conv) rule above, with 'δ' meaning "unfold a def".
+def double (n : Nat) : Nat := n + n
+example : double 3 = 6 := rfl   -- kernel: unfold `double 3` (δ), reduce `3+3` (β/ι),
+                                 -- checks syntactic equality with `6`. No proof term
+                                 -- beyond `rfl` is needed — this *is* the (conv) rule.
+```
+
+```rust
+// A tiny, honest δ-reducer: unfold one named constant occurrence at a time,
+// mirroring the "Basis" + "Compatibility" shape of Definition 9.5.1.
+enum Expr { Var(String), Const(String, Vec<Expr>), Add(Box<Expr>, Box<Expr>) }
+
+fn unfold_once(e: &Expr, defs: &std::collections::HashMap<String, (Vec<String>, Expr)>)
+    -> Option<Expr>
+{
+    match e {
+        Expr::Const(name, args) => {
+            let (params, body) = defs.get(name)?;
+            // one-step: substitute this occurrence's args into the definiens
+            Some(substitute(body, params, args))   // δ: a(U) -> M[x := U]
+        }
+        Expr::Add(l, r) => {
+            // Compatibility: try unfolding a subterm, leave the rest untouched
+            unfold_once(l, defs).map(|l2| Expr::Add(Box::new(l2), r.clone()))
+                .or_else(|| unfold_once(r, defs).map(|r2| Expr::Add(l.clone(), Box::new(r2))))
+        }
+        _ => None,
+    }
+}
+# fn substitute(_: &Expr, _: &[String], _: &[Expr]) -> Expr { unimplemented!() }
+```
+
+---
+
+## Primitive definitions: when there's nothing to unfold to
+
+Descriptive definitions cover an enormous amount of ground, but they cannot express **axioms** — things assumed to hold, not derived — or **axiomatic notions** — things assumed to exist, not constructed. $\mathbb N$ itself, the constant $0$, the successor function $s$, the induction principle, the classical law of excluded middle: none of these have a definiens inside $\lambda C$ or $\lambda D_0$; they are exactly the primitive, load-bearing assumptions a formal theory has to be *given*, not able to derive from nothing (§10.1–10.2).
+
+Chapter 10's move is elegant: rather than bolting axioms on as a separate mechanism (e.g., a fixed "pre-context" of always-available assumptions — which the book tried informally in Chapter 7 for the law of excluded middle, and found unwieldy for anything beyond a single axiom), treat a primitive notion as **a definition with an empty, non-existent body**, written with the meta-symbol $\bot\!\!\bot$ standing in for "no definiens":
+$$
+\overline x : \overline A \Vdash a(\overline x) := \bot\!\!\bot : N.
+$$
+This is not the type-theoretic $\bot$ (falsehood) — the book is careful to flag $\bot\!\!\bot$ as a pure meta-symbol, on a par with `:=` itself, never something that occurs *inside* an expression (§10.4). A primitive constant has a type but nothing to unfold to; it simply *is*, axiomatically. The examples the book gives (Example 10.2.2) read almost like a signature file:
+
+$$
+\begin{aligned}
+\emptyset &\Vdash N &&:= \bot\!\!\bot : *_s \\
+\emptyset &\Vdash 0 &&:= \bot\!\!\bot : N \\
+\emptyset &\Vdash s &&:= \bot\!\!\bot : N \to N \\
+P:N\to *_p &\Vdash \mathit{ind}(P) &&:= \bot\!\!\bot : P0 \Rightarrow (\forall_{n:N}(Pn \Rightarrow P(sn)) \Rightarrow \forall_{n:N} Pn)
+\end{aligned}
+$$
+
+Once $\mathit{ind}(P)$ is in the environment, proving a fact by induction on $\mathbb N$ is just *instantiating* this primitive constant at the specific predicate $Q$ you care about — `(inst)` again, no new machinery — and then supplying the base case and step case as ordinary function arguments via `(appl)`.
+
+The two new rules mirror `(def)`/`(inst)` almost exactly, differing only where the missing body forces a change (§10.3): `(def-prim)` drops the "definiens checks against $N$" premise (there is no definiens) and instead demands only that $N$ itself is a well-formed type or kind; `(inst-prim)` is syntactically identical to `(inst)`, just matched against a primitive $D$ instead of a descriptive one. Together, $\lambda D_0$ plus these two rules is the book's final system, $\lambda D$ (the complete rule set is tabulated in Appendix D).
+
+```rust
+// Primitive definitions as an "unimplemented but trusted" boundary:
+// a proof obligation the type checker accepts without a body — exactly
+// what an `unsafe` invariant or an external axiom looks like in practice.
+trait Induction<P: Fn(u64) -> bool> {
+    // No body — this is *assumed*, not derived, precisely like (def-prim).
+    fn ind(base: (), step: fn(u64) -> ()) -> (); // ~ P0 ⇒ (∀n. Pn⇒P(n+1)) ⇒ ∀n. Pn
+}
+```
+
+```lean
+-- Lean's `axiom` keyword is the direct, named counterpart of a λD
+-- primitive definition — a constant with a type and deliberately no proof term:
+axiom Classical.em (p : Prop) : p ∨ ¬p   -- (def-prim), essentially verbatim
+```
+
+A caution the book states plainly and repeats (§10.2, §10.6): a syntactically correct primitive definition can still make the *whole system* inconsistent, or simply mathematically meaningless — nothing about `(def-prim)`'s single well-formedness premise checks that the axiom is *true* or even *consistent* with what's already assumed. Type checking a $\lambda D$-text only certifies that every step follows the rules; it says nothing about whether the axioms feeding those steps deserve to be believed. That burden is pushed outward, onto whoever is choosing the axioms — exactly the same posture a Rust codebase takes toward its `unsafe` blocks: the compiler verifies everything *given* the invariant, but the invariant itself is a human commitment, not something checked.
+
+---
+
+## Normalisation and confluence: why $\lambda D$'s type checker terminates and agrees with itself
+
+The last piece (§10.4–10.5) is the metatheoretic payoff that makes all of the above *usable* by an actual algorithm, not just a paper formalism. Two properties matter, and the book proves both hold for $\lambda D$'s combined reduction:
+
+- **Normalisation (termination).** *Weak* normalisation of $\to_\Delta$ says every legal expression has *some* finite chain of unfoldings ending in $\delta$-normal form; *strong* normalisation says *every* chain of unfoldings terminates, regardless of which occurrence you choose to unfold first (Theorems 10.5.1–10.5.2). The same pair of results is then re-established for the *combined* relation $\to_\beta^\Delta$ mixing $\beta$- and $\delta$-steps (Theorems 10.5.7–10.5.8) — proving this for the combination is strictly harder than proving each in isolation, since interleaving two independently-terminating rewrite systems does not automatically terminate in general.
+- **Confluence (Church–Rosser).** If an expression can reduce two different ways, $M \twoheadrightarrow_\Delta N_1$ and $M \twoheadrightarrow_\Delta N_2$, there's always a common $N_3$ both can reduce to (Theorem 10.5.3); the same holds for $\twoheadrightarrow_\beta^\Delta$ (Theorem 10.5.5, "$\beta\delta$-confluence"). This is exactly what licensed the earlier claim that $E \equiv a(a(x,x),a(y,y))$ has a *unique* $\delta$-normal form no matter which of its three possible first unfoldings you pick.
+
+Together, normalisation plus confluence give **uniqueness of normal forms** (Corollaries 10.5.4, 10.5.6): every legal expression has exactly one $\delta$-normal form and exactly one $\beta\delta$-normal form. This pair of facts is precisely what makes $\lambda D$'s definitional equality *decidable* and order-independent — a type checker can reduce two expressions to normal form via *any* reduction strategy it likes (leftmost, innermost, parallel) and compare the results, confident it will get the same answer every implementation strategy would. Without confluence, "is `X` definitionally equal to `Y`" could depend on *which* unfolding order the checker happened to pick — an unacceptable nondeterminism for a system whose entire purpose is producing machine-checkable proofs. This is the metatheoretic guarantee that lets Lean's kernel, or Coq's, unfold `def`s and reduce redexes in whatever order is computationally convenient, without ever worrying that a different order might have produced a different verdict.
+
+---
+
+## Where this leads
+
+Definitions are not a late add-on bolted onto type theory for convenience — Chapters 8–10 establish them as the load-bearing mechanism that turns a bare type-checking calculus into something that can host real mathematics. Three threads from here run forward through the rest of the book:
+
+- **Chapter 11 (Flag-style natural deduction in $\lambda D$)** defines every logical connective and quantifier — $\land, \lor, \Rightarrow, \neg, \forall, \exists$ — as ordinary $\lambda D$-*constants*, using exactly the `(def)`/`(inst)` machinery built here; there is no separate "logic layer," only definitions built on top of $\lambda C$'s core rules.
+- **Chapters 12–14 (Mathematics, sets, arithmetic)** are, per §8.9's closing observation, *nothing but* long lists of definitions in this format — every notion from subsets to the natural numbers to the $\iota$-descriptor (see [[Formalising-Elementary-Mathematics]]) is introduced exactly the way `total(S,R)` was introduced here.
+- **Chapter 15 (Bézout's Lemma)**, the book's capstone, is the payoff of naming proofs specifically: the general lemma is proved once as a named constant with a parameter list, then *instantiated* — not re-proved — at $m=55, n=28$, exactly mirroring the $p(m,n,u) \to p(55,28,U)$ worked example in §8.7.
+
+For the standing goal of building a Rust type/proof checker: `(def)`, `(inst)`, and the $\Delta;\Gamma$ extended-judgement form are close to a direct blueprint for how a real checker's environment and substitution machinery has to be structured — constants keyed by name, looked up with cumulative-substitution instantiation, and an explicit, checked freshness/ordering discipline on the definition list. And for the elaborator/unification goal: $\beta\delta$-conversion *is* what `isDefEq` computes, and the confluence-plus-normalisation results here are precisely the theorems that justify implementing it as "reduce both sides, in any order, and compare" rather than needing some cleverer, order-sensitive procedure.

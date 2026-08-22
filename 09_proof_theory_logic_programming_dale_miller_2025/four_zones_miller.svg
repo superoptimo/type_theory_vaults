@@ -1,0 +1,20 @@
+<svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif" font-size="15">
+  <style> text { fill: #3a3a3a; } .lbl { font-size: 13px; font-style: italic; } .cell { fill: none; stroke: #888888; stroke-width: 1.2; } </style>
+  <rect x="10" y="10" width="620" height="120" class="cell"/>
+  <line x1="320" y1="10" x2="320" y2="130" stroke="#888888" stroke-width="1"/>
+  <line x1="10" y1="70" x2="630" y2="70" stroke="#888888" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="30" y="45" font-weight="bold">Ψ</text>
+  <text x="60" y="45">left-unbounded</text>
+  <text x="30" y="105">Γ</text>
+  <text x="60" y="105">left-bounded</text>
+  <text x="345" y="45">Δ</text>
+  <text x="375" y="45">right-bounded</text>
+  <text x="345" y="105">Υ</text>
+  <text x="375" y="105">right-unbounded</text>
+  <text x="325" y="70" font-size="20" text-anchor="middle">⊢</text>
+  <text x="30" y="150" class="lbl">"!"-implicit: reusable, never consumed</text>
+  <text x="345" y="150" class="lbl">"?"-implicit: reusable, never consumed</text>
+  <text x="30" y="170" class="lbl">linear: consumed exactly once during search</text>
+  <text x="345" y="170" class="lbl">linear: produced/split during search</text>
+  <text x="150" y="192" font-size="13" text-anchor="middle">Σ :: Ψ ; Γ  ⊢  Δ ; Υ</text>
+</svg>
