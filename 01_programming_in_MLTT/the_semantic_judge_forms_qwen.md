@@ -9,11 +9,11 @@ tags:
   - judgement-forms
   - canonical-forms
 ---
-# The Semantics of Judgement Forms
+# [[The-Semantics-of-Judgement-Forms|The Semantics of Judgement Forms]]
 
 [[book-guidelines|↩ Back to guidelines]]
 
-Chapter 4 is the load-bearing wall of the whole book. Everything before it (the theory of expressions, Chapter 3) was syntax; everything after it (every set former, every proof rule, the subset theory, the theory of types) is justified *from* what this chapter establishes: a direct explanation of what the four judgement forms of type theory **mean**, given without borrowing meaning from any other mathematical theory.
+Chapter 4 is the load-bearing wall of the whole book. Everything before it ([[The-Theory-of-Expressions|the theory of expressions]], Chapter 3) was syntax; everything after it (every set former, every proof rule, the subset theory, the theory of types) is justified *from* what this chapter establishes: a direct explanation of what the four judgement forms of type theory **mean**, given without borrowing meaning from any other mathematical theory.
 
 ## Why this chapter has to exist, and why it looks the way it does
 
@@ -30,9 +30,9 @@ Now the methodological problem. When you define a programming language, you norm
 
 The book's solution: **explain the judgements in terms of computation.** The primitive notion is not "set" or "function" but *evaluation* — "the purely mechanical procedure of finding the value of a closed saturated expression." Sets are then explained in terms of the canonical values programs can produce, and elements in terms of what programs evaluate to. This is why the chapter reads like operational semantics rather than model theory: that is precisely what it is.
 
-**What breaks without this.** If the semantics were model-theoretic (sets-as-collections living in some meta-universe), you would lose two things at once. First, the computational reading that makes proofs into programs — an element of a set would no longer *be* a terminating computation. Second, the justification of the proof rules: the book's rules are defended by arguing "this rule preserves the meaning just explained," and that argument only goes through when the meaning is stated in terms of evaluation and canonical forms. A denotational semantics would justify different rules, or the same rules for different reasons that don't transfer to implementation.
+**What breaks without this.** If the semantics were model-theoretic (sets-as-collections living in some meta-universe), you would lose two things at once. First, the computational reading that makes proofs into programs — an element of a set would no longer *be* a terminating computation. Second, the justification of [[The-Universe-of-Small-Sets#The proof|the proof]] rules: the book's rules are defended by arguing "this rule preserves the meaning just explained," and that argument only goes through when the meaning is stated in terms of evaluation and canonical forms. A denotational semantics would justify different rules, or the same rules for different reasons that don't transfer to implementation.
 
-One more framing point the chapter makes, easy to miss: this semantics **does not depend on any particular primitive constants**. It is a schema — a template that says what you must supply for each new set former (its canonical elements, their equality, its selector's computation rule) and what you get back (meaning for all four judgements involving it). Chapters 6–16 are nothing but instantiations of this schema.
+One more framing point the chapter makes, easy to miss: this semantics **does not depend on any particular primitive constants**. It is a schema — a template that says what you must supply for each new set former (its canonical elements, their [[Propositions-as-Sets-(The-Curry-Howard-Correspondence)#Equality|equality]], its selector's computation rule) and what you get back (meaning for all four judgements involving it). Chapters 6–16 are nothing but instantiations of this schema.
 
 ## The primitive: computation, canonical forms, and laziness
 
@@ -269,7 +269,7 @@ example : one = MyNat.succ MyNat.zero := rfl
 -- The kernel's conversion check is judgement 4 implemented.
 ```
 
-Note the asymmetry worth keeping in mind: the *judgemental* equality of this chapter (and of Chapter 3's definitional equality $\equiv$) is decidable by construction — that decidability is what arities were invented to protect. The *propositional* equality sets $Id$ and $Eq$ of Chapter 8 are a different story, and the tension between them is one of the book's recurring themes.
+Note the asymmetry worth keeping in mind: the *judgemental* equality of this chapter (and of Chapter 3's definitional equality $\equiv$) is decidable by construction — that decidability is what arities were invented to protect. The *propositional* [[Equality-Sets|equality sets]] $Id$ and $Eq$ of Chapter 8 are a different story, and the tension between them is one of the book's recurring themes.
 
 **What breaks without this.** A proof system whose equality judgement compared syntax rather than values could not even identify $2+2$ with $4$. More structurally: the elimination/equality rules of every later chapter ($natrec(0, d, e) = d$, $apply(\lambda(b), a) = b(a)$, …) are computation laws stated as instances of this fourth judgement. Without evaluation-in-the-meaning, none of them would be expressible as equalities.
 
@@ -303,7 +303,7 @@ The meaning of hypothetical judgements is then defined **by induction on the len
 - **$a(x) = b(x) \in A(x)\ [x \in C]$** — to know $a(c) = b(c) \in A(c)$ for arbitrary $c \in C$.
 - Propositional readings lift exactly as before.
 
-The step to $n$ assumptions iterates the same move: $A(x_1,\ldots,x_n)\ set\ [x_1 \in C_1, \ldots, x_n \in C_n(\ldots)]$ means that $A(c, x_2, \ldots, x_n)$ is a set under the remaining assumptions, provided $c \in C_1$ — and the general **extensionality of propositional functions** (families of sets) is stated once and for all: from
+The step to $n$ assumptions iterates the same move: $A(x_1,\ldots,x_n)\ set\ [x_1 \in C_1, \ldots, x_n \in C_n(\ldots)]$ means that $A(c, x_2, \ldots, x_n)$ is a set under the remaining assumptions, provided $c \in C_1$ — and the general **[[The-Semantics-of-Judgement-Forms#Extensionality of propositional functions|extensionality of propositional functions]]** (families of sets) is stated once and for all: from
 
 $$a_1 = b_1 \in C_1,\quad a_2 = b_2 \in C_2(a_1),\quad \ldots,\quad a_n = b_n \in C_n(a_1, \ldots, a_{n-1})$$
 
@@ -386,6 +386,6 @@ For your projects, this chapter is about as load-bearing as it gets — it is th
 - **Judgement 4 is `isDefEq`.** "Yield equal canonical elements as values" is, operationally, reduce-both-sides-and-compare — the conversion check at the core of Lean's kernel unifier and the one your elaborator's metavariable solver will call thousands of times. When you implement Miller-pattern unification, every comparison of a candidate solution against an expected type bottoms out in this chapter's fourth judgement.
 - **Context well-formedness and extensionality are the plumbing under both targets.** Substitution-into-a-family being sound *because families are extensional by meaning* is the fact you will re-prove (as a lemma about your implementation) for Hoare-triple substitution under program-state assumptions, and the fact your elaborator's congruence closure silently depends on whenever it solves a metavariable under a local context. The book flags the exact obligations — equivalence relation on canonical elements, same-form-equal-parts, extensionality under equal arguments — that an implementation must preserve to keep those arguments valid.
 
-**Where this leads.** Directly onward: Chapter 5 (the general rules justified here), then every set former of Chapters 6–16, each of which you can now read as "canonical elements + equality + selector + computation rule, justified from this semantics."
+**[[Disjoint-Unions-and-the-Existential-Quantifier#Where this leads|Where this leads]].** Directly onward: Chapter 5 (the general rules justified here), then every set former of Chapters 6–16, each of which you can now read as "canonical elements + equality + selector + computation rule, justified from this semantics."
 
 [[book-guidelines|↩ Back to guidelines]]

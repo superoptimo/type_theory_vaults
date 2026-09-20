@@ -166,7 +166,7 @@ Before any of the four dynamics is defined, Harper first defines the general not
 3. $s\ \mathsf{final}$ — $s$ is a terminated state (by convention, final states never transition further).
 4. $s \mapsto s'$ — $s$ may step to $s'$.
 
-A state from which no transition is possible is called **stuck**; every final state is stuck by convention, but (crucially, for the safety theorem in the next topic) a transition system *can* have [[Type-Safety#Stuck states|stuck states]] that are *not* final — those are the ill-defined programs a type system is supposed to rule out. A **transition sequence** is $s_0, \ldots, s_n$ with $s_0\ \mathsf{initial}$ and each $s_i \mapsto s_{i+1}$; it is **maximal** if it cannot be extended, and **complete** if maximal *and* $s_n\ \mathsf{final}$. The book writes $s \Downarrow$ for "there exists a complete sequence starting at $s$."
+A state from which no transition is possible is called **stuck**; every final state is stuck by convention, but (crucially, for the [[State-and-Assignables#Safety|safety]] theorem in the next topic) a transition system *can* have [[Type-Safety#Stuck states|stuck states]] that are *not* final — those are the ill-defined programs a type system is supposed to rule out. A **transition sequence** is $s_0, \ldots, s_n$ with $s_0\ \mathsf{initial}$ and each $s_i \mapsto s_{i+1}$; it is **maximal** if it cannot be extended, and **complete** if maximal *and* $s_n\ \mathsf{final}$. The book writes $s \Downarrow$ for "there exists a complete sequence starting at $s$."
 
 The reflexive-transitive closure $s \mapsto^* s'$ is itself given by an ordinary inductive definition —
 
@@ -178,7 +178,7 @@ $$
 
 A transition system is **deterministic** if every state has at most one successor. This matters practically: determinacy is exactly the property that makes "the value of this program" well-defined independent of *which* order the interpreter happens to pick when multiple reductions are possible.
 
-**Grounding.** A transition system is nothing more than a labeled graph with designated start/accept-adjacent nodes — the same object underlying a Rust/Python state-machine `enum` with a `step` function, or a Lean `Prop`-valued step relation:
+**[[Recursive-Types#Grounding|Grounding]].** A transition system is nothing more than a labeled graph with designated start/accept-adjacent nodes — the same object underlying a Rust/Python state-machine `enum` with a `step` function, or a Lean `Prop`-valued step relation:
 
 ```rust
 trait TransitionSystem {

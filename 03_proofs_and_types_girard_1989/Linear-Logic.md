@@ -165,31 +165,7 @@ $$\dfrac{\vdash C,D,\underline{A}}{\vdash C⅋D,\underline{A}}$$
 
 rewrite the passive context $A$ unchanged at every single step, purely because sequent calculus insists on a strict left-to-right derivation order. Two derivations that differ only in *which* independent rule got applied first are, semantically, the same proof wearing two different outfits — Lafont works exactly this example: $\vdash A,A^\perp$ and $\vdash B,B^\perp$ combined by $\otimes$ then combined with $\vdash C,C^\perp$ by another $\otimes$, then $⅋$'d at the end, gives conclusion $\vdash A^\perp ⅋ B^\perp,\,(A\otimes B)\otimes C,\,C^\perp$ — and a completely different-looking derivation, applying $⅋$ *before* the second $\otimes$, produces the identical conclusion. **Strip out the redundant, order-imposing bookkeeping and what's left is the proof net**: a graph built from three kinds of node — an axiom **link** (produces a dual pair $A,A^\perp$ directly), a **cut** (joins $A$ to $A^\perp$, symmetric, slated for removal), and one node per logical rule ($\otimes$, $⅋$, $1$, $\bot$). Every formula is the conclusion of exactly one node and the premise of at most one; the un-consumed formulas are the net's **conclusions**, and — this is the entire point — **they carry no order**.
 
-<svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two sequent derivations differing only in rule order collapse to the same proof net">
-  <text x="150" y="18" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#888888">two sequent derivations (different rule order)</text>
-  <text x="150" y="40" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#888888">⊗ then ⊗ then ⅋</text>
-  <text x="150" y="56" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#888888">⊗ then ⅋ then ⊗</text>
-  <line x1="300" y1="45" x2="380" y2="105" stroke="#888888" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#888888"/></marker></defs>
-  <text x="330" y="35" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6a8f6a">same net</text>
-
-  <text x="470" y="80" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#888888">proof net (unordered conclusions)</text>
-  <circle cx="400" cy="120" r="4" fill="#888888"/><text x="400" y="112" text-anchor="middle" font-size="11" fill="#888888">A</text>
-  <circle cx="430" cy="120" r="4" fill="#888888"/><text x="430" y="112" text-anchor="middle" font-size="11" fill="#888888">B</text>
-  <circle cx="415" cy="145" r="4" fill="#888888"/><text x="415" y="163" text-anchor="middle" font-size="11" fill="#888888">A⊗B</text>
-  <line x1="400" y1="120" x2="415" y2="145" stroke="#888888" stroke-width="1.2"/>
-  <line x1="430" y1="120" x2="415" y2="145" stroke="#888888" stroke-width="1.2"/>
-  <circle cx="470" cy="120" r="4" fill="#888888"/><text x="470" y="112" text-anchor="middle" font-size="11" fill="#888888">C</text>
-  <circle cx="443" cy="170" r="4" fill="#888888"/><text x="443" y="188" text-anchor="middle" font-size="11" fill="#888888">(A⊗B)⊗C</text>
-  <line x1="415" y1="145" x2="443" y2="170" stroke="#888888" stroke-width="1.2"/>
-  <line x1="470" y1="120" x2="443" y2="170" stroke="#888888" stroke-width="1.2"/>
-  <circle cx="530" cy="120" r="4" fill="#888888"/><text x="530" y="112" text-anchor="middle" font-size="11" fill="#888888">C⊥</text>
-  <circle cx="565" cy="110" r="4" fill="#888888"/><text x="580" y="105" text-anchor="middle" font-size="11" fill="#888888">A⊥</text>
-  <circle cx="595" cy="110" r="4" fill="#888888"/><text x="595" y="130" text-anchor="middle" font-size="11" fill="#888888">B⊥</text>
-  <circle cx="580" cy="135" r="4" fill="#888888"/><text x="580" y="153" text-anchor="middle" font-size="11" fill="#888888">A⊥⅋B⊥</text>
-  <line x1="565" y1="110" x2="580" y2="135" stroke="#888888" stroke-width="1.2"/>
-  <line x1="595" y1="110" x2="580" y2="135" stroke="#888888" stroke-width="1.2"/>
-</svg>
+![[linear_logic_proofnets.svg]]
 
 The construction is inductive and mirrors the one-sided rules exactly: links are nets; if $A$ concludes net $\nu$ and $A^\perp$ concludes net $\nu'$, joining them by a cut is a net; if $A$ concludes $\nu$ and $B$ concludes $\nu'$, joining by a $\otimes$-node is a net; if $A$ *and* $B$ **both** conclude the *same* net $\nu$, joining by a $⅋$-node is a net; $1$ alone is a net; capping any net's conclusion with $\bot$ is a net.
 
@@ -199,48 +175,7 @@ Not every graph you can scribble this way is legitimate, though — Lafont's cou
 
 This is where proof nets stop being merely a tidier notation and start doing real work. Rewriting a cut is **purely local** graph surgery, in exactly two shapes plus a degenerate case:
 
-<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The three local cut-elimination rules for proof nets: axiom-cut, tensor-par, and unit-unit">
-  <text x="320" y="18" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#888888">local cut-elimination rules (proof nets)</text>
-
-  <text x="90" y="42" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#888888">axiom · cut → nothing</text>
-  <text x="55" y="70" font-family="sans-serif" font-size="12" fill="#888888">A</text>
-  <text x="80" y="70" font-family="sans-serif" font-size="12" fill="#888888">A⊥</text>
-  <line x1="60" y1="62" x2="86" y2="62" stroke="#888888" stroke-width="1.2"/>
-  <text x="120" y="90" font-family="sans-serif" font-size="12" fill="#888888">ν</text>
-  <text x="118" y="105" font-family="sans-serif" font-size="12" fill="#888888">A</text>
-  <line x1="86" y1="65" x2="122" y2="98" stroke="#aa5555" stroke-width="1" stroke-dasharray="3 2"/>
-  <text x="100" y="130" font-family="sans-serif" font-size="11" fill="#aa5555">cut A⊥/A</text>
-  <path d="M 30 145 L 200 145" stroke="#6a8f6a" stroke-width="1.2" marker-end="url(#arrow2)"/>
-  <defs><marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6a8f6a"/></marker></defs>
-  <text x="115" y="140" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6a8f6a">wire straight through</text>
-  <text x="60" y="180" font-family="sans-serif" font-size="12" fill="#888888">ν</text>
-  <text x="60" y="195" font-family="sans-serif" font-size="12" fill="#888888">A</text>
-
-  <line x1="220" y1="30" x2="220" y2="230" stroke="#cccccc" stroke-width="1"/>
-
-  <text x="340" y="42" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#888888">⊗ · ⅋ cut → two smaller cuts</text>
-  <text x="260" y="65" font-family="sans-serif" font-size="11" fill="#888888">ν(A) ν'(B)</text>
-  <text x="255" y="80" font-family="sans-serif" font-size="12" fill="#888888">A⊗B</text>
-  <text x="330" y="65" font-family="sans-serif" font-size="11" fill="#888888">μ(A⊥) μ(B⊥)</text>
-  <text x="335" y="80" font-family="sans-serif" font-size="12" fill="#888888">A⊥⅋B⊥</text>
-  <line x1="270" y1="82" x2="330" y2="82" stroke="#aa5555" stroke-width="1" stroke-dasharray="3 2"/>
-  <text x="300" y="100" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#aa5555">cut</text>
-  <path d="M 250 120 L 420 120" stroke="#6a8f6a" stroke-width="1.2" marker-end="url(#arrow2)"/>
-  <text x="335" y="115" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6a8f6a">split into A/A⊥ and B/B⊥</text>
-  <text x="255" y="150" font-family="sans-serif" font-size="11" fill="#888888">ν(A)</text>
-  <line x1="272" y1="145" x2="300" y2="145" stroke="#888888" stroke-width="1"/>
-  <text x="305" y="150" font-family="sans-serif" font-size="11" fill="#888888">μ(A⊥)</text>
-  <text x="345" y="150" font-family="sans-serif" font-size="11" fill="#888888">ν'(B)</text>
-  <line x1="362" y1="145" x2="390" y2="145" stroke="#888888" stroke-width="1"/>
-  <text x="395" y="150" font-family="sans-serif" font-size="11" fill="#888888">μ(B⊥)</text>
-
-  <line x1="450" y1="30" x2="450" y2="230" stroke="#cccccc" stroke-width="1"/>
-  <text x="540" y="42" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#888888">1 · ⊥ cut → nothing</text>
-  <text x="520" y="70" font-family="sans-serif" font-size="12" fill="#888888">1</text>
-  <text x="560" y="70" font-family="sans-serif" font-size="12" fill="#888888">⊥</text>
-  <line x1="524" y1="62" x2="558" y2="62" stroke="#aa5555" stroke-width="1" stroke-dasharray="3 2"/>
-  <text x="540" y="110" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6a8f6a">(nothing — both vanish)</text>
-</svg>
+![[linear_logic_cut_elimination.svg]]
 
 An axiom link with one leg immediately cut just wires the other side of the cut straight through and disappears — cutting against an identity is a no-op. A cut between $A\otimes B$ (fed by two separate sub-nets, one producing $A$, one producing $B$) and $A^\perp ⅋ B^\perp$ (fed by a single sub-net concluding both duals) splits into **two independent smaller cuts**, $A/A^\perp$ and $B/B^\perp$, each reconnecting straight into whichever sub-nets used to feed the original nodes. $1$ cut against $\bot$ just vanishes — neither has any premises to reconnect.
 

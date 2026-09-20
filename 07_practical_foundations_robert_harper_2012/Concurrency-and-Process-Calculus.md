@@ -71,7 +71,7 @@ $$\dfrac{}{*\$(!a;P+E) \xrightarrow{a!} P \parallel {*\$(!a;P+E)}} \qquad \dfrac
 
 Now a new copy is spawned *only exactly when* a synchronization actually happens — the "guess when to replicate" nondeterminism vanishes, because replication and the triggering interaction are a single indivisible step. This is precisely how you'd want to model a server: it only ever "forks a handler" in the same atomic moment a client connects, never speculatively.
 
-**Grounding (Rust) — replicated synchronization is a listener loop, not a generic spawn-forever.**
+**[[Recursive-Types#Grounding|Grounding]] (Rust) — replicated synchronization is a listener loop, not a generic spawn-forever.**
 
 ```rust
 // *$(?a;P + E), specialized: replicated synchronization on a channel

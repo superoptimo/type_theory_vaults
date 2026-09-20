@@ -1,0 +1,110 @@
+# Specifying Systems: The TLA+ Language and Tools for Hardware and Software Engineers — Index
+
+[[book-guidelines|↩ Back to guidelines]]
+
+1. **Elementary Mathematical Foundations for Specification** : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+   - Propositional logic and truth tables : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+   - Set theory primitives and operators : [[Formal-Semantics-of-the-TLA+-Language|Link1]], [[Elementary-Mathematical-Foundations-for-Specification|Link2]]
+   - Predicate logic and bounded versus unbounded quantification : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+   - Functions, domains, and function construction : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+   - Records and tuples as functions : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+   - Recursive function definitions : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+   - The choose operator and Hilbert's epsilon : [[Elementary-Mathematical-Foundations-for-Specification|Link1]], [[Formal-Semantics-of-the-TLA+-Language|Link2]]
+   - TLA+ as an untyped formalism : [[Elementary-Mathematical-Foundations-for-Specification|Link]]
+
+2. **The Syntax of TLA+** : [[The-Syntax-of-TLA+|Link]]
+   - Ascii versus typeset notation : [[The-Syntax-of-TLA+|Link]]
+   - The BNF grammar and module structure : [[The-Syntax-of-TLA+|Link]]
+   - Lexemes, tokens, and reserved words : [[The-Syntax-of-TLA+|Link]]
+   - Operator precedence as a range : [[The-Syntax-of-TLA+|Link]]
+   - Aligned conjunction and disjunction lists : [[The-Syntax-of-TLA+|Link]]
+   - Comment forms and typesetting conventions : [[The-Syntax-of-TLA+|Link]]
+   - Syntactic anomalies in parsing : [[The-Syntax-of-TLA+|Link]]
+
+3. **Formal Semantics of the TLA+ Language** : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Meaning of an expression via primitive operators : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Interpretations of Boolean operators on non-Boolean values : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Arity, order, and level of an operator : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Lambda expressions as metalanguage : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Contexts and the meaning of a module : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Module extension : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Instantiation and capture-avoiding substitution : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Semantic correctness as formula validity : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+
+4. **States, Actions, and Behaviors** : [[Formal-Semantics-of-the-TLA+-Language|Link1]], [[States-Actions-and-Behaviors|Link2]]
+   - States as assignments to variables : [[States-Actions-and-Behaviors|Link]]
+   - Actions and next-state relations : [[States-Actions-and-Behaviors|Link]]
+   - Stuttering steps and invariance under stuttering : [[States-Actions-and-Behaviors|Link]]
+   - Enabling conditions : [[States-Actions-and-Behaviors|Link]]
+   - Action composition : [[States-Actions-and-Behaviors|Link]]
+   - The grain of atomicity : [[States-Actions-and-Behaviors|Link1]], [[Writing-Specifications-Engineering-Practice|Link2]]
+
+5. **Specifying Safety Properties** : [[Specifying-Safety-Properties|Link]]
+   - The canonical specification form : [[Specifying-Safety-Properties|Link]]
+   - Type invariants as ordinary invariants : [[Specifying-Safety-Properties|Link]]
+   - Inductive invariants versus invariants of a specification : [[Specifying-Safety-Properties|Link]]
+   - Initial predicates and next-state actions : [[States-Actions-and-Behaviors|Link1]], [[Advanced-Specification-Examples|Link2]]
+   - Silly expressions in an untyped language : [[Specifying-Safety-Properties|Link]]
+
+6. **Temporal Logic and Liveness** : [[Temporal-Logic-and-Liveness|Link]]
+   - The always and eventually operators : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+   - Temporal tautologies versus temporal proof rules : [[Temporal-Logic-and-Liveness|Link]]
+   - The leads-to operator
+   - Weak fairness : [[Real-Time-Specification|Link1]], [[Temporal-Logic-and-Liveness|Link2]]
+   - Strong fairness : [[Temporal-Logic-and-Liveness|Link]]
+   - Machine closure : [[Composing-Specifications|Link1]], [[Real-Time-Specification|Link2]], [[Temporal-Logic-and-Liveness|Link3]]
+   - Temporal quantification and hiding : [[Temporal-Logic-and-Liveness|Link]]
+
+7. **Real-Time Specification** : [[Real-Time-Specification|Link]]
+   - The now variable : [[Real-Time-Specification|Link]]
+   - Real-time bounds on actions : [[Real-Time-Specification|Link]]
+   - Zeno specifications : [[Real-Time-Specification|Link]]
+   - Hybrid system specifications and differential equations : [[Real-Time-Specification|Link]]
+
+8. **Refinement and Implementation** : [[Refinement-and-Implementation|Link]]
+   - Implementation as logical implication : [[Refinement-and-Implementation|Link]]
+   - Refinement mappings : [[Refinement-and-Implementation|Link]]
+   - Step simulation : [[Refinement-and-Implementation|Link]]
+   - Interface refinement : [[Refinement-and-Implementation|Link]]
+   - Data refinement : [[Refinement-and-Implementation|Link]]
+
+9. **Composing Specifications** : [[Composing-Specifications|Link]]
+   - Interleaving versus noninterleaving composition : [[Composing-Specifications|Link]]
+   - Disjoint-state versus shared-state composition : [[Composing-Specifications|Link]]
+   - Joint actions : [[Composing-Specifications|Link]]
+   - Compositional hiding : [[Composing-Specifications|Link]]
+   - Open-system versus closed-system specifications : [[Composing-Specifications|Link]]
+   - Rely-guarantee contracts between system and environment
+
+10. **Advanced Specification Examples** : [[Advanced-Specification-Examples|Link]]
+    - Specifying data structures such as graphs : [[Advanced-Specification-Examples|Link]]
+    - Solving differential equations in TLA+ : [[Advanced-Specification-Examples|Link]]
+    - BNF grammars as TLA+ modules : [[Advanced-Specification-Examples|Link]]
+    - Multiprocessor memory correctness conditions : [[Advanced-Specification-Examples|Link]]
+    - Linearizability, serializability, and sequential consistency
+
+11. **Writing Specifications: Engineering Practice** : [[Writing-Specifications-Engineering-Practice|Link]]
+    - Why and what to specify : [[Writing-Specifications-Engineering-Practice|Link]]
+    - Choosing the grain of atomicity : [[Writing-Specifications-Engineering-Practice|Link]]
+    - Choosing a data-structure abstraction level : [[Writing-Specifications-Engineering-Practice|Link]]
+    - Common style pitfalls : [[Writing-Specifications-Engineering-Practice|Link]]
+    - Writing specifications during design : [[Writing-Specifications-Engineering-Practice|Link]]
+
+12. **The Standard Modules** : [[The-Standard-Modules|Link]]
+    - The Sequences module : [[The-Standard-Modules|Link]]
+    - The FiniteSets module : [[The-Standard-Modules|Link]]
+    - The Bags module : [[The-Standard-Modules|Link]]
+    - The Peano and ProtoReals foundation modules : [[The-Standard-Modules|Link]]
+    - The Naturals, Integers, and Reals modules
+
+13. **The TLA+ Tools** : [[The-TLA+-Tools|Link]]
+    - The Syntactic Analyzer : [[The-TLA+-Tools|Link]]
+    - The $\text{TLATEX}$ typesetter : [[The-TLA+-Tools|Link]]
+    - The $\text{TLC}$ model checker : [[The-TLA+-Tools|Link]]
+    - TLC values and expression evaluation : [[Formal-Semantics-of-the-TLA+-Language|Link]]
+    - Model-checking mode versus simulation mode : [[The-TLA+-Tools|Link]]
+    - Views, fingerprints, and symmetry : [[The-TLA+-Tools|Link]]
+    - Limitations of liveness checking under a finite model : [[The-TLA+-Tools|Link]]
+    - Practical debugging advice for TLC : [[The-TLA+-Tools|Link]]
+
+---

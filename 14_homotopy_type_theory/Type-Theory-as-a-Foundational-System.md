@@ -1,377 +1,152 @@
 ---
 title: Type Theory as a Foundational System
-book: Homotopy Type Theory - Univalent Foundations of Mathematics
-chapters: Introduction (pp. 1–5); Chapter 1, §§1.1, 1.3 (pp. 17–25); Appendix A.1–A.2 (pp. 425–427)
-tags: [type-theory, hott, foundations, judgmental-equality, universes, dependent-types]
----
-
-Part of the [[book-guidelines|HoTT study map]] — Chapter 1, §1.1 & §1.3.
-
-# Type Theory as a Foundational System
-
-The book opens Chapter 1 with a warning: type theory "behaves differently from set theory in several important ways, and that can take some getting used to," so the authors will be *more formal* here than anywhere else in the book. That's a signal worth taking seriously. This chapter isn't a warm-up; it specifies the **shape of the machine** that every later construction runs on. Get the shape wrong and the univalence axiom, higher inductive types, and everything in Part II will read as arbitrary symbol-pushing. Get it right and they become almost inevitable.
-
-There are five ideas doing all the load-bearing work:
-
-1. Foundations as **one layer** instead of two.
-2. **Judgments** ($a : A$) as something other than propositions ($a \in A$).
-3. **Two different equalities** — judgmental ($\equiv$) and propositional ($=$).
-4. **Contexts** as the ordered environment in which judgments hold.
-5. **Universes** as the disciplined way to talk about "all types."
-
-We'll take them in order, each with the problem it solves first and the notation second.
-
----
-
-## One layer instead of two
-
-**The problem.** Set-theoretic foundations have *two layers*. Layer one is the deductive system of first-order logic: propositions, connectives, quantifiers, rules like "from $A$ and $B$ infer $A \land B$." Layer two is the actual theory of sets (say ZFC), formulated *inside* that logic: sets, membership, and axioms like Pairing and Choice. Proving a theorem means mixing both layers constantly — logic provides the reasoning machinery, set theory provides the objects.
-
-Type theory collapses this to **one layer**. There is only one kind of object — *types* — and propositions are identified with particular types. The mathematical activity of *proving a theorem* becomes a special case of the mathematical activity of *constructing an object*: to prove proposition $A$ is to construct an inhabitant of the type $A$.
-
-```mermaid
-graph BT
-    subgraph SET["Set theory: two layers"]
-        P["Layer 1 — propositions<br/>(first-order logic rules)"] --> S["Layer 2 — sets<br/>(ZFC axioms)"]
-    end
-    subgraph TT["Type theory: one layer"]
-        T["Types = propositions = constructions<br/>proving = constructing"]
-    end
-```
-
-The book's Table 1 (p. 11) is the translation dictionary: $\land$ becomes product, $\lor$ becomes coproduct, $\exists$ becomes $\Sigma$-type, $\forall$ becomes $\Pi$-type, equality becomes the identity type. We'll meet the full table later (§1.11); right now the point is only architectural.
-
-**Why bother collapsing the layers?** Because the two-layer design inherits a wart: in first-order logic, the judgment "$A$ has a proof" lives at a *different level* from the proposition $A$ itself. The logic talks *about* propositions from the outside. Type theory makes that external talk into internal structure: the basic act of the system — "$a$ has type $A$" — is simultaneously "a proof of proposition $A$" when $A$ is being used as a proposition. One mechanism, two readings.
-
-### What breaks without this
-
-Nothing technically fails if you keep two layers — set theory works fine. What you lose is *uniformity*. Every later chapter of this book exploits the fact that "build a program" and "prove a theorem" are the same operation: a verified program *is* a proof, a proof *is* a program you can run. That identity is impossible to even state in a two-layer foundation where proofs live in the meta-language and objects live in the object language.
-
----
-
-## Judgments: what the machine actually checks
-
-Now the single most important distinction in the whole book, and the one set-theoretic intuition most reliably sabotages.
-
-### The basic judgment
-
-The fundamental act of type theory is written:
-
-$$a : A$$
-
-and pronounced "the term $a$ has type $A$" (or loosely, "$a$ is an element of $A$"). This is a **judgment**, not a proposition.
-
-**What is a judgment?** The book gives two mental pictures. Picture one: a deductive system is a formal *game*, and judgments are the *positions* you reach by following the rules. Picture two: a deductive system is an algebraic theory, and judgments are its *elements* (like elements of a group), with the deductive rules as the operations. Either way, judgments are the things you *derive*, sitting in the metatheory — they are not internal statements of the theory.
-
-The contrast with set theory is sharp:
-
-- In set theory, $a \in A$ is a **proposition**: a relation that may or may not hold between two *pre-existing* objects $a$ and $A$. You can prove it, disprove it, assume it, negate it.
-- In type theory, $a : A$ is a **judgment**. You can derive it or fail to derive it — and that's it. As the book puts it, you cannot say "if $a : A$ then it is not the case that $b : B$," and you cannot "disprove" $a : A$.
-
-And there's a deeper shift hiding in the notation: **there are no typeless elements.** In set theory, "let $x$ be a natural number" is shorthand for "let $x$ be a *thing*, and assume $x \in \mathbb{N}$." In type theory, "let $x : \mathbb{N}$" is *atomic* — you cannot introduce a variable without specifying its type, and every element's type is (generally) uniquely determined by the element itself.
-
-### Grounding it in tools you already know
-
-The judgment/proposition distinction is not philosophical garnish; it's the difference between *compile time* and *runtime*, and between the *kernel* and the *proof language*.
-
-In **Rust**, `let x: u32 = 4;` is checked by the compiler and then *gone* — you cannot write an expression that asks "is it the case that `x: u32`?", negate it, or branch on it. It is a well-formedness condition on the program, not a value inside the program. A type error isn't a `false` you can inspect; it's a program that never was.
-
-In **Lean**, judgments are literally what the kernel prints:
-
-```lean
-#check 42          -- 42 : Nat
-#check Nat         -- Nat : Type
-#check Type        -- Type : Type 1      ← the universe hierarchy, live
-#check fun x => x  -- fun x => x : ?m.1 → ?m.1   ← unresolved metavariables!
-```
-
-That last line is worth pausing on: `?m.1` is a **metavariable** — a hole the elaborator must fill. The fact that a simple identity function elaborates through unification against unknown types is the entire seed of the elaborator project you're building toward. Everything that follows in this chapter (definitional equality, contexts, universes) is machinery that `isDefEq` and friends run on top of.
-
-### A tiny judgment engine in Rust
-
-Here is the judgment $a : A$, the context, and the distinction between inference and checking, as real (if miniature) code. This is the skeleton of every type checker *and* every proof checker:
-
-```rust
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Ty {
-    Nat,
-    Arrow(Box<Ty>, Box<Ty>),
-}
-
-#[derive(Debug, Clone)]
-enum Tm {
-    Var(String),
-    Zero,
-    Succ(Box<Tm>),
-    Lam(String, Ty, Box<Tm>),
-    App(Box<Tm>, Box<Tm>),
-}
-
-/// The context Γ: an *ordered* list of (variable, type) assumptions.
-/// Order matters: later assumptions may depend on earlier ones.
-struct Ctx(Vec<(String, Ty)>);
-
-impl Ctx {
-    fn empty() -> Self { Ctx(vec![]) }
-
-    fn lookup(&self, x: &str) -> Option<&Ty> {
-        // Most recent binding wins (shadowing).
-        self.0.iter().rev().find(|(name, _)| name == x).map(|(_, ty)| ty)
-    }
-
-    fn extend(&self, x: String, ty: Ty) -> Ctx {
-        let mut v = self.0.clone();
-        v.push((x, ty));
-        Ctx(v)
-    }
-}
-
-/// The judgment "Γ ⊢ t : A", in inference mode: synthesize A.
-fn infer(ctx: &Ctx, t: &Tm) -> Result<Ty, String> {
-    match t {
-        Tm::Var(x) => ctx.lookup(x).cloned()
-            .ok_or_else(|| format!("unbound variable: {x}")),
-        Tm::Zero => Ok(Ty::Nat),
-        Tm::Succ(t) => { check(ctx, t, &Ty::Nat)?; Ok(Ty::Nat) }
-        Tm::Lam(x, dom, body) => {
-            let cod = infer(&ctx.extend(x.clone(), dom.clone()), body)?;
-            Ok(Ty::Arrow(Box::new(dom.clone()), Box::new(cod)))
-        }
-        Tm::App(f, arg) => match infer(ctx, f)? {
-            Ty::Arrow(dom, cod) => { check(ctx, arg, &dom)?; Ok(*cod) }
-            other => Err(format!("attempted to apply non-function: {other:?}")),
-        },
-    }
-}
-
-/// The judgment "Γ ⊢ t : A", in checking mode: verify against a given A.
-fn check(ctx: &Ctx, t: &Tm, expected: &Ty) -> Result<(), String> {
-    let actual = infer(ctx, t)?;
-    if &actual == expected {
-        Ok(())
-    } else {
-        Err(format!("expected {expected:?}, got {actual:?}"))
-    }
-}
-```
-
-Notice two things. First, `infer`/`check` *return `Result`* — a judgment is a decidable relation, not a boolean property of bare terms. "Is `Var("x")` well-typed?" is a malformed question; only "is it well-typed *in context Γ*?" is. Second, the `infer`/`check` split is already **bidirectional typing** — inference synthesizes a type, checking verifies against an expected one. Your elaborator target is precisely this skeleton, enriched with metavariables and a definitional-equality step where this code uses `==`.
-
-### What breaks without this
-
-Treat $a : A$ as a proposition and you immediately get grammatical sentences that are nonsense ("assume $a : A$; then it is not the case that $b : B$"), and worse, you re-open the door to Russell-style paradoxes — elements floating free of types, collections formed of arbitrary things. Historically this isn't hypothetical: **Russell invented type theory precisely to block these paradoxes** (the book notes this in its history of type theory, p. 2). The judgment discipline is the scar tissue.
-
----
-
-## Two equalities: definitional vs. propositional
-
-If the last section was the chapter's most important distinction, this one is the most *consequential* — it determines what your proof assistant can compute, what your elaborator can solve, and (later) whether univalence is even consistent.
-
-### Propositional equality: equality as a type
-
-In set theory, equality is a proposition: you can prove $a = b$, disprove it, assume it as a hypothesis. Since propositions are types, equality must be a **type**: for $a, b : A$ there is a type
-
-$$a =_A b$$
-
-whose inhabitants are *proofs* that $a$ equals $b$. When $a =_A b$ is inhabited, $a$ and $b$ are **propositionally equal**.
-
-This equality is proof-relevant: there can be *many* different inhabitants of $a =_A b$, and which one you have can matter. (In homotopy type theory they're paths — but that's Chapter 2's business.)
-
-### Judgmental equality: equality as computation
-
-But the system also needs an equality that lives at the *judgment* level, alongside $a : A$. This is **judgmental** or **definitional equality**, written
-
-$$a \equiv b : A \qquad \text{or simply} \qquad a \equiv b$$
-
-The intuition the book gives: $a \equiv b$ means **"equal by definition."** If you define $f : \mathbb{N} \to \mathbb{N}$ by $f(x) :\equiv x^2$, then $f(3)$ is equal to $3^2$ *by definition* — no proof required, no inhabitant constructed. The symbol $:\equiv$ means "I am introducing a definitional equality," i.e., a definition.
-
-Three properties make judgmental equality a different beast from propositional equality:
-
-1. **It's not internal.** You cannot negate it, assume it as a hypothesis, or prove it inside the theory. "Whether or not two expressions are equal by definition is just a matter of expanding out the definitions."
-2. **It's algorithmically decidable** — there is a (meta-theoretic) procedure that settles it. Propositional equality is decidedly not decidable in general.
-3. **It controls conversion.** Its whole job is to govern the other judgment: from $a : A$ and $A \equiv B$, you may derive $a : B$.
-
-### The motivating example, straight from the book
-
-Why do we need the definitional notion at all? Suppose you've proved $3^2 = 9$, i.e. you have a term $p : (3^2 = 9)$. Then the *same witness* $p$ ought to count as a proof that $f(3) = 9$, since $f(3)$ **is** $3^2$ by definition. The cleanest way to make that true is not some elaborate axiom about $f$ — it's the conversion rule: judgmental equality lets the type checker silently rewrite goals.
-
-A technical note worth absorbing: the symbols $:$ and $\equiv$ **bind more loosely than anything else**. So "$p : x = y$" parses as "$p : (x = y)$" — a term inhabiting an equality type — and never as "$(p : x) = y$", which is ill-formed because $p : x$ is a judgment and judgments can't be equal to anything.
-
-### The Lean view: `rfl` is where the two equalities meet
-
-Lean makes the division of labor concrete. Definitional equality is what the kernel decides by unfolding definitions and reducing; the proof term `rfl` is *accepted* exactly when both sides are definitionally equal:
-
-```lean
--- Definitional: both sides compute to the same normal form.
-example : 2 + 2 = 4 := by rfl
-example : (fun x : Nat => x + x) 2 = 2 + 2 := by rfl   -- β-reduction
-example (n : Nat) : n + 0 = n := by rfl                -- add recurses on arg 2
-example (n : Nat) : n + 1 = Nat.succ n := by rfl
-
--- NOT definitional for generic n: `1 + n` is stuck while n is unknown.
--- This needs a real (propositional) proof.
-example (n : Nat) : n + 1 = 1 + n := by
-  induction n with
-  | zero     => rfl
-  | succ n ih => simp [ih]   -- the tactic is beside the point; a proof is required
-```
-
-This mirrors the book's own observation (Notes, p. 54): even the trivial commutativity $n + 1 = 1 + n$ is *not* judgmental for a generic $n$ — though it is judgmental for any *specific* $n$, since then both sides compute (e.g. $3 + 1 \equiv 4 \equiv 1 + 3$).
-
-> **Load-bearing for your elaborator goal:** the kernel's definitional check has an elaborator-side cousin, **`isDefEq`** — the same question ("do these reduce to the same thing?") generalized to terms containing metavariables. When Lean elaborates `fun x => x` into `?m.1 → ?m.1`, it's solving constraints *up to definitional equality*. Everything in this section is the spec that `isDefEq` implements.
-
-### The Rust view: normalization vs. verified properties
-
-The same split appears in your compiler target. *Definitional* equality is constant folding, β-reduction, normalization — mechanical, terminating-by-construction rewriting you do at compile time without asking anyone's permission. *Propositional* equality is what your verifier's theorem prover establishes: "this program's output equals that specification," a claim with a proof object attached. If you blur these in the toolchain, either your compiler starts needing a theorem prover to compile `2 + 2` (unworkable), or your verifier can only prove things the constant folder can see (useless).
-
-### What breaks without this
-
-Both collapse directions are instructive, and the book's Notes are explicit about them:
-
-- **Collapse propositional into judgmental** (add a *reflection rule*: $p : x = y$ implies $x \equiv y$). This is extensional type theory. Every type becomes homotopically discrete — a set with no higher path structure — which is **inconsistent with univalence** (Example 3.1.9 gives a path in the universe that isn't reflexivity). The entire homotopical content of the book dies.
-- **Collapse judgmental into propositional** (no definitional equality at all). Now the conversion rule needs a proof term every time you rewrite, type-checking stops being decidable, and the "procedural" character of the system — the thing that makes it a programming language — evaporates.
-
-Two equalities isn't a wart. It's the only configuration where both computation and proof-relevance survive.
-
----
-
-## Contexts: the environment judgments live in
-
-Judgments don't hold simpliciter; they hold *under assumptions*. The collection of assumptions is the **context**, and it's the plumbing underneath everything — dependent types, substitution, and eventually both of your target systems.
-
-### The definition
-
-A **context** is a list of assumptions like
-
-$$x_1 : A_1,\; x_2 : A_2,\; \dots,\; x_n : A_n$$
-
-under which a judgment may be derived — for instance, building $m + n : \mathbb{N}$ under assumptions $m : \mathbb{N}, n : \mathbb{N}$. Written formally (in the style of Appendix A): $\Gamma \vdash a : A$, read "in context $\Gamma$, term $a$ has type $A$." The book adds a lovely topological gloss: think of the context as a **parameter space**.
-
-Two structural facts matter:
-
-1. **The context is an ordered list, not a set.** Later assumptions may *depend* on earlier ones: the assumption $x : A$ can only be made after the assumptions for any variables appearing in the type $A$. This is what "dependent types" mechanically means — types that mention earlier variables.
-2. **Assumptions whose type is a proposition act as hypotheses.** Assuming $p : x =_A y$ is assuming an equality, in the ordinary mathematical sense. But note the asymmetry from the previous section: you can assume a *propositional* equality (it's a type, it can have inhabitants), but you **cannot assume a judgmental equality** — it's not a type. The closest substitute is *substitution*: replacing a variable by a specific term, in language the book sanctions as "now assume $x \equiv a$."
-
-### Why order and binding discipline are not pedantry
-
-The book's §1.2 example of what goes wrong with naive substitution is worth knowing cold. Define $f : \mathbb{N} \to (\mathbb{N} \to \mathbb{N})$ by $f(x) :\equiv \lambda y.\, x + y$. Now: what is $f(y)$, assuming somewhere that $y : \mathbb{N}$?
-
-Naïvely substituting gives $\lambda y.\, y + y$ — **wrong**. The substituted $y$ was referring to our assumption; after substitution it refers to the λ-bound argument. The variable got **captured**, the binding structure was destroyed, and "calculations which are semantically unsound" become possible. The correct answer is $\lambda z.\, y + z$ — rename the bound variable first (α-conversion).
-
-The same phenomenon is why your Rust checker's `extend` above pushes onto an *ordered* list with shadowing lookup, and why any Hoare-logic soundness proof you'll ever write lives or dies on substitution lemmas. When the learning-goals note says substitution and context management are "the recurring plumbing under both Hoare-logic soundness proofs and elaboration," this paragraph is the concrete referent.
-
-### What breaks without this
-
-Without ordered contexts: dependent types like $B(x)$ can't even be stated well-formed (what is $B$ applied to a variable that isn't in scope?). Without binding discipline: capture-avoidance fails, substitution becomes unsound, and every metatheoretic proof (type preservation, soundness of your verifier) collapses. These failures are silent in examples and catastrophic in proofs — exactly the class of bug that makes formal metatheory worth doing.
-
----
-
-## Universes: types of types, carefully
-
-We've been saying "$A$ is a type" informally. Time to make it precise — and to meet the first place where naïve type theory explodes.
-
-### The hierarchy
-
-We'd love a universe of all types, $\mathcal{U}_\infty$, with $\mathcal{U}_\infty : \mathcal{U}_\infty$. **This is unsound**: the book states plainly that from it "we can deduce that every type, including the empty type representing the proposition False, is inhabited" — e.g., by encoding Russell's paradox directly (Girard's paradox in the type-theoretic setting). So instead: a **hierarchy of universes**,
-
-$$\mathcal{U}_0 : \mathcal{U}_1 : \mathcal{U}_2 : \cdots$$
-
-where each universe is an element of the next. A type $A$ "is a type" by virtue of inhabiting *some* $\mathcal{U}_i$. Types belonging to a universe $\mathcal{U}$ under discussion are called **small types**.
-
-```mermaid
-graph BT
-    U0["𝒰₀"] -->|"element of"| U1["𝒰₁"]
-    U1 -->|"element of"| U2["𝒰₂"]
-    U2 -->|"element of"| U3["⋮"]
-```
-
-The book adopts **cumulativity**: if $A : \mathcal{U}_i$ then also $A : \mathcal{U}_{i+1}$. Convenient, and the book honestly flags the cost — "elements no longer have unique types." (If unique types matter to you, this is the first of several places where HoTT chooses ergonomics over a set-theoretic nicety.)
-
-### Typical ambiguity: levels you don't write
-
-Tracking indices everywhere is misery, so the book writes $A : \mathcal{U}$ with the level suppressed, trusting that levels "can be assigned in a consistent way." You may even write $\mathcal{U} : \mathcal{U}$, silently read as $\mathcal{U}_i : \mathcal{U}_{i+1}$. This convention is called **typical ambiguity**, and the book's warning is worth quoting: it's "convenient but a bit dangerous, since it allows us to write valid-looking proofs that reproduce the paradoxes of self-reference. If there is any doubt about whether an argument is correct, the way to check it is to try to assign levels consistently to all universes appearing in it."
-
-If that "omit the indices, let the machine reconstruct them, occasionally get burned" pattern sounds familiar: it's the exact social contract of **Rust lifetime elision**, and of Lean's universe metavariables (`Type` elaborating to `Type u` with `u` to be solved). The analogy holds all the way down to the failure mode — the fix is always to write the indices out.
-
-### Type families: dependent functions into a universe
-
-With universes in hand, the book defines a **family of types** (or dependent type) over $A$ as a function $B : A \to \mathcal{U}$: to each element of $A$ it assigns a type. Examples: $\mathrm{Fin} : \mathbb{N} \to \mathcal{U}$ (finite sets of each size) and the constant family $\lambda (x : A).\, B$.
-
-And a non-example that clarifies the whole setup: there is **no** family $\lambda (i : \mathbb{N}).\, \mathcal{U}_i$ — no universe large enough to be its codomain. Universe indices are not natural numbers of the theory; they are meta-level bookkeeping. That single non-example quietly encodes the entire paradox-avoidance strategy.
-
-### What breaks without this
-
-$\mathcal{U}_\infty : \mathcal{U}_\infty$ gives you an inhabited empty type — total inconsistency, and not in some exotic corner: the derivation is short enough that Coq formalized it as an exercise in the 1990s. The hierarchy isn't a stylistic choice; it's the price of having "the type of all (small) types" mean anything at all. Later, univalence (§2.10) will be stated *about a universe* $\mathcal{U}$ — so this discipline is also what makes the book's central axiom well-formed.
-
----
-
-## Rules, not axioms — until further notice
-
-Last architectural decision, and the one whose absence you'll feel hardest in Chapters 2 and 6.
-
-### The distinction
-
-In a deductive system:
-
-- **Rules** let you conclude one judgment from others. (Game metaphor: the rules of the game. Algebra metaphor: the operations.)
-- **Axioms** are judgments *given at the outset*. (Game metaphor: the starting position. Algebra metaphor: generators of a free model.)
-
-Set theory puts everything into axioms: first-order logic contributes only generic rules, and all information about sets lives in ZFC's axioms. **Type theory inverts this**: information lives in the *rules*. There's no Pairing axiom; instead there's a *rule* saying that from $a : A$ and $b : B$ you may derive $(a, b) : A \times B$:
-
-<svg viewBox="0 0 440 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pairing inference rule as a derivation tree">
-  <text x="120" y="38" text-anchor="middle" font-family="monospace" font-size="15" fill="#222222">a : A</text>
-  <text x="255" y="38" text-anchor="middle" font-family="monospace" font-size="15" fill="#222222">b : B</text>
-  <line x1="50" y1="54" x2="330" y2="54" stroke="#707070" stroke-width="1.5"/>
-  <text x="345" y="59" font-family="sans-serif" font-style="italic" font-size="13" fill="#555555">(pair)</text>
-  <text x="190" y="90" text-anchor="middle" font-family="monospace" font-size="15" fill="#222222">(a, b) : A × B</text>
-</svg>
-
-### Why rules? Because rules are procedural
-
-The book's sentence to underline: "The advantage of formulating type theory using only rules is that rules are 'procedural.' In particular, this property is what makes possible (though it does not automatically ensure) the good computational properties of type theory, such as 'canonicity'."
-
-**Canonicity**: every closed term of type $\mathbb{N}$ reduces to an actual numeral. From rules-only structure you get normalization, which gives decidable type-checking ("we should be able to recognize a proof when we see one"), which gives canonicity. This chain is why type theory doubles as a programming language and why proof checking is a mechanical affair.
-
-### The punchline the chapter is setting up
-
-Chapter 1 is rules-only — but **homotopy type theory is not**. The whole book hinges on adding axioms back in: function extensionality (§2.9), univalence (§2.10), higher inductive types (Chapter 6). And axioms are *not* procedural: an axiom is "an 'atomic' element that is declared to inhabit some specified type, without there being any rules governing its behavior." Add them carelessly and canonicity breaks — a closed $\mathbb{N}$-term may no longer compute to a numeral. The book names this tension explicitly: **the constructivity/canonicity of univalence is the most pressing open problem** of the field (Voevodsky's conjecture, pp. 11–12).
-
-So Chapter 1's rules-only presentation isn't naive; it's the *baseline* whose properties make the later axioms meaningful — and whose partial loss makes those axioms interesting.
-
-### What breaks without this
-
-If you never add axioms: you get ordinary Martin-Löf type theory, which — as the book is frank about — cannot prove function extensionality or univalence, cannot identify isomorphic structures, and cannot describe spheres. If you add axioms without caring whether they preserve computation: you lose the procedural character, canonicity fails, and the system stops being usable as a programming language or a mechanically checkable foundation. HoTT's research program is, in one line, *getting the axioms without paying more computational price than necessary*.
-
----
-
-## Where this leads
-
-Everything downstream in the book is built from these five pieces:
-
-```mermaid
-graph LR
-    J["Judgments & contexts (§1.1)"] --> F["Every type former:<br/>formation / introduction /<br/>elimination / computation (§1.2–1.10)"]
-    J --> PAT["Propositions as types (§1.11)"]
-    E["Judgmental vs propositional equality (§1.1)"] --> ID["Identity types & path induction (§1.12)"]
-    E --> HIT["HIT computation rules:<br/>judgmental for points,<br/>propositional for paths (Ch. 6)"]
-    U["Universe hierarchy (§1.3)"] --> UN["Univalence: (A = B) ≃ (A ≃ B) (§2.10)"]
-    R["Rules-only core (§1.1)"] --> AX["Axioms: funext, univalence,<br/>higher inductives (§2.9–2.10, Ch. 6)"]
-```
-
-For your two targets, this chapter is maximally load-bearing — not background, but the actual spec:
-
-- **The Rust verifier:** judgment forms and typing rules are the shared ancestor of "a type checker" and "a proof checker," and this chapter is where that identity is stated outright — checking a proof *is* type-checking. The `Ctx`/`infer`/`check` skeleton above, with richer type formers and logical state carried in the context, is your toolchain's core loop. Hoare-triple contexts are typing contexts wearing a different hat.
-- **The elaborator:** the two-equality split is `isDefEq`'s job description — definitional equality as the fast decidable check with metavariables layered on top, propositional equality as what the prover searches for. Contexts are the environment unification happens in; capture-avoiding substitution is the correctness condition your unifier must never violate.
-
-Next in sequence: **§1.2–1.10**, where each type former is specified by the four-part rule pattern this chapter introduces (formation / introduction / elimination / computation) — the pattern you'll be pattern-matching against for the rest of the book.
-
+source: Homotopy Type Theory — Univalent Foundations of Mathematics (The Univalent Foundations Program, Institute for Advanced Study)
+chapter: Introduction (pp. 1–14), §1.1 Type theory versus set theory, §1.3 Universes and families (pp. 17–20, 24–25)
+tags: [type-theory, foundations, judgments, definitional-equality, universes, hott]
 ---
 
 [[book-guidelines|↩ Back to guidelines]]
+
+# Type Theory as a Foundational System
+
+## Why a foundational system needs re-examining at all
+
+Every working mathematician quietly assumes that, in principle, whatever they write down could be cashed out in Zermelo–Fraenkel set theory (ZFC). You don't think about this assumption day to day — it's the background contract that makes "rigorous proof" mean something specific. Homotopy Type Theory (HoTT) proposes a *different* background contract: instead of coding every mathematical object as a set built from $\in$-chains rooted at $\varnothing$, you code it as a **type**, governed by a completely different deductive apparatus.
+
+This isn't cosmetic. Set theory and type theory disagree about something structural: what kind of thing a "statement you can prove" is, and how it relates to the "objects" the statement is about. Getting this distinction precise is the entire content of this topic — and it turns out to be exactly [[Type-Theory-as-a-Foundational-System-Qwen#The distinction|the distinction]] a type checker's kernel has to get right, because a type checker/proof checker *is* an implementation of one of these deductive systems.
+
+## Two-layer vs. one-layer foundations
+
+Set theory has **two layers** stacked on top of each other:
+
+1. First-order logic — the deductive system that tells you how to derive **judgments** of the form "proposition $A$ has a proof."
+2. The axioms of ZFC, stated *inside* that logic — pairing, union, power set, replacement, foundation, choice, and so on.
+
+Sets and propositions are therefore two different kinds of thing living at two different layers: propositions are the "moves" of first-order logic, sets are the objects those moves talk about.
+
+Type theory collapses this into **one layer**. There is a single deductive system, and its only basic notion is the **type**. Propositions are not a separate layer above types — they *are* types, via the propositions-as-types correspondence (its own topic, but worth flagging now: it's the reason "prove $A$" and "construct an element of $A$" become the same activity). A "theorem" is nothing but a type that happens to be inhabited, and a "proof" is nothing but a term inhabiting it.
+
+```mermaid
+graph TD
+    subgraph "Set theory (two layers)"
+        FOL["First-order logic<br/>(judgment: 'A has a proof')"]
+        ZFC["ZFC axioms, stated inside FOL<br/>(objects: sets)"]
+        FOL --> ZFC
+    end
+    subgraph "Type theory (one layer)"
+        TT["Type theory deductive system<br/>(judgment: 'a : A')<br/>propositions = types, proofs = terms"]
+    end
 ```
 
-**Notes on this generation:**
-- **Guidelines match:** Topic List entry "Type Theory as a Foundational System" → Chapter 1; primary sources §1.1 (pp. 17–21) and §1.3 (pp. 24–25), with the Chapter Notes (pp. 54–56) drawn on for the extensional/intensional collapse discussion.
-- **Style applied:** Lean promoted to a primary grounding language (source material is exactly the type-theoretic/elaboration-shaped case `article-style.md` describes); Rust primary for the checker-shaped context/judgment machinery; Python skipped as no load-bearing use existed.
-- **Learning-goals flags:** three explicit callouts — `isDefEq` (definitional equality thread), bidirectional `infer`/`check` (bidirectional typing thread), and substitution/context plumbing (Hoare-soundness thread). Judgment-as-shared-ancestor made explicit in the synthesis.
-- **Checklist coverage:** all five sub-items of the guidelines' topic entry (two foundations, two equalities, contexts/dependent types, universes/cumulativity, rules vs axioms) plus all Key Questions relevant to this chapter's foundational sections.
+**Why this matters for a kernel:** a proof assistant's trusted kernel is exactly a machine that decides derivability in *one* of these systems. Lean's kernel, Coq's kernel, and the type checker you'd write for a refinement-type compiler are all implementations of the one-layer picture — there is no separate "logic layer" bolted on top; typing *is* the logic. This is why "type checking" and "proof checking" are the same problem in these systems, not two problems that happen to share code.
+
+## The basic judgment: `a : A`
+
+The judgment analogous to "$A$ has a proof" in type theory is written
+
+$$a : A$$
+
+read "the term $a$ has type $A$." Depending on what $A$ is being used to model, this can mean "$a$ is an element of the set $A$" (informally) or, when $A$ represents a proposition, "$a$ is *evidence* that $A$ holds." The crucial difference from set-theoretic membership $a \in A$ is that $\in$ is a *proposition* — something you can assert, negate, or hypothesize — while $a : A$ is a **judgment**: a statement made *about* the formal system, from outside it, that is either derivable or it isn't. You cannot internally write "if $a : A$ then it is not the case that $b : B$"; judgments don't compose into further statements the way propositions do.
+
+A second consequence: in type theory, a term never floats free. "Let $x$ be a natural number" is not sugar for "let $x$ be some thing, and additionally assume $x \in \mathbb{N}$" (two moves, as in set theory) — it is the single atomic judgment $x : \mathbb{N}$. Every term comes typed from the moment it's introduced.
+
+**Rust framing.** This is precisely the difference between a dynamically-checked membership test and a statically-typed binding. `let x: u32 = 5;` doesn't first produce an untyped `5` and then verify `5 ∈ u32` — the compiler never has an untyped `5` to interrogate; `x`'s type is fixed at the point of introduction and threaded through every subsequent judgment about `x`. A `rustc` type error is a *failure to derive a judgment*, not a failed runtime predicate.
+
+## Judgmental equality vs. propositional equality
+
+This is the single most important distinction in the whole chapter, and it's the one that will resurface constantly once you build an elaborator.
+
+Type theory has **two different notions of equality**, living at two different levels:
+
+- **Propositional equality**, written $a =_A b$: this is a *type*. For $a, b : A$, the expression $a =_A b$ is itself a type, and *proving* $a = b$ means exhibiting a term (a witness) that inhabits it. Because it's a type, propositional equality is a proposition in the technical sense — you can hypothesize it, negate it (well, negate its negation), and in HoTT it can have highly nontrivial internal structure (paths, higher paths — the subject of later topics).
+- **Judgmental equality** (also called *definitional* equality), written $a \equiv b : A$: this is a **judgment**, at the same level as $a : A$ itself, not a type you inhabit. It means "equal by unfolding definitions." If $f(x) :\equiv x^2$, then $f(3) \equiv 3^2$ holds *by definition* — there is nothing to prove, only definitions to expand. Judgmental equality is decidable by a mechanical (metatheoretic) procedure: normalize both sides and compare.
+
+The book is explicit that you cannot internally negate or hypothesize a judgmental equality — "if $x \equiv y$ then $z \not\equiv w$" is not a statement type theory can even express, because $\equiv$ isn't a type-forming relation, it's a fact about derivability. What judgmental equality *does* do is control the other judgment form: if $a : A$ and $A \equiv B$, then also $a : B$. Definitional unfolding is silently interchangeable everywhere.
+
+**This is exactly `isDefEq`.** If you've looked at how Lean's elaborator works, this section *is* the specification of `isDefEq`: the kernel-level, decidable, no-user-visible-proof-obligation check that two terms reduce to the same normal form. Every time the elaborator needs to check that an inferred type matches an expected type, it is checking judgmental — not propositional — equality first, falling back to unification (metavariable assignment) only when the terms aren't already syntactically/definitionally identical. Propositional equality (`Eq` in Lean, or `a = b : Prop`), by contrast, is a genuine *type* that you construct proof terms for (`rfl`, `Eq.trans`, `Eq.symm`, or a full tactic proof) — it's what a *user* proves, whereas definitional equality is what the *kernel* silently checks on your behalf, for free, without ever surfacing as an obligation.
+
+```lean
+-- judgmental/definitional equality: no proof term needed, the kernel just unfolds
+example : (fun x => x + 0) 3 ≡ 3 := rfl   -- `rfl` succeeds because both sides
+                                            -- normalize to the same term
+
+-- propositional equality: a genuine type, needs an actual (possibly nontrivial) proof
+theorem add_comm' (a b : Nat) : a + b = b + a := by
+  induction b with
+  | zero => rfl
+  | succ n ih => simp [Nat.add_succ, ih]
+```
+
+Note that `rfl` succeeding on the first example is not a coincidence of tactic convenience — it is *definitionally* how the type checker validates that `3 : Nat` also has type `(fun x => x + 0) 3`'s type without your writing a single line of proof. The moment a propositional-equality proof is required instead (as in `add_comm'`), you've left the free, silent layer and entered the layer where the *user* (or an automated prover) has to do work.
+
+**Why this is load-bearing for a compiler/elaborator project:** a bidirectional type checker's `check(term, expected_type)` mode has to decide, at every application and every let-binding, whether the *inferred* type and the *expected* type are the same type — and "the same" there means judgmentally equal, not propositionally equal. Get this boundary wrong (e.g. by requiring a propositional proof where a definitional unfolding would do, or vice versa) and you either lose decidability of type checking or reject perfectly good programs. This is also precisely the boundary that a refinement-type checker has to draw between what the *kernel* checks automatically (definitional unfolding of refinement predicates) and what has to be discharged by an SMT call (a genuine propositional obligation about the refinement predicate's truth).
+
+## Contexts: judgments under assumptions
+
+Judgments rarely stand alone — they're usually made *under assumptions*. You construct $m + n : \mathbb{N}$ *assuming* $m, n : \mathbb{N}$. The book calls the running collection of such assumptions the **context**, and stresses that a context is technically an *ordered list*: $x : A$ can only be introduced after every variable free in $A$ has already been introduced. Formally this is written $x_1 : A_1, \, x_2 : A_2(x_1), \, \ldots \vdash \Gamma$ — the source book defers this turnstile notation to Appendix A, but it's the standard shape you'll recognize as $\Gamma \vdash a : A$.
+
+Two subtleties the source is careful about, both of which matter enormously for an implementation:
+
+- You *can* assume a **propositional** equality ($p : x = y$ is a perfectly good context entry, since $x = y$ is a type). You *cannot* assume a **judgmental** equality — $x \equiv y$ isn't a type, so there's no context slot for it. The nearest thing to "assuming $x \equiv a$" is *substitution*: replacing the variable $x$ throughout a type or term by the concrete term $a$, wherever $x : A$ was previously in scope.
+- Because later context entries can depend on earlier ones (e.g. $y : B(x)$ depends on $x : A$), contexts are not sets of bindings — they're *ordered, dependency-respecting* lists. This is the seed of **dependent types**: a type occurring later in a context can mention a term bound earlier.
+
+**Why this is load-bearing:** context management — insertion, well-formedness (does every free variable in a new entry's type already have a binding?), and substitution under a context — is exactly the plumbing that both (a) an elaborator's local context (the thing metavariables get abstracted over, and the thing pattern unification checks variable-dependency against) and (b) a Hoare-logic soundness proof (substitution lemmas: "if $\Gamma, x:A \vdash e : B$ and $\Gamma \vdash a : A$ then $\Gamma \vdash e[a/x] : B[a/x]$") both rest on. Variable capture bugs in a real implementation are almost always context/substitution bugs of exactly this shape.
+
+**Rust framing** — a minimal context as an implementer would represent it:
+
+```rust
+struct Context {
+    // ordered: entry i's type may only mention variables 0..i
+    entries: Vec<(VarId, Type)>,
+}
+
+impl Context {
+    fn extend(&self, x: VarId, ty: Type) -> Context {
+        debug_assert!(ty.free_vars().iter().all(|v| self.binds(*v)));
+        let mut entries = self.entries.clone();
+        entries.push((x, ty));
+        Context { entries }
+    }
+
+    // substitution: replace `x` by `term` throughout, respecting binder scoping
+    fn substitute(&self, x: VarId, term: &Term) -> Context { /* ... */ todo!() }
+}
+```
+
+The `debug_assert!` there is doing, at runtime, exactly the well-formedness check the book states informally: a context is only valid if it respects the dependency order.
+
+## Universes: the type of types, made safe
+
+Once you've said "type theory has one basic notion, the type," a natural question follows: is "type" itself a type? Naively assuming a single universe $\mathcal{U}_\infty : \mathcal{U}_\infty$ (a universe of *all* types, including itself) is **unsound** — it reproduces Russell's paradox internally (Girard's paradox / Coquand's encoding via well-founded trees is the usual culprit), letting you inhabit the empty type and thereby prove anything.
+
+The fix is a **cumulative hierarchy of universes**:
+
+$$\mathcal{U}_0 : \mathcal{U}_1 : \mathcal{U}_2 : \cdots$$
+
+Each $\mathcal{U}_i$ is itself an element of the next one up, $\mathcal{U}_{i+1}$, and **cumulativity** means every type in $\mathcal{U}_i$ is also (re-classified as) a type in $\mathcal{U}_{i+1}$: if $A : \mathcal{U}_i$ then also $A : \mathcal{U}_{i+1}$. This buys you the ability to quantify over "all types" *at a fixed level* without quantifying over the entire universe hierarchy — but it costs you unique typing: a term no longer has one canonical type, since it inhabits every universe level above its "natural" one. Most informal presentations (including the rest of this book) elide the explicit level and just write $A : \mathcal{U}$, called **typical ambiguity** — convenient, but you have to be able to reconstruct consistent level assignments on demand if you suspect an argument is secretly circular.
+
+A **type family** is a function $B : A \to \mathcal{U}$ — a type that varies over elements of $A$, e.g. $\mathrm{Fin} : \mathbb{N} \to \mathcal{U}$ where $\mathrm{Fin}(n)$ has exactly $n$ elements. This is the formal notion underlying **dependent types**: not just "a type depending on a value" as a slogan, but literally a function into a universe.
+
+**Why this is load-bearing:** universe levels are exactly the thing a real dependent-type elaborator has to solve constraints for (Lean, Agda, and Coq all run a universe-level unification/constraint pass alongside term-level unification), and getting cumulativity vs. strict universe polymorphism right determines whether your kernel accepts `Type u -> Type u` style code without spurious level explosions. For a refinement-type compiler this mostly stays in the background (most refinement predicates live at a single, fixed universe of propositions/booleans), but the *type family* reading — $B : A \to \mathcal{U}$ — is precisely the shape of a **dependent function type's codomain**, which is where refinement predicates ($\{x : A \mid \phi(x)\}$ as a $\Sigma$-type with $\phi : A \to \mathrm{Prop}$) come from directly.
+
+## Rules, not axioms
+
+The last structural point the source makes is about *how* type theory is specified at all, and it's a point about deductive-system design, not just a fact about HoTT. A deductive system has:
+
+- **Rules** — ways to derive one judgment from others (like operations in an algebraic theory).
+- **Axioms** — judgments simply handed to you at the outset (like generators of a free model).
+
+Set theory lives almost entirely in its axioms: first-order logic supplies the rules, and *all* the content — pairing, union, power set, choice — is axiomatic. Type theory inverts this: the type theory presented in this chapter (before univalence, before [[Higher-Inductive-Types|higher inductive types]]) consists **entirely of rules, with no axioms at all**. Every type former — function types, $\Pi$-types, $\Sigma$-types, coproducts, the naturals — comes with its own formation/introduction/elimination/computation rules, and *that's the whole theory*; nothing is simply postulated to exist.
+
+This matters because rules, unlike axioms, are **procedural** — they tell you an algorithm, not just a fact. This procedurality is what makes properties like *canonicity* (every closed term of type $\mathbb{N}$ reduces to a literal numeral) and *decidable type checking* possible in principle, though not automatic. It's also exactly why the book flags, later, that adding the univalence axiom (a genuine axiom, not a rule) breaks this: you regain expressive power but lose the uniform introduction/elimination structure, and canonicity for univalence-extended type theory was, at the time of writing, an open conjecture of Voevodsky's.
+
+**Why this is load-bearing:** a trusted kernel's soundness argument is only as good as its rule set being closed and its rules being genuinely procedural (each elimination rule computes against the matching introduction rule — the computation rules). If your refinement-type kernel needs to admit an "axiom" (e.g. an SMT-discharged proof obligation accepted without a rule-level derivation), you have deliberately punched a hole in the closed rule-based picture — which is fine, but it's the exact same kind of hole univalence punches here, and it deserves the same scrutiny: does it preserve consistency, does it preserve (some form of) canonicity for the fragment that doesn't touch it, and is the hole confined to a clearly demarcated part of the trusted computing base?
+
+## Where this leads
+
+This chapter's five ideas — judgments vs. propositions, judgmental vs. propositional equality, contexts, universes, and rules-not-axioms — are the vocabulary every later chapter assumes without re-deriving. Concretely:
+
+- The **propositions-as-types correspondence** (next topic) is the direct payoff of collapsing set theory's two layers into type theory's one.
+- **[[Identity-Types-and-Path-Structure|Identity types and path structure]]** reopens propositional equality $a =_A b$ specifically, giving it the homotopical reading (a *path* $a \leadsto b$) that the rest of the book is built on — this section deliberately stayed at the "equality is a type, full stop" level so that the path-space reinterpretation has something precise to reinterpret.
+- **The univalence axiom** is exactly the "genuine axiom, not a rule" case flagged above, generalized: it says $(A =_\mathcal{U} B) \simeq (A \simeq B)$, an axiom about the universe's own identity type, deliberately punching the kind of hole this section warned you to scrutinize.
+- For the compiler project specifically: this topic *is* the boundary between the parts of a dependent-type checker that run silently and automatically (definitional equality, rule-driven type formation) and the parts that require explicit proof construction or external solving (propositional equality, axioms) — every later design decision about what the elaborator can decide on its own versus what it has to hand off to unification, tactics, or an SMT solver traces back to this split.

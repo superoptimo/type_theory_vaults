@@ -1,173 +1,223 @@
 ---
 title: Equivalences and Their Characterizations
-book: Homotopy Type Theory - Univalent Foundations of Mathematics
-chapters: "Chapter 4 §§4.1-4.6 (pp. 129-138)"
-tags: [hott, equivalence, quasi-inverse, half-adjoint-equivalence, contractibility, fibers, surjections, embeddings, type-theory]
+book: 14_homotopy_type_theory (Homotopy Type Theory - Univalent Foundations of Mathematics)
+chapters: "Chapter 4: Equivalences, §§4.1-4.6 (pp. 129-139)"
+tags: [homotopy-type-theory, equivalences, half-adjoint-equivalence, contractibility, univalent-foundations, hott]
 ---
-
-# Equivalences and Their Characterizations
 
 [[book-guidelines|↩ Back to guidelines]]
 
-## The problem: "equivalence" needs to be a proposition, and the obvious definition isn't
+# Equivalences and Their Characterizations
 
-Chapter 2 needed a notion of "$A$ and $B$ are the same type" to even *state* the [[Formal-Metatheory#Univalence|univalence]] axiom — $(A =_{\mathcal U} B) \simeq (A \simeq B)$ makes no sense until $\simeq$ means something. The obvious candidate, introduced there provisionally, is: $f : A \to B$ is an equivalence if it has a **quasi-inverse**, i.e. a function going back the other way that cancels $f$ on both sides. That's the everyday mathematical meaning of "invertible," and it's the right *idea*. This article is about why the *literal formalization* of that idea is broken, and what the book replaces it with.
+## The problem: "has an inverse" is not the same as "is uniquely invertible"
 
-Here's the shape of the requirement, stated up front (the book restates it at the top of Chapter 4, and it's worth keeping visible throughout): whatever type $\mathrm{isequiv}(f)$ ends up meaning, it has to satisfy three properties simultaneously:
+Chapter 2 introduced a working notion of equivalence between types just well enough to state the univalence axiom. Chapter 4 goes back and does the job properly, because the naive definition turns out to be broken in a way that matters a great deal once you start doing actual proofs with it.
 
-1. $\mathrm{qinv}(f) \to \mathrm{isequiv}(f)$ — anything that's quasi-invertible counts as an equivalence,
-2. $\mathrm{isequiv}(f) \to \mathrm{qinv}(f)$ — anything that's an equivalence has an actual quasi-inverse you can extract,
-3. $\mathrm{isequiv}(f)$ is a **mere proposition** — for any fixed $f$, there is at most one way to inhabit $\mathrm{isequiv}(f)$; being-an-equivalence is a *property* $f$ either has or doesn't, not extra data attached to it.
+Here is the naive definition. A function $f : A \to B$ has a **quasi-inverse** if there is a $g : B \to A$ that undoes it in both directions:
 
-The tension is entirely in property (3). Properties (1) and (2) say $\mathrm{isequiv}(f)$ has to be logically equivalent to $\mathrm{qinv}(f)$. Property (3) says it can't just *be* $\mathrm{qinv}(f)$ — because, as this chapter proves with an explicit counterexample, $\mathrm{qinv}(f)$ itself is not a mere proposition. You need a type that's logically equivalent to $\mathrm{qinv}(f)$ but *better behaved* than it. Chapter 4 builds three different such types — half adjoint equivalences, bi-invertible maps, and contractible maps — proves each one works, proves they're all equivalent to each other, and then picks one as the official definition.
+$$
+\mathrm{qinv}(f) :\equiv \sum_{g:B\to A} \big( (f \circ g \sim \mathrm{id}_B) \times (g \circ f \sim \mathrm{id}_A) \big)
+$$
 
-**What breaks without this move.** If you used $\mathrm{isequiv}(f) :\equiv \mathrm{qinv}(f)$ as the definition baked into $A \simeq B :\equiv \sum_{f:A\to B}\mathrm{qinv}(f)$, then univalence would be transporting not just "$A$ and $B$ are equivalent" but a specific, possibly-non-unique *witness* of how, along an identity of universes — and worse, a path $p : A = B$ would carry strictly more information than "some" equivalence, because different (but propositionally equal as functions) quasi-inverse packages would give genuinely different elements of the total quasi-inverse type. The clean statement "$A = B$ is the same thing as $A$ and $B$ being equivalent" needs "equivalent" to mean something *canonical* — one bit of information (yes, equivalent) plus one witness, not a witness-with-redundant-extra-structure. Mere-propositionhood is what makes $\simeq$ behave like the intuitive, size-one notion of "these are interchangeable" rather than a graph of interconnections.
+(Here $\sim$ is pointwise homotopy: $f \circ g \sim \mathrm{id}_B$ means $\prod_{y:B} f(g(y)) = y$.) This is exactly what a working programmer would write down instinctively for "invertible function" — a witness `g`, a proof that `f(g(y)) == y` for all `y`, and a proof that `g(f(x)) == x` for all `x`. If you were writing this in Rust as a trait, it would look like:
 
-## Why quasi-inverses fail
-
-### The bare definition
-
-Recall $\mathrm{qinv}(f)$, spelled out in full:
-$$\mathrm{qinv}(f) :\equiv \sum_{g:B\to A} (f\circ g \sim \mathrm{id}_B)\times(g\circ f\sim \mathrm{id}_A).$$
-An inhabitant is a triple $(g,\epsilon,\eta)$: a function $g$ going back, a homotopy $\epsilon$ witnessing $f\circ g \sim \mathrm{id}_B$, and a homotopy $\eta$ witnessing $g\circ f \sim \mathrm{id}_A$. (By [[Formal-Metatheory#Function extensionality|function extensionality]] this is equivalent to the version with $=$ instead of $\sim$; the book moves freely between the two.)
-
-At first glance this looks exactly like "invertible" should look — three pieces of evidence, no more, no less. The problem only shows up once you ask: *given that $f$ is an equivalence, how much redundancy is sitting inside $\mathrm{qinv}(f)$?*
-
-### Lemma 4.1.1: quasi-inverses collapse to a loop space
-
-The book's first move is to show that if $f$ is already known to have *some* quasi-inverse, the whole type $\mathrm{qinv}(f)$ is equivalent to something much smaller — and much more suspicious:
-$$\mathrm{qinv}(f) \simeq \prod_{x:A}(x=x).$$
-
-The proof is a clean illustration of the "reduce to the identity function via univalence" trick that recurs constantly in this book. Since $f$ is an equivalence, $(f,e) : A\simeq B$ for some $e$, and by univalence this pair is $\mathrm{idtoeqv}(p)$ for some path $p : A=B$. Path induction lets you assume $p$ is $\mathrm{refl}_A$, which forces $f$ to literally be $\mathrm{id}_A$ — so it suffices to compute $\mathrm{qinv}(\mathrm{id}_A)$. Unwinding definitions and applying function extensionality twice, $\mathrm{qinv}(\mathrm{id}_A)$ turns out to be (up to equivalence) the type of pairs $(h, p)$ where $h : A \to A$ is equal to $\mathrm{id}_A$ *twice over*, and by Lemma 3.11.9 (paths out of a contractible type's center are equivalent to paths between its endpoints), this collapses to $\mathrm{id}_A = \mathrm{id}_A$, which by function extensionality again is $\prod_{x:A}(x=x)$.
-
-Read this the way the book intends: two out of the three data in $(g,\epsilon,\eta)$ — the function $g$ and one of the two homotopies — are, once you know $f$ is invertible at all, *contractible choices*: essentially forced, no real freedom. All the actual "wiggle room" left in $\mathrm{qinv}(f)$ collapses into a single leftover piece of data, a self-map of $\prod_{x:A}(x=x)$: for every point of $A$, a specific way of looping back to itself.
-
-### Theorem 4.1.3: an explicit counterexample
-
-$\prod_{x:A}(x=x)$ being nontrivial is exactly the failure mode the book needs, because that type is (thinking of $A$ as a higher groupoid) the type of natural transformations from the identity functor to itself — the **center** of $A$, in the same sense that the center of a group is the subgroup of elements commuting with everything. If $A$, viewed as a one-object groupoid, is a nontrivial abelian group, its center is the whole group — which can certainly have more than one element.
-
-The book builds exactly this: $X :\equiv \sum_{A:\mathcal U}\lVert \mathbf 2 = A\rVert$ (types merely equal to the booleans — this is the same construction used in §3.8 to build a non-split surjection), a basepoint $a :\equiv (\mathbf 2, |\mathrm{refl}_{\mathbf 2}|)$, and shows $a = a$ is equivalent to $\mathbf 2\simeq \mathbf 2$, a *set* with two elements: the identity equivalence and the "swap" equivalence $e$ sending $0_{\mathbf 2}\leftrightarrow 1_{\mathbf 2}$. Lemma 4.1.2 — a genuinely delicate piece of propositional-truncation bookkeeping, gluing together a locally-defined function across merely-existing witnesses using the fact that swap commutes with itself — then produces an actual $f : \prod_{x:X}(x=x)$ with $f(a) = q$, the path corresponding to $e$. Since $e \neq \mathrm{id}_{\mathbf 2}$, this $f$ is a genuinely different loop-assignment than the trivial one $\lambda x.\mathrm{refl}_x$.
-
-Conclusion: $\prod_{x:X}(x=x)$ has at least two distinct elements, so by Lemma 4.1.1, $\mathrm{qinv}(\mathrm{id}_X)$ has at least two distinct elements. **The identity function on $X$ — which is unambiguously an equivalence — has more than one "proof" of quasi-invertibility.** $\mathrm{qinv}(f)$ is not a mere proposition, full stop, and the book notes the pattern generalizes: any Eilenberg–Mac Lane space $K(G,1)$ for nontrivial abelian $G$ gives another counterexample, and (once the circle is constructed in Chapter 6) $S^1 = K(\mathbb Z,1)$ is the easiest one to picture — a loop space with $\pi_1 = \mathbb Z$ has infinitely many distinct self-loops at every point, hence infinitely many distinct "quasi-inverses" of the identity map.
-
-**[[Homotopical-Interpretation-of-Type-Theory#Grounding|Grounding]] — why this matters for anything that checks "are these the same":** think of $\mathrm{qinv}(f)$ as *evidence* your elaborator's unifier would carry around after solving "is $f$ invertible?" If that evidence type isn't provably a singleton, you have no principled way to say two derivations of invertibility are "the same solution" — you'd need to separately track and compare *which* quasi-inverse witness you have, which is exactly the kind of proof-irrelevance failure that makes definitional equality checking (`isDefEq`-style) intractable: you want "is an equivalence" to collapse to a boolean-shaped fact the kernel can check once and cache, not an open-ended space of alternative proofs it has to keep distinguishing.
-
-## Fix #1: half adjoint equivalences
-
-### Diagnosing exactly what to cut
-
-Lemma 4.1.1's proof is also a diagnosis: of the three data $(g,\eta,\epsilon)$ in $\mathrm{qinv}(f)$, two ($g$ and $\eta$) are jointly contractible once $f$ is known invertible — but *removing* them (i.e. quantifying them away via $\Sigma$-contractibility) leaves the third ($\epsilon$) as genuinely free data, and that's exactly where the nontriviality of $\prod_x (x=x)$ leaks in. The fix: don't remove $\epsilon$. Instead, pin it down by adding **one further coherence datum** relating it to the other two — a datum which, together with $\epsilon$, itself forms a contractible type once more.
-
-**Definition 4.2.1.** $f:A\to B$ is a **half adjoint equivalence** if there exist $g:B\to A$, $\eta: g\circ f\sim \mathrm{id}_A$, $\epsilon: f\circ g\sim\mathrm{id}_B$, and additionally a homotopy
-$$\tau : \prod_{x:A} f(\eta_x) = \epsilon_{f(x)}$$
-tying the two homotopies together through $f$. The resulting type is
-$$\mathrm{ishae}(f) :\equiv \sum_{g:B\to A}\sum_{\eta:g\circ f\sim \mathrm{id}_A}\sum_{\epsilon:f\circ g\sim \mathrm{id}_B}\prod_{x:A} f(\eta_x)=\epsilon_{f(x)}.$$
-
-The name "half adjoint" comes from category theory: this is exactly the triangle-identity data of an adjoint equivalence, but only *one* of the two triangle identities (there's a symmetric version $\tau' : \prod_y g(\epsilon_y) = \eta_{gy}$ using $g$ instead of $f$, and Lemma 4.2.2 proves the two conditions are logically equivalent — but critically, the book does *not* include both in the definition). Forgetting $\tau$ recovers $\mathrm{qinv}(f)$ immediately, so $\mathrm{ishae}(f)\to\mathrm{qinv}(f)$ is free. The real content, and the reason this whole apparatus exists, is the converse direction and the mere-propositionhood proof.
-
-**What breaks if you add both $\tau$ and $\tau'$.** The book flags this explicitly: doing so leaves one more piece of leftover, uncanceled data — you'd need yet another coherence condition to soak it up, and so on forever. The rule of thumb stated here (and load-bearing for the rest of the book's higher-coherence arguments) is: *you get a well-behaved type by cutting off after an odd number of coherences.* One homotopy each way plus one triangle identity is the minimal odd-numbered stopping point.
-
-### The engine: fibers are contractible
-
-Everything downstream — the mere-propositionhood of $\mathrm{ishae}$, and the entire "contractible fibers" characterization in §4.4 — runs through one central object, the **fiber**:
-$$\mathrm{fib}_f(y) :\equiv \sum_{x:A}(f(x)=y).$$
-This is the type-theoretic incarnation of the topologist's "preimage," except proof-relevant: an element isn't just "some $x$ with $f(x)=y$," it's a specific $x$ *bundled with a specific witness* that $f(x)=y$. Paths in a fiber have a clean characterization (Lemma 4.2.5, following from the path lemmas for $\Sigma$-types in §2.7):
-$$(x,p)=(x',p') \;\simeq\; \sum_{\gamma:x=x'} f(\gamma)\cdot p' = p.$$
-
-**Theorem 4.2.6.** If $f$ is a half adjoint equivalence, every fiber $\mathrm{fib}_f(y)$ is contractible.
-
-The proof is a small gem: take $(gy,\epsilon_y)$ as the center of contraction, and for any other $(x,p)$ in the fiber, build the connecting path using $\gamma :\equiv g(p)^{-1}\cdot\eta_x$ — precisely the kind of path you can only assemble because $\tau$ is available to make the two sides of the required equation ($f(\gamma)\cdot p = \epsilon_y$) actually meet. Take away $\tau$ and this proof has a hole in it exactly where the counterexample from §4.1 would live.
-
-From here, the book builds up the mere-propositionhood proof of $\mathrm{ishae}(f)$ almost mechanically:
-
-- $\mathrm{linv}(f) :\equiv \sum_{g:B\to A}(g\circ f\sim \mathrm{id}_A)$ and $\mathrm{rinv}(f) :\equiv \sum_{g:B\to A}(f\circ g\sim \mathrm{id}_B)$ (left- and right-inverse data separately) are each equivalent to a fiber of the pre-/post-composition maps $(-\circ f)$ and $(f\circ -)$ — and those composition maps are themselves shown to have quasi-inverses whenever $f$ does (Lemma 4.2.8), hence (by the theorem just proved, applied one level up) contractible fibers, hence $\mathrm{linv}(f)$ and $\mathrm{rinv}(f)$ are **contractible** (Lemma 4.2.9) whenever $f$ has a quasi-inverse at all.
-- The remaining coherence data ($\tau$, sitting on top of a chosen right inverse) is *also* shown contractible (Lemma 4.2.12), again by relating it to a path space inside an already-contractible fiber.
-- Chaining these via associativity of $\Sigma$ (the same "peel off a contractible layer" move used throughout Chapter 3 for mere propositions) gives **Theorem 4.2.13: $\mathrm{ishae}(f)$ is a mere proposition**, whenever $f$ actually is one.
-
-So $\mathrm{ishae}$ clears all three bars: it's logically equivalent to $\mathrm{qinv}$ (Theorem 4.2.3 constructs the missing direction $\mathrm{qinv}(f)\to\mathrm{ishae}(f)$ by explicitly repairing a plain quasi-inverse's $\epsilon$ into a coherent $\epsilon'$ using a naturality square), and it's provably a mere proposition. Problem solved — but at a cost: the definition now carries a 2-dimensional path ($\tau$) as first-class data, which is exactly the kind of "Greek-letter soup" that's easy to write down and hard to hold in your head.
-
-## Fix #2: bi-invertible maps
-
-The second fix takes the opposite tack: instead of adding higher coherence, add *more separated low-dimensional data*.
-
-**Definition 4.3.1.** $f:A\to B$ is **bi-invertible** if it has a left inverse *and* a right inverse, independently:
-$$\mathrm{biinv}(f) :\equiv \mathrm{linv}(f)\times \mathrm{rinv}(f).$$
-
-This is, verbatim, the definition of equivalence the book used provisionally back in §2.4, now given a name. Logical equivalence with $\mathrm{qinv}(f)$ is elementary algebra (a two-sided inverse gives you both a left and a right inverse trivially; and if $g$ is a left inverse and $h$ is a right inverse of $f$, the standard "$g = g\circ(f\circ h) = (g\circ f)\circ h = h$" argument shows $g$ and $h$ agree up to homotopy, so either one serves as a genuine two-sided quasi-inverse). Mere-propositionhood (Theorem 4.3.2) is now free: given that $f$ is bi-invertible, it has a quasi-inverse, so by Lemma 4.2.9 (proved above) *both* $\mathrm{linv}(f)$ and $\mathrm{rinv}(f)$ are separately contractible, and a product of contractible types is contractible.
-
-Notice the family resemblance to $\mathrm{ishae}$: both definitions take the "combine $g$ and one homotopy into a contractible chunk, then add one more datum that pairs with the leftover homotopy to form another contractible chunk" recipe from Lemma 4.1.1's diagnosis. The difference is *where* the extra datum lives: $\mathrm{ishae}$ adds a 2-dimensional path ($\tau$) sitting above the existing homotopies; $\mathrm{biinv}$ instead adds a whole second 0-dimensional function (an independent right inverse) sitting alongside them. Higher-dimensional coherence versus more separated low-dimensional structure — two different currencies for paying the same debt.
-
-**Corollary 4.3.3.** $\mathrm{biinv}(f)\simeq \mathrm{ishae}(f)$ — immediate once you know $\mathrm{biinv}(f)\to\mathrm{qinv}(f)\to\mathrm{ishae}(f)$ and back, and both sides are mere propositions (so, per Lemma 3.3.3 from Chapter 3, logical equivalence between two mere propositions upgrades automatically to a full type equivalence).
-
-$\mathrm{biinv}$'s selling point is *practical*, not conceptual: no 2-dimensional paths, and its two "halves" (left-invertibility, right-invertibility) can be established completely independently of each other, which the book notes is often the easier proof strategy in practice even though $\mathrm{ishae}$ is the more informative package to *have* once proved.
-
-## Fix #3: contractible fibers as the definition
-
-The proof of Theorem 4.2.6 already revealed the real invariant underneath both $\mathrm{ishae}$ and $\mathrm{biinv}$: fibers being contractible. The book's third fix promotes that observation to a definition in its own right.
-
-**Definition 4.4.1.** $f:A\to B$ is **contractible** (as a map) if every fiber is a contractible *type*:
-$$\mathrm{isContr}(f) :\equiv \prod_{y:B}\mathrm{isContr}(\mathrm{fib}_f(y)).$$
-
-This is a small but conceptually important terminology overload, flagged explicitly by the book: "contractible" said of a *type* (§3.11) means it has a center and every point is connected to it; said of a *map*, it means every one of its (homotopy) fibers, individually, is a contractible type. This is exactly the standard homotopy-theoretic convention of lifting a property of types to a property of maps by quantifying over fibers — the same move that later gives "$n$-truncated map," "$n$-connected map," and so on in Chapters 7–11. As a sanity check, a type $A$ is contractible exactly when the unique map $A\to\mathbf 1$ is a contractible map — the "map" notion strictly generalizes the "type" notion.
-
-Theorem 4.2.6 already gives $\mathrm{ishae}(f)\to\mathrm{isContr}(f)$. The converse (**Theorem 4.4.3**) is a genuinely constructive recipe, and it's worth internalizing because it's the cleanest illustration in the chapter of "extracting a function from contractibility": given $P:\mathrm{isContr}(f)$, define $g(y)$ to be the first component of the center of contraction of $\mathrm{fib}_f(y)$ — literally, "the point $\mathrm{fib}_f(y)$ contracts onto, projected down to its $A$-coordinate" — and $\epsilon(y)$ the accompanying witness that $f(g(y))=y$. Since every fiber is contractible, in particular $\mathrm{fib}_f(f(x))$ is, which hands you (uniquely up to the contraction) exactly the path needed to supply $\eta$ and the coherence $\tau$ in one stroke.
-
-$\mathrm{isContr}(f)$ is a mere proposition essentially by definition (Lemma 4.4.4: it's a product of mere propositions, since contractibility of a fixed type is itself always a mere proposition — Lemma 3.11.4 from Chapter 3), so **Theorem 4.4.5** closes the loop:
-$$\mathrm{isContr}(f) \;\simeq\; \mathrm{ishae}(f) \;\simeq\; \mathrm{biinv}(f).$$
-
-All three notions are pairwise equivalent, all three satisfy the three desiderata from the opening of the chapter, and (§4.5) the book simply *picks one* as canonical:
-$$\mathrm{isequiv}(f) :\equiv \mathrm{ishae}(f),$$
-chosen because it carries the most directly useful data for formalization (you get an actual inverse function and coherent homotopies out of it immediately), while noting $\mathrm{biinv}(f)$ is often more convenient to *establish* in practice, precisely because its two halves decompose. This is a genuinely pragmatic choice among three formally interchangeable options — the book is explicit that for its purposes "the specific choice will make little difference," which is itself worth noticing as a design principle: once you've proven three characterizations pairwise equivalent *and* each individually a mere proposition, you've earned the right to stop caring which one you literally wrote down, and go back to just saying "equivalence."
-
-One immediate practical payoff of having the contractible-fibers definition available (**Corollary 4.4.6**): if $B\to\mathrm{isequiv}(f)$ — i.e., merely knowing $B$ is inhabited already implies $f$ is an equivalence — then $f$ actually *is* an equivalence, full stop, with no further hypothesis needed. You get to *assume* the codomain is nonempty while proving invertibility, which is a freedom none of the other formulations makes so immediately available.
-
-**Grounding — Lean's `Equiv` and why "which definition" is a real engineering choice, not just an aesthetic one.** Lean's mathlib defines structural equivalences (`Equiv`, often written `≃`) essentially as bi-invertible-flavored data — a forward map, a backward map, and two separate proofs `left_inv`/`right_inv` that the round-trips are `id` — which is closer to $\mathrm{biinv}$ than to $\mathrm{ishae}$:
-
-```lean
-structure Equiv (α : Sort u) (β : Sort v) where
-  toFun    : α → β
-  invFun   : β → α
-  left_inv  : Function.LeftInverse invFun toFun   -- invFun ∘ toFun = id
-  right_inv : Function.RightInverse invFun toFun  -- toFun ∘ invFun = id
+```rust
+trait QuasiInverse<A, B> {
+    fn g(&self, b: B) -> A;
+    // proof obligations, informally:
+    // forall b: B, f(g(b)) == b
+    // forall a: A, g(f(a)) == a
+}
 ```
 
-This is a live instance of exactly the choice §4.5 discusses: mathlib's `Equiv` doesn't bundle a $\tau$-style coherence, because for *doing ordinary mathematics* you almost never need it — you need "here's a map, here's its inverse, here's proof they cancel," and you separately prove `Equiv.toFun` is injective/surjective when you need that. But whenever mathlib needs to prove two equivalences are *equal as terms* (an extensionality lemma), it has to reach for essentially the same contractibility argument this section works out by hand, because raw `left_inv`/`right_inv` data (like $\mathrm{qinv}$) is *not* automatically a subsingleton without extra work — mathlib's route is showing `Equiv` is determined entirely by its underlying function via `Equiv.ext`, which does the "one side of the data is redundant" collapse this section proves abstractly.
+The trouble is not that this definition is *wrong* — it's that the *type of evidence* `qinv(f)` is badly behaved. We want a function to "be an equivalence" in **at most one way** — i.e. we want $\mathrm{isequiv}(f)$ to be a *mere proposition* (at most one inhabitant up to equality, no extra data floating around inside the proof of invertibility). This matters practically: if "$f$ is an equivalence" carried around genuinely different proofs, then propositions built out of "there exists an equivalence $A \simeq B$" would be ambiguous about *which* equivalence witness they're talking about, and univalence — which identifies $A = B$ with $A \simeq B$ — would be identifying $A=B$ with a type that has structure, not just a truth value. The three desiderata the book sets out for any acceptable definition of `isequiv(f)` are:
 
-## Surjections and embeddings: the classical decomposition, reformulated
+$$
+\text{(i) } \mathrm{qinv}(f) \to \mathrm{isequiv}(f) \qquad \text{(ii) } \mathrm{isequiv}(f) \to \mathrm{qinv}(f) \qquad \text{(iii) } \mathrm{isequiv}(f) \text{ is a mere proposition}
+$$
 
-Once equivalence has a settled definition, §4.6 checks it against the oldest characterization of "isomorphism" there is: injective-and-surjective. Because "injective" clashes with the proof-relevant setting (an injective function between non-set types can still identify points in higher-dimensional, non-trivial ways), the book renames it:
+Note [[Real-Numbers-and-Analysis#The trap|the trap]]: (i) and (ii) together say `isequiv(f)` should be **logically equivalent** to `qinv(f)` — same truth value, same information content in terms of "does an inverse exist." But (iii) additionally demands `isequiv(f)` behave like a well-behaved predicate, no more informative than "true or false." `qinv(f)` itself typically fails (iii). This is the crux of the whole chapter: to find something that carries exactly as much information as "an inverse exists" and no more.
+
+**Why does `qinv` fail to be a mere proposition?** Concretely: if $f$ is a quasi-inverse of itself in more than one inequivalent way, then $\mathrm{qinv}(f)$ has (at least) two different inhabitants that aren't equal — like a checker holding two structurally different certificates for the same fact and being unable to tell you they're "the same proof." Lemma 4.1.1 makes this precise: if $f$ has *some* quasi-inverse (equivalently, is an equivalence), then
+
+$$
+\mathrm{qinv}(f) \simeq \prod_{x:A} (x = x)
+$$
+
+The proof leans on univalence to reduce to the case $f = \mathrm{id}_A$, then uses that $\sum_{g:A\to A}(g = \mathrm{id}_A)$ is contractible (a general fact about "based path spaces") to strip away the $g$ and $\eta$ data, leaving exactly $\mathrm{id}_A = \mathrm{id}_A$, i.e. $\prod_{x:A} x = x$ by function extensionality. Intuitively: the choice of inverse function $g$ and the proof $\eta$ that it's a left-inverse are *not* independent extra freedom — once $f$ is fixed as an equivalence, $g$ and $\eta$ together form a contractible bundle (there's essentially one canonical choice). What's left over, the proof $\epsilon$ that $g$ is also a right-inverse, is where the extra, unwanted freedom lives.
+
+So the type $\prod_{x:A}(x=x)$ — "for every point, a self-path" — being non-trivial is exactly what makes `qinv` misbehave. Reading $A$ as a higher groupoid (objects = points, morphisms = paths), an element of $\prod_{x:A}(x=x)$ is a natural transformation from the identity functor to itself: this is precisely the algebraic notion of the **center** of a group (or groupoid) — the elements that commute with everything. Theorem 4.1.3 exhibits an actual type $X :\equiv \sum_{A:\mathcal U}\|2 =A\|$ (essentially the type $K(\mathbb Z_2, 1)$, an Eilenberg–Mac Lane space — you'll meet this family again in Chapter 8) where this center is non-trivial: there's a "twist" path $q$ (coming from the non-identity self-equivalence of the two-element type) that is genuinely different from the trivial reflexivity path. That non-triviality is a real obstruction, not a technicality — it means `qinv(id_X)` has at least two distinct proofs, so `qinv` cannot be the right definition of `isequiv`.
+
+**What breaks without a fix:** every downstream theorem that wants to reason "let $e$ be the (unique) proof that $f$ is an equivalence" silently fails — there might be several proofs, and any construction that pattern-matches on the specific inverse/homotopy data risks depending on *which* proof you picked, which is exactly the kind of proof-irrelevance violation that makes formalized mathematics unusable. In Lean or a Coq-like kernel, this is the difference between a `Prop`-valued predicate (definitionally irrelevant, one canonical proof) and a `Type`/`Sort`-valued structure carrying genuine data — `qinv(f)` behaves like the latter when you wanted the former.
+
+## Fix #1: Half-adjoint equivalences — add exactly one more coherence datum
+
+The insight (§4.2) is surgical. `qinv(f)` bundles three data: $g$, $\eta : g\circ f \sim \mathrm{id}_A$, and $\epsilon: f \circ g \sim \mathrm{id}_B$. It turns out $g$ and $\eta$ together are *already* contractible once $f$ is known to be an equivalence — the badness lives entirely in the leftover $\epsilon$. Rather than removing data, the fix is to **add one more piece**: a coherence path relating $\eta$ and $\epsilon$ through $f$, so that $\epsilon$ together with this new datum becomes contractible too.
+
+**Definition 4.2.1 (half adjoint equivalence).** $f : A \to B$ is a half adjoint equivalence if there exist $g$, $\eta : g\circ f \sim \mathrm{id}_A$, $\epsilon : f \circ g \sim \mathrm{id}_B$, and a homotopy of *paths between paths*
+
+$$
+\tau : \prod_{x:A} f(\eta_x) = \epsilon_{f(x)}
+$$
+
+$$
+\mathrm{ishae}(f) :\equiv \sum_{g:B\to A}\sum_{\eta:g\circ f\sim \mathrm{id}_A}\sum_{\epsilon:f\circ g\sim \mathrm{id}_B} \prod_{x:A} f(\eta_x) = \epsilon(f(x))
+$$
+
+This is the type-theoretic transcription of the classical notion of an **adjoint equivalence** in category theory — $f$ and $g$ form a pair of adjoint functors between one-object categories where the unit and counit satisfy one triangle identity. (It's called "half" adjoint because a genuine categorical adjoint equivalence asks for *both* triangle identities — the symmetric condition $\upsilon : \prod_{y:B} g(\epsilon_y) = \eta(gy)$ — but Lemma 4.2.2 shows the two conditions are logically equivalent given the rest of the data, so imposing either one alone suffices, and imposing **both** would just reintroduce one extra unconstrained datum after cancellation. There's a real pattern here: cut off the tower of coherences after an odd number of levels and things stay well-behaved; this is the same phenomenon that eventually motivates the $n$-truncation hierarchy in Chapter 7.)
+
+Getting from `qinv` to `ishae` is Theorem 4.2.3: given any quasi-inverse $(g,\eta,\epsilon)$, you keep $g,\eta$ as-is but must *redefine* $\epsilon$ (call it $\epsilon'$) using a specific formula built from naturality of $\epsilon$ and $\eta$, so that the required $\tau$ exists by construction:
+
+$$
+\epsilon'(b) :\equiv \epsilon(f(g(b)))^{-1} \cdot \big(f(\eta(g(b))) \cdot \epsilon(b)\big)
+$$
+
+This is a genuinely fiddly 2-dimensional path calculation (whiskering and naturality squares) — the book's proof is essentially "chase the diagram," and it's the first place in the book where you're really forced to think of paths between paths as first-class objects you compute with, not just as an abstract existence statement.
+
+### The payoff: fibers of an equivalence are contractible
+
+The **fiber** of $f$ over a point $y : B$ packages "the preimages of $y$, remembered together with their witnessing path":
+
+$$
+\mathrm{fib}_f(y) :\equiv \sum_{x:A} (f(x) = y)
+$$
+
+Theorem 4.2.6: if $f$ is a half adjoint equivalence, $\mathrm{fib}_f(y)$ is contractible for every $y$ — there is essentially exactly one preimage, with essentially exactly one witnessing path. This single fact is the technical engine of the entire chapter: contractibility of fibers is what lets you *prove* `ishae(f)` is itself a mere proposition (Theorem 4.2.13), by decomposing `ishae(f)` via $\Sigma$-associativity into a sum of contractible pieces (`rinv(f)` contractible by Lemma 4.2.9, and — given a right inverse — the remaining coherence datum `rcoh_f(g,ε)` contractible by Lemma 4.2.12, itself because it reduces to a path space inside the already-contractible fiber). "Contractible $\Sigma$ of contractible fibers is contractible" is the load-bearing lemma-composition pattern throughout — the same pattern you'll want when proving a bidirectional type checker's synthesized type is *unique up to definitional equality*: you show the space of valid derivations is contractible rather than merely inhabited.
+
+```rust
+// Half-adjoint equivalence as a Rust-shaped structure. The "coherence" field
+// is the part that has no naive analogue in ordinary software: it is a proof
+// obligation, not data you'd ever inspect at runtime, but it's what makes
+// the *type* of "is-an-equivalence" evidence behave like a boolean flag
+// rather than an arbitrary payload.
+struct Ishae<A, B, F: Fn(A) -> B> {
+    f: F,
+    g: Box<dyn Fn(B) -> A>,
+    eta: /* proof: forall a, g(f(a)) == a */ (),
+    epsilon: /* proof: forall b, f(g(b)) == b */ (),
+    tau: /* proof: forall a, f(eta(a)) == epsilon(f(a)) */ (),
+}
+```
+
+In Lean's own kernel, the analogous move shows up whenever `Eq.mpr`/`rfl`-based proofs of a bijection need to be shown proof-irrelevant: Lean's `Prop` universe makes this whole problem structurally disappear for propositions (any two proofs of a `Prop` are definitionally equal), but `isequiv` here is being built as a `Type`-level structure precisely because HoTT has no separate proof-irrelevant `Prop` universe as a primitive — mere-proposition-hood has to be *proved*, not assumed by fiat. This is a genuine foundational difference worth sitting with: Lean gets propositional irrelevance for free from a stratified universe hierarchy; HoTT earns the analogous guarantee, lemma by lemma, from univalence and truncation.
+
+## Fix #2: Bi-invertible maps — split it into two independent halves
+
+**Definition 4.3.1.** $f$ is bi-invertible if it has a left inverse *and* a right inverse, independently:
+
+$$
+\mathrm{biinv}(f) :\equiv \mathrm{linv}(f) \times \mathrm{rinv}(f), \qquad
+\mathrm{linv}(f) :\equiv \sum_{g:B\to A}(g\circ f \sim \mathrm{id}_A), \qquad
+\mathrm{rinv}(f) :\equiv \sum_{g:B\to A}(f\circ g \sim \mathrm{id}_B)
+$$
+
+This is the "obvious" algebraic fact from ordinary mathematics — a function is invertible iff it has a left inverse and a right inverse (which then must agree) — reformulated so it type-checks. Crucially, `biinv(f)` does **not** need any 2-dimensional coherence path: it fixes the `qinv` problem not by adding a coherence datum (as `ishae` did) but by *decoupling* the two homotopies into separate existence statements, each of which is individually contractible once $f$ is known invertible (Lemma 4.2.9, reused here). Theorem 4.3.2 gets mere-propositionhood essentially for free: a product of two contractible types is contractible.
+
+The two fixes are not competing hacks — they're the same phenomenon viewed from two angles, and Corollary 4.3.3 proves $\mathrm{biinv}(f) \simeq \mathrm{ishae}(f)$ (via the interderivability $\mathrm{qinv} \to \mathrm{ishae}$, $\mathrm{qinv}\to\mathrm{biinv}$, and the general fact that any two mere propositions that are logically equivalent are equivalent as types — Lemma 3.3.3). Practically: `ishae` is what you want when *constructing* proofs (it hands you the most directly usable data — a concrete inverse plus a concrete coherence witness), while `biinv` is nicer when you want to *reason about* invertibility abstractly, because its two halves (`linv`, `rinv`) can be established completely independently — no synchronization needed between them. The book picks `ishae` as the official definition of `isequiv(f)` for exactly this reason (better data for formalization), while flagging that the choice mostly doesn't matter downstream.
+
+## Fix #3: Contractible fibers — go straight to the geometric picture
+
+The proofs above kept leaning on "fibers of an equivalence are contractible" as a *consequence*. Section 4.4 promotes it to a **definition**:
+
+$$
+\mathrm{isContr}(f) :\equiv \prod_{y:B} \mathrm{isContr}(\mathrm{fib}_f(y))
+$$
+
+This says: $f$ is an equivalence exactly when every fiber is contractible — not just inhabited (that would be surjectivity, see below), but contractible: exactly one point up to a unique path. This is the homotopy-theorist's native definition, and it generalizes cleanly: HoTT's convention is that a map "has property P" when all of its homotopy fibers have property P, so a *type* $A$ being contractible is recovered as the special case that the unique map $A \to \mathbf 1$ is a contractible map. (From Chapter 7 on, contractible maps and types are also called $(-2)$-truncated — the base case of the truncation hierarchy.)
+
+Theorem 4.4.3 constructs `ishae(f)` directly from `isContr(f)`: given that every fiber has a contraction center, define $g(y)$ as the first component of the center of $\mathrm{fib}_f(y)$, and $\epsilon(y)$ as its witnessing path — and then the *remaining* coherence data (η and τ) follow because they amount to a path inside an already-contractible fiber, which trivially exists. Combined with the earlier direction (Theorem 4.2.6: `ishae → isContr`), and both being mere propositions (Lemma 4.4.4, `isContr(f)`; Theorem 4.2.13, `ishae(f)`), Theorem 4.4.5 gives:
+
+$$
+\mathrm{isContr}(f) \simeq \mathrm{ishae}(f) \simeq \mathrm{biinv}(f)
+$$
+
+three pairwise-equivalent, individually-mere-propositional characterizations of "equivalence," any of which can serve as `isequiv(f)`. The book fixes $\mathrm{isequiv}(f) :\equiv \mathrm{ishae}(f)$ by convention (§4.5) — but the *content* of "being an equivalence" is now genuinely characterization-independent, which is exactly the robustness property you want out of a foundational definition.
+
+One immediate practical payoff of the `isContr` viewpoint (Corollary 4.4.6): to prove $f$ is an equivalence, it suffices to show $B \to \mathrm{isequiv}(f)$ — i.e., you're allowed to *assume the codomain is inhabited* while proving invertibility. This kind of "assume what you're trying to produce, to prove a proposition about it" move only works because `isequiv(f)` is a mere proposition — this is the general lemma "$B \to \mathrm{isProp}(B) $ actually proves $\mathrm{isProp}(B)$" (Exercise 3.5) applied to $\mathrm{isequiv}$.
+
+```python
+# The three characterizations as three different runtime checks you *could*
+# perform to convince yourself f is a bijection — none is "the" right one,
+# they're extensionally interchangeable once mere-propositionhood is known.
+def is_contr_fiber(f, y, domain):
+    preimages = [x for x in domain if f(x) == y]
+    return len(preimages) == 1          # isContr(f) reading: exactly one preimage
+
+def has_qinv(f, g, domain, codomain):
+    return (all(f(g(y)) == y for y in codomain) and
+            all(g(f(x)) == x for x in domain))   # naive qinv reading
+```
+
+## Surjections and embeddings: recovering "injective and surjective" honestly
+
+Section 4.6 asks the question a working mathematician asks immediately: in ordinary set theory, bijective = injective + surjective. Does that survive the move to general types (not just sets)?
 
 **Definition 4.6.1.**
-- $f:A\to B$ is a **surjection** if for every $b:B$, $\lVert \mathrm{fib}_f(b)\rVert$ — the fiber is *merely* inhabited. Unpacked, this is exactly the classical $\forall b.\exists a. f(a)=b$, with $\exists$ read as the truncated $\Sigma$ from Chapter 3.
-- $f:A\to B$ is an **embedding** if for every $x,y:A$, the action-on-paths map $\mathrm{ap}_f : (x=_A y)\to(f(x)=_B f(y))$ (from §2.2) is itself an equivalence.
+- $f$ is **surjective** if $\prod_{b:B} \| \mathrm{fib}_f(b) \|$ — every fiber is *merely* inhabited (propositionally truncated: "there merely exists a preimage," with no commitment to *which* one, or how many).
+- $f$ is an **embedding** if $\mathrm{ap}_f : (x =_A y) \to (f(x) =_B f(y))$ is an equivalence for every $x,y : A$ — informally, $f$ doesn't just avoid collisions, it identifies the *paths between* points as faithfully as the points themselves.
 
-Embedding is the genuinely new idea here, and it's worth sitting with why it's the *right* generalization of injectivity rather than the naive "if $f(x)=f(y)$ then $x=y$" (which, notice, would only produce a *function* $f(x)=f(y) \to x=y$, of unspecified quality — nothing stops it from losing information). Demanding that $\mathrm{ap}_f$ be a full *equivalence* says something much stronger and much more homotopically honest: not merely "equal outputs imply equal inputs," but "the *space of proofs* that $x=y$ is faithfully mirrored by the space of proofs that $f(x)=f(y)$" — an embedding doesn't just preserve the fact of equality, it preserves the entire path structure between points. For plain sets, where every identity type is automatically a mere proposition, this collapses back down to ordinary injectivity exactly — which is why the book reserves "injection"/"bijection" language specifically for the set case and uses "embedding" for the general one.
+The truncation in the surjectivity definition is not decorative — it is the entire point, and it's exactly the same discipline that made `isequiv` need fixing in the first place. Compare:
 
-**Split vs. merely surjective — where choice bites.** The book is careful to distinguish surjectivity (merely-existing preimages) from being a **split surjection**: $\prod_{b:B}\sum_{a:A}(f(a)=b)$, i.e. an honest, computable section. A split surjection is exactly a retraction in the sense of §3.11, and being split is strictly stronger than being (merely) surjective — the axiom of choice from §3.8 is *precisely* the statement that every surjection between **sets** is split, and the book points out that under univalence this is genuinely false for surjections in general: reusing the type family $Y:X\to\mathcal U$ from Lemma 3.8.5 (merely-inhabited but not globally choosable), the first projection $\sum_{x:X}Y(x)\to X$ is a surjection with no section.
+$$
+\text{surjective: } \prod_{b:B}\big\|\mathrm{fib}_f(b)\big\| \qquad\text{vs.}\qquad \text{split surjective: } \prod_{b:B}\sum_{a:A}(f(a)=b)
+$$
 
-**Grounding.** This is a clean, concrete instance of a distinction that matters directly for building a proof search / unifier: "there merely exists a solution" (surjective) and "here is a total, computable procedure producing one" (split surjective) are not the same claim, and conflating them is exactly the gap between a *decidability* result and an *algorithm*. A completeness theorem for a unification procedure ("if a unifier exists, my algorithm finds one") is asserting something split-surjection-shaped; a bare existence proof of most-general-unifiers in the abstract is merely-surjection-shaped. The book's insistence on keeping these grammatically distinct (`∃` vs. `Σ`, `∥−∥` vs. bare) is the same discipline a from-scratch elaborator needs to keep "a metavariable assignment exists" separate from "here is the assignment my algorithm actually produced."
+The untruncated ($\Sigma$) version demands a *specific, chosen* preimage-with-witness for every $b$ — that's a section of $f$, i.e. $f$ has a genuine right inverse, which the book identifies with "retraction" from §3.11. Truncating collapses "there could be many different choices of preimage, and I refuse to commit to one" down to a bare yes/no. **This is precisely where the axiom of choice lives in type theory**: AC (§3.8) says exactly that every surjection between sets *is* split — i.e., that the truncation can always be safely removed for sets. But the book is explicit that under univalence, this is not a free lunch: Lemma 3.8.5 exhibits an actual surjection (the first projection out of $\sum_{x:X} Y(x)$ for a suitable non-split family $Y$) that provably has no section. Univalence and "every surjection splits" are in genuine tension unless you're willing to assume full AC. This is worth internalizing if you're building a metatheory: **truncated existence and Σ-witnessed existence are not interchangeable**, and any place in a formal system that silently converts "we know a valid X exists" into "here is a specific X" is smuggling in a choice principle.
 
-Although this section doesn't prove it outright (that's §4.6's closing remark, developed further via the closure properties in §4.7), it flags the target result plainly: $f$ is an equivalence if and only if it is both a surjection and an embedding — the type-theoretic reconstruction of "bijective = injective + surjective," now stated in a form that degrades gracefully (via mere propositions and embeddings) when $A$ and $B$ are not sets.
+**Theorem 4.6.3 (the payoff): $f$ is an equivalence iff it is a surjective embedding.**
+- Forward direction is easy: an equivalence has contractible (hence merely-inhabited) fibers, and Theorem 2.11.1 already showed any equivalence is an embedding.
+- Backward direction is the interesting one: given surjectivity, the fiber over any $b$ is merely inhabited — truncation-eliminate to get an actual point $(x,p)$ in it (legal here because "the fiber is contractible" is itself a mere proposition, so you're allowed to destruct a truncated hypothesis when proving a further mere proposition). Given a second point $(y,q)$ in the same fiber, embedding-ness (ap$_f$ being an equivalence) supplies a path $r : x = y$ with $\mathrm{ap}_f(r) = p \cdot q^{-1}$, which after rearranging via the $\Sigma$-path characterization shows $(x,p) = (y,q)$. So the fiber is inhabited *and* any two of its points are equal — exactly `isContr`.
+
+And since both `isSurjective` and `isEmbedding` are themselves mere propositions, Corollary 4.6.4 upgrades the "iff" to a genuine type equivalence:
+
+$$
+\mathrm{isequiv}(f) \simeq \big(\mathrm{isEmbedding}(f) \times \mathrm{isSurjective}(f)\big)
+$$
+
+with the caveat the book flags explicitly: this can't serve as *the* definition of equivalence, because "embedding" is itself defined in terms of `ap_f` being an equivalence — it's circular as a foundational definition, but it's a genuinely useful *characterization* once `isequiv` already exists (used later for the "object classifier" material in §4.8, and generalized to all $n$-types in Chapter 7). The book also drops the classically-loaded words "injective"/"bijection" for general types — reserving them for the special case where $A, B$ are sets, where embedding collapses to the familiar $\prod_{x,y}(f(x)=f(y)) \to (x=y)$ — precisely because for higher types that formula is "ill-behaved": it throws away exactly the path-level information that `ap_f`-is-an-equivalence preserves.
+
+```lean
+-- Sketch in Lean-style pseudocode. Note how truncation (‖·‖, Lean's `Nonempty`
+-- or `Trunc`/`Squash`) is doing real work distinguishing the two notions —
+-- this is the same distinction between "the elaborator found *a* solution to
+-- this metavariable" (existence, truncated) and "here is the specific
+-- unification substitution" (a witnessed Σ-type) that shows up in a
+-- pattern-unification algorithm: soundness only needs the truncated
+-- statement, but the algorithm itself must construct actual witnesses.
+def IsSurjective (f : A → B) : Prop := ∀ b, Nonempty (Fiber f b)   -- ‖fib_f(b)‖
+def IsSplitSurj  (f : A → B) : Type := ∀ b, Fiber f b              -- Σ-witnessed
+def IsEmbedding  (f : A → B) : Prop := ∀ x y, IsEquiv (fun p : x = y => congrArg f p)
+```
 
 ## Where this leads
 
 ```mermaid
 graph TD
-    Q["qinv(f)  (not a mere proposition — Thm 4.1.3)"]
-    L["Lemma 4.1.1: qinv(f) ≃ Π(x:A) x=x"]
-    H["ishae(f)  (+ coherence τ)"]
-    B["biinv(f)  (linv × rinv)"]
-    C["isContr(f)  (all fibers contractible)"]
-    Q --> L
-    Q -. repaired by .-> H
-    Q -. repaired by .-> B
-    H -- Thm 4.2.6 --> C
-    C -- Thm 4.4.3 --> H
-    H -- Cor 4.3.3 --> B
-    H == "chosen as isequiv(f), §4.5" ==> DEF["isequiv(f) :≡ ishae(f)"]
-    DEF --> SE["Surjection + Embedding\n(§4.6, classical bijection reformulated)"]
+    qinv["qinv(f)<br/>(naive inverse, NOT a mere proposition)"]
+    ishae["ishae(f): half adjoint equivalence<br/>(add coherence τ)"]
+    biinv["biinv(f): bi-invertible map<br/>(split into linv × rinv)"]
+    isContr["isContr(f): contractible fibers<br/>(geometric definition)"]
+    isequiv["isequiv(f) := ishae(f)<br/>(canonical choice, §4.5)"]
+    fibers["fib_f(y) contractible<br/>(the shared technical engine)"]
+    surjemb["isEmbedding(f) × isSurjective(f)<br/>(useful characterization, not a definition)"]
+    ac["Axiom of Choice<br/>(splits truncated surjections)"]
+    ua["Univalence Axiom<br/>(A = B) ≃ (A ≃ B)"]
+    ntrunc["n-truncation hierarchy (Ch. 7)<br/>isequiv is the (-1)-truncated case pattern"]
+
+    qinv -->|"Thm 4.2.3"| ishae
+    qinv -->|"§2.4"| biinv
+    ishae <-->|"Cor 4.3.3"| biinv
+    ishae -->|"Thm 4.2.6"| fibers
+    fibers -->|"Thm 4.4.3"| ishae
+    fibers -.->|"defines"| isContr
+    ishae -->|"Thm 4.4.5"| isContr
+    ishae ==> isequiv
+    isequiv -->|"Thm 4.6.3 / Cor 4.6.4"| surjemb
+    surjemb -.tension.- ac
+    isequiv -->|"feeds"| ua
+    isequiv -.->|"generalizes to"| ntrunc
 ```
 
-This chapter is load-bearing in a very literal sense: every later use of "$A\simeq B$" in the book — starting immediately with the statement of univalence itself, and continuing through the object classifier (§4.8), the structure identity principle (Chapter 9), the equivalence-of-categories machinery, and the $n$-connected/$n$-truncated map hierarchy of Chapter 7 — is quietly relying on $\mathrm{isequiv}$ being a mere proposition, established here and nowhere else. Univalence's own well-behavedness (that $A=B$ really does carry exactly one bit of "are they equivalent" plus one canonical witness, not a redundant pile of alternative proofs) is inherited entirely from this chapter's work. The closure properties taken up next (§4.7 — the 2-out-of-3 property, retracts of equivalences, fiberwise-to-total-space equivalence) are all proved by the same fiber-contractibility toolkit assembled here, and the entire truncation-level hierarchy of Chapter 7 is, at bottom, a generalization of exactly the pattern seen in this chapter: contractible ($(-2)$-types) sits at the bottom, mere propositions ($(-1)$-types) one level up, and "$n$-truncated map" is defined the same way $\mathrm{isContr}(f)$ was defined here — by quantifying a type-level truncation condition over fibers.
+This chapter is pure scaffolding for everything that follows, and it earns its density: `isequiv(f)` as defined here (via `ishae`) is exactly the type that appears on the right of $A \simeq B :\equiv \sum_{f:A\to B}\mathrm{isequiv}(f)$, which is what the univalence axiom equates with $A = B$ — the companion article "[[The-Univalence-Axiom-and-Its-Consequences|The Univalence Axiom and Its Consequences]]" builds on `isequiv(f)` as a black box being a mere proposition; that black-box property is *exactly* what this chapter spent its effort proving, not assuming. Contractibility-of-fibers is the technical idea that resurfaces as the base case of the $n$-truncation hierarchy in Chapter 7 (contractible = $(-2)$-truncated, mere propositions = $(-1)$-truncated, sets = $0$-truncated, and so on), and the "surjective + embedding" characterization is what gets reused, generalized, and made precise for higher $n$ there. It's also the technical backbone behind Chapter 9's category theory: "fully faithful and essentially surjective functors are equivalences" — the categorical analogue of this chapter's Theorem 4.6.3, proved without needing the axiom of choice.
 
-For the standing project, the throughline is proof-irrelevance engineering, not homotopy theory for its own sake (this book stays background material, per the non-goals list, and none of the above requires taking the homotopical reading literally to be useful). The actual transferable content is the *pattern*: when a "does X hold" question naturally produces a type of witnesses that isn't automatically a mere proposition, the fix is not to wish it away but to either (a) find the minimal extra coherence datum that makes it one — the $\mathrm{ishae}$ move — or (b) find an equivalent but structurally different formulation that's a mere proposition for free — the $\mathrm{isContr}(f)$ move, which is the one that generalizes best. A kernel's `isDefEq` check and a unifier's "does this constraint have a solution" check are both, underneath, asking exactly this kind of question, and the fiber-contractibility idiom — rephrase "does a solution exist" as "is the space of solutions a single point" — is a genuinely reusable design pattern for making such checks decidable and their positive answers canonical, independent of whatever specific proof procedure discovers them.
+For the elaborator/verifier project this workbench is oriented toward, the load-bearing takeaway is the **mere-proposition discipline itself**, not the HoTT-specific machinery: any time you design a judgment or a proof-object type meant to answer a yes/no question (`isEquiv`, but just as easily `HasType(Γ, e, τ)` in a bidirectional checker, or `Unifies(t₁, t₂, σ)` in a Miller-pattern unifier), you should ask the same question this chapter asked of `qinv`: does the *type of evidence* actually carry no more information than the proposition it witnesses, or is it secretly a data structure with multiple inequivalent inhabitants masquerading as a boolean? Lean's kernel sidesteps this by fiat via the `Prop` universe and definitional proof-irrelevance; a from-scratch verifier that doesn't have that stratification available has to *earn* the same guarantee the way this chapter did — by explicit contractibility arguments — or risk exactly the ambiguity (which witness did the elaborator actually commit to?) that `qinv(f)`'s failure illustrates. The surjective/split-surjective distinction is the same warning in miniature for constraint solving: "a solution exists" (truncated) and "here is the substitution" (a $\Sigma$-witness a unification algorithm must actually produce) are different claims, and conflating them is exactly the choice-principle trap Lemma 3.8.5 exhibits.

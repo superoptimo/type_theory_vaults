@@ -1,0 +1,4 @@
+/* This forces MathJax to load your custom macro globally */
+mjx-container {
+  --mathjax-macros: "\def\parr{\mathbin{\unicode{x214B}}}";
+}

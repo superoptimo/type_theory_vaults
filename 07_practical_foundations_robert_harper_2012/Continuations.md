@@ -80,7 +80,7 @@ Because $K\{\texttt{nat}{\rightharpoonup}\}$'s rules are already axioms with no 
 
 and [[Dynamic-Classification#Safety|safety]] extends *unchanged in shape* from Chapter 27:
 
-> **Theorem 29.2 (Safety).**
+> **Theorem 29.2 ([[State-and-Assignables#Safety|Safety]]).**
 > 1. If $s\;\text{ok}$ and $s \mapsto s'$, then $s'\;\text{ok}$.
 > 2. If $s\;\text{ok}$, then either $s\;\text{final}$ or there exists $s'$ such that $s \mapsto s'$.
 
@@ -252,7 +252,7 @@ flowchart LR
 
 This pattern — a thread voluntarily yielding by resuming its scheduler, rather than being interrupted by a timer or external event — is exactly **cooperative multi-threading**. Harper is explicit about the contrast: "This pattern of control is called cooperative multi-threading, because it is based on explicit yields, rather than implicit yields imposed by asynchronous events such as timer interrupts." Nothing here has changed about the underlying mechanism — it's still `letcc`/`throw` reifying stacks as values, and `resume`/`fold`/`unfold` gluing them into the recursive $\tau\,\texttt{coro}$ type. What changed is the *topology*: instead of a fixed pair resuming each other, an arbitrary set of routines all resume one distinguished scheduler routine, which centralizes the "who runs next" decision.
 
-**What breaks without this:** without cooperative scheduling built on coroutines, implementing something like green threads or an event loop from scratch would require either genuine OS-level preemption (expensive, needs kernel support, and reintroduces the very re-entrancy hazards continuations otherwise sidestep) or hand-rolled state machines simulating suspension points — exactly the boilerplate `letcc`/`throw` eliminates by making "where to resume" a value the language already knows how to type-check and manage safely.
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]]:** without cooperative scheduling built on coroutines, implementing something like green threads or an event loop from scratch would require either genuine OS-level preemption (expensive, needs kernel support, and reintroduces the very re-entrancy hazards continuations otherwise sidestep) or hand-rolled state machines simulating suspension points — exactly the boilerplate `letcc`/`throw` eliminates by making "where to resume" a value the language already knows how to type-check and manage safely.
 
 ## Where this leads
 

@@ -1,0 +1,139 @@
+.lsp-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px;
+	height: 100%;
+	overflow-y: auto;
+}
+
+.lsp-search-row {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
+.lsp-search-input {
+	flex: 1;
+	min-width: 0;
+}
+
+.lsp-clear-btn {
+	flex: 0 0 auto;
+	cursor: pointer;
+}
+
+.lsp-canvas-wrap {
+	position: relative;
+	width: 100%;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary-alt);
+	overflow: hidden;
+	user-select: none;
+	-webkit-user-select: none;
+	/* Color used by the canvas drawing context. */
+	--lsp-ink: var(--text-normal);
+}
+
+.lsp-canvas {
+	display: block;
+	width: 100%;
+	height: 190px;
+	touch-action: none;
+	cursor: crosshair;
+	user-select: none;
+	-webkit-user-select: none;
+	outline: none;
+}
+
+.lsp-status {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	min-height: 1.2em;
+}
+
+.lsp-results {
+	flex: 1;
+}
+
+.lsp-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+	gap: 6px;
+	align-items: start;
+}
+
+.lsp-history {
+	flex: 0 0 auto;
+}
+
+.lsp-history:not(:empty) {
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 8px;
+}
+
+.lsp-history-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	margin-bottom: 6px;
+}
+
+.lsp-result {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 6px;
+	padding: 8px 6px;
+	min-height: 72px;
+	cursor: pointer;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-secondary);
+	transition: background-color 0.1s ease, border-color 0.1s ease;
+	overflow: hidden;
+}
+
+.lsp-result:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+}
+
+.lsp-result-preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 30px;
+	font-size: 1.3em;
+	line-height: 1;
+	color: var(--text-normal);
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+/* Hide the preview slot entirely when nothing rendered into it. */
+.lsp-result-preview:empty {
+	display: none;
+}
+
+.lsp-result-preview .math {
+	display: inline-block;
+}
+
+/* Keep oversized symbols clipped inside the tile instead of spilling out. */
+.lsp-result-preview .MathJax {
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.lsp-result-code {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	text-align: center;
+	line-height: 1.25;
+	width: 100%;
+	word-break: break-all;
+}

@@ -1,516 +1,222 @@
 ---
 title: Inductive Definitions and Initial Algebras
-source: Homotopy Type Theory — Univalent Foundations of Mathematics
-chapters: "Chapter 5: Induction, §§5.1, 5.4–5.6 (pp. 149–150, 156–168)"
-tags: [type-theory, HoTT, inductive-types, initial-algebras, strict-positivity, W-types, homotopy-inductive-types]
+book: "Homotopy Type Theory: Univalent Foundations of Mathematics"
+chapters: "Chapter 5, Induction (§5.1, §5.3–§5.6)"
+pages: "149–168"
+tags: [type-theory, hott, inductive-types, initial-algebra, strict-positivity, category-theory]
 ---
 
 [[book-guidelines|↩ Back to guidelines]]
 
 # Inductive Definitions and Initial Algebras
 
-## Why a *general theory* of "inductive type" has to exist at all
+## Why you need a theory of inductive types, not just a list of them
 
-Chapter 1 handed you seven type formers — $\mathbf 0$, $\mathbf 1$, $\mathbf 2$, $A+B$,
-$A\times B$, $\mathbb N$, and (later) $W$-types — each arriving with its own hand-written
-recursor, its own computation rule, its own induction principle. [[Type-Formers-and-Their-Universal-Properties|The
-W-types article]] already showed that all of them are instances of one shape: labels with
-arities, `sup(a, f)`, structural recursion on trees. But that raises the real question this
-article answers: if I, the type theory *user*, want to define my *own* new inductive type —
-some data structure the book's authors never anticipated — what rules govern which
-"constructor lists" are even legal, and where do the induction principle, the recursion
-principle, and the initiality property *come from*? Nobody hands you a bespoke recursor for a
-type you just invented; you have to be able to derive it mechanically from the shape of the
-constructors alone.
+By the end of Chapter 1 you have a working zoo: $\mathbf{0}$, $\mathbf{1}$, $\mathbf{2}$, $\mathbb{N}$, coproducts, products, $\Sigma$-types. Each one came with its own hand-written recursion and induction principle, stated as a special case, from scratch, every time. That's fine as a tour, but it leaves two questions completely open, and they're exactly the questions you'd ask if you were implementing a proof assistant's kernel rather than just reading about one:
 
-This is exactly the problem a compiler author solving `inductive Foo where | mk1 : ... | mk2 :
-...` has to solve for real: given an arbitrary declaration, synthesize the eliminator, its
-computation rules, and — if you want a semantic account of what makes the declaration
-*consistent* — a proof that it denotes something at all. HoTT's Chapter 5 answers this in three
-moves, and this article walks through each:
+1. **Given an arbitrary new type declaration — one the book's author never anticipated — how do I *mechanically* derive its recursion principle, its induction principle, and its computation rules?** If the answer is "you can't, you have to think about each case," then inductive types aren't really a *feature* of the type theory, they're a folklore pattern the metatheory doesn't actually understand.
+2. **When are two "looks-the-same" type declarations actually forced to produce equal types?** $\mathbb{N}$ built as `zero`/`succ` and $\mathbb{N}$ built as `List(1)` (unary lists) are obviously "the same set" to a working mathematician. Is that a theorem, or a convention someone has to assert by hand?
 
-1. **A general syntax** for what a legal constructor list looks like, and a syntactic
-   restriction — **strict positivity** — that keeps arbitrary "definitions" from being
-   inconsistent (§5.6).
-2. **A uniform recipe** for reading off the induction and recursion principles from that syntax,
-   mechanically, the same way a `.rec`/`.ind` generator in a proof assistant's kernel does
-   (§5.1, §5.6).
-3. **A category-theoretic characterization**: an inductive type isn't just "the type generated
-   by these constructors" as an intuition — it is the **homotopy-initial algebra** for the
-   endofunctor those constructors determine, and this universal property, not the syntax, is
-   what actually pins the type down up to equality (§5.4–§5.5).
+Chapter 5 answers both. The answer to (2) turns out to be the categorical notion of *initial algebra*, generalized to homotopy-initiality; the answer to (1) is a syntactic discipline — **strict positivity** — precise enough that a compiler could check it, together with a mechanical recipe that reads a constructor's type off the page and produces the induction principle for it. This is, in a very literal sense, the chapter that specifies what "define a new type by `enum`/`inductive`/`data`" is allowed to mean, and why the kernel is entitled to trust whatever comes out. If you are eventually going to write a Rust type-checker that admits user-declared inductive types, §5.6 is close to the actual algorithm you'll implement, and §5.4–§5.5 is the soundness argument for why that algorithm doesn't let you smuggle in a paradox.
 
-```mermaid
-flowchart TB
-    A["A constructor list<br/>(syntax, §5.6)"] --> B{"strictly positive?"}
-    B -- no --> C["inconsistent — Cantor-style<br/>paradox derivable"]
-    B -- yes --> D["mechanically derive<br/>recursion + induction principles"]
-    D --> E["the type is the<br/>homotopy-initial algebra<br/>for the induced functor (§5.4)"]
-    E --> F["h-initiality ⇒ unique up to<br/>equality, via univalence (§5.2, §5.4)"]
-```
+## Constructors as free generation (§5.1)
 
----
+The book's starting intuition, stated plainly: an inductive type $X$ is "freely generated" by a finite list of *constructors*, each a function of some arity into $X$. A 0-ary constructor is just a distinguished element. $\mathbf{2}$ is generated by $0_{\mathbf 2}, 1_{\mathbf 2} : \mathbf 2$; $\mathbb N$ by $0 : \mathbb N$ and $\mathrm{succ} : \mathbb N \to \mathbb N$; lists by $\mathrm{nil}$ and $\mathrm{cons} : A \to \mathrm{List}(A) \to \mathrm{List}(A)$.
 
-## 1. What breaks if you don't restrict the syntax at all
+"Freely generated" is cashed out not as a direct axiom ("every element is $0$ or a successor") but as an **induction principle**: to prove $E : \mathbb N \to \mathcal U$ for every natural number, it suffices to supply
+$$e_z : E(0) \qquad e_s : \prod_{n:\mathbb N} E(n) \to E(\mathrm{succ}(n)),$$
+and the resulting $\mathrm{ind}_{\mathbb N}(E, e_z, e_s)$ *computes* judgmentally on the constructors:
+$$\mathrm{ind}_{\mathbb N}(E,e_z,e_s,0) \equiv e_z, \qquad \mathrm{ind}_{\mathbb N}(E,e_z,e_s,\mathrm{succ}(n)) \equiv e_s(n, \mathrm{ind}_{\mathbb N}(E,e_z,e_s,n)).$$
 
-Start from the failure case, because it's the cleanest way to see *why* the restriction the
-book eventually imposes is exactly the one it is, and not something weaker.
-
-Suppose you let yourself write down any "constructor" you like. Consider:
-
-$$g : (C \to \mathbb N) \to C$$
-
-as a single constructor for a type $C$. What would the recursion principle even say? To define
-$f : C \to P$, you'd want to handle the case $c \equiv g(\alpha)$ for $\alpha : C \to \mathbb N$,
-and — following the pattern from every recursor you've seen — you'd want to "recursively call
-$f$" on the constructor's arguments. But $\alpha$ has type $C \to \mathbb N$, not $C$: there is
-no sensible way to "apply $f$ to $\alpha$," because both $f$ and $\alpha$ have $C$ in their
-*domain*. The recursive-call machinery that works fine for `succ : N → N` (apply $f$ to the one
-argument of type $\mathbb N$) has nothing to grab onto here.
-
-You could dodge this by *not* trying to recurse into $\alpha$ — just treat $C \to \mathbb N$ as
-an opaque indexing family and give the recursor $h : (C \to \mathbb N) \to P$ with computation
-rule $\mathrm{rec}_C(P, h, g(\alpha)) \equiv h(\alpha)$. This typechecks as a *syntactic*
-recipe. But the book states plainly that a type $C$ with exactly this recursor is
-**inconsistent** — you can derive $\mathbf 0$ from it (Exercises 5.7–5.10). The problem is that
-$C$ appears to the *left* of an arrow in the type of its own constructor's argument: $\alpha : C
-\to \mathbb N$ is *contravariant* in $C$. A constructor that consumes "the type being defined"
-contravariantly lets you build something big enough to diagonalize against itself.
-
-### The sharper trap: double negatives look covariant but aren't safe
-
-You might think: fine, just ban $C$ appearing to the left of a single arrow, i.e. require every
-constructor argument to be *covariant* in the type being defined (formation `X ↦ A` for a
-constant `A`, or `X ↦ X` for the identity, or composites of those, are all covariant). But
-composing two contravariant functors is *covariant* — $(X \to \mathrm{Prop}) \to \mathrm{Prop}$
-passes the "covariance" test purely syntactically, since $C$ occurs twice, both times to the
-left of an arrow, canceling out. And this is enough to reconstruct a genuine paradox. The book
-works out the full argument for a type $D$ with constructor
-
-$$k : ((D \to \mathrm{Prop}) \to \mathrm{Prop}) \to D$$
-
-By defining an "inverse" $r$ via the recursion principle of $D$, and an injection $f : (D \to
-\mathrm{Prop}) \to D$ via $f(\delta) :\equiv k(\lambda x.\, (x = \delta))$, one shows $f$ is
-injective — which means $D$ admits an injection *from its own power type*, a direct
-proof-relevant analogue of Cantor's theorem being violated. A diagonal predicate
-$\theta(\gamma) :\equiv \neg\, p(\gamma)(\gamma)$ (where $p$ is built from $f$'s inverse) then
-produces a proposition equivalent to its own negation — a genuine contradiction, not just an
-awkward definition.
-
-**What this buys you, precisely:** the lesson isn't "avoid contravariance," full stop — it's
-that *nested* contravariance, however many arrows deep, is still unsafe if the type being
-defined ever sits to the left of *any* arrow along the way. So the book's actual restriction —
-**strict positivity** — is stronger than plain covariance: the type being defined may never
-occur in the domain of a function type anywhere in a constructor's argument types, not even
-nested arbitrarily deep inside further arrows where the sign would formally cancel out to
-"positive." Only strictly-positive occurrences (always in a *return* position, however deeply
-nested under further covariant constructions) are permitted.
-
-> Footnote worth internalizing (the book states this explicitly, §5.6 n.1): strict positivity is
-> exactly the condition ensuring the endofunctor determined by the constructors is
-> **polynomial** — and it is a standard fact in category theory that arbitrary endofunctors need
-> not have initial algebras at all, while polynomial functors always do. The syntactic
-> restriction and the semantic guarantee (§4 below) are two views of the same fact.
-
-**[[Homotopical-Interpretation-of-Type-Theory#Grounding|Grounding]] — this is exactly the "positivity checker" in a real kernel.** Any language with
-user-declared inductive/recursive types has to run this exact check. Rust's `enum` sidesteps the
-issue entirely by requiring recursive fields to go through `Box`/`Vec`/a pointer indirection
-(so the compiler never needs a positivity checker — indirection makes size-computation trivial,
-which is a *different* problem strict positivity doesn't address, but the two get conflated in
-practice). Lean's kernel, by contrast, runs a real strict-positivity check on every `inductive`
-declaration:
-
-```lean
--- accepted: C occurs only in return position (covariant, strictly positive)
-inductive Tree (A : Type) where
-  | leaf : A → Tree A
-  | node : (Tree A → Tree A) → Tree A   -- OK: Tree only appears as a *codomain*
-
--- rejected by Lean's kernel with "constructor resulting type is not
--- valid, it must be an inductive datatype" / positivity failure:
--- inductive Bad where
---   | mk : (Bad → Prop) → Bad
-```
-
-If you are ever writing your own elaborator/kernel for a checker that accepts user-defined
-inductive types (per the standing project's "accept arbitrary declarations, not hard-code
-`Nat`/`List`" goal), this positivity check is not optional scaffolding — it is the difference
-between a sound kernel and one where `Prop`/`False` becomes derivable from a legal-looking
-declaration.
-
----
-
-## 2. The general syntax, and reading off the eliminator mechanically
-
-Having ruled out the bad case, the book states the general shape a **valid** inductive
-definition of a type $W$ takes: a *finite* list of constructors, each assigned a function type
-that takes some number of (possibly dependent) arguments and returns an element of $W$, where
-$W$ itself may occur in argument types **only strictly positively** — i.e., each argument is
-either a type not mentioning $W$ at all, or an iterated (possibly dependent) function type whose
-*codomain* is $W$. The book's running example constructor:
-
-$$c : (A \to W) \to (B \to C \to W) \to D \to W \to W \tag{5.6.4}$$
-
-is legal: $W$ appears as the codomain of `A → W`, as the codomain of `B → C → W`, and bare, but
-never as a domain.
-
-### Recursion principle: mechanical, from the shape alone
-
-To build $f : W \to P$, you need one case per constructor, and inside each case you get to
-*recursively call* $f$ on every strictly-positive occurrence of $W$ in that constructor's
-arguments — because those occurrences are exactly the ones $f$ can be legally composed with
-(covariance is precisely "you can post-compose"). For constructor `c` above, the recursor needs:
-
-$$d : (A \to W) \to (A \to P) \to (B \to C \to W) \to (B \to C \to P) \to D \to W \to P \to P
-\tag{5.6.5}$$
-
-— read this left to right: the *raw* argument `α : A → W`, then the *recursive-call result*
-`A → P` obtained by post-composing `α` with `f`; the raw `β : B → C → W`, then its recursive
-result `B → C → P`; the non-recursive `δ : D` untouched; the raw `ω : W`, then its recursive
-result `P`. The computation rule is exactly what you'd guess:
-
-$$f(c(\alpha,\beta,\delta,\omega)) \equiv d(\alpha,\, f\circ\alpha,\, \beta,\, f\circ\beta,\, \delta,\, \omega,\, f(\omega)) \tag{5.6.6}$$
-
-### Induction principle: same shape, dependent codomain
-
-The induction principle is the same recipe, but the "recursive-call result" types become
-dependent: instead of a flat `A → P`, you need $\prod_{a:A} P(\alpha(a))$ — a proof of the
-motive at every recursively-reached point, not just a value:
-
-$$d : \prod_{\alpha:A\to W}\Big(\prod_{a:A}P(\alpha(a))\Big) \to \prod_{\beta:B\to C\to W}\Big(\prod_{(b,c)}P(\beta(b,c))\Big) \to \prod_{\delta:D}\prod_{\omega:W} P(\omega) \to P(c(\alpha,\beta,\delta,\omega)) \tag{5.6.7}$$
-
-The recursion principle is literally the special case where $P$ is taken to be a constant
-family — the same relationship you already saw for $\mathbb N$ and for $W$-types, now stated
-once, generically, for *any* legal inductive definition. This is also precisely how definitions
-by pattern matching (§1.10) get "compiled" back down to an explicit `ind` call: each clause
-`f(c(α,β,δ,ω)) :≡ ⋯` may use recursive calls `f(α(a))`, `f(β(b,c))`, `f(ω)` on the right,
-and these get systematically replaced by fresh bound variables `ᾱ`, `β̄`, `ω̄` of exactly the
-motive-applied types above when repackaging the definition as `ind_W(P, …)`.
-
-**Grounding.** This is exactly what a `#[derive(...)]`-style eliminator generator, or a proof
-assistant's automatic `.rec`/`.ind` synthesis, computes from a declaration's AST: walk each
-constructor's argument list, and for every argument whose type has $W$ (the type being defined)
-appearing only in codomain position, add a matching "recursive result" slot right after it.
+This is exactly a `match` compiled into structural recursion — no surprise, since dependent pattern matching *is* sugar for the eliminator (§1.10, revisited in §5.6 below).
 
 ```rust
-// The shape of constructor (5.6.4), directly transcribed. Rust can't express the
-// strict-positivity check as a *language rule* (it doesn't need to, since Box<T>
-// sidesteps the sizing issue that positivity in HoTT is not actually about) —
-// but the eliminator's *shape* is identical to (5.6.5) once you write it by hand:
-enum W<A, B, C, D> {
-    C(fn(A) -> Box<W<A, B, C, D>>, fn(B, C) -> Box<W<A, B, C, D>>, D, Box<W<A, B, C, D>>),
-}
+// The shape indN(E, e_z, e_s) compiles to, concretely:
+enum Nat { Zero, Succ(Box<Nat>) }
 
-// recursor: one "recursive result" slot per strictly-positive occurrence — this
-// is (5.6.5) read off the constructor's shape, mechanically:
-fn rec_w<A, B, C, D, P: Clone>(
-    d: impl Fn(/*α*/ &dyn Fn(A) -> W<A,B,C,D>, /*f∘α*/ &dyn Fn(A) -> P,
-               /*β*/ &dyn Fn(B, C) -> W<A,B,C,D>, /*f∘β*/ &dyn Fn(B, C) -> P,
-               D, /*ω*/ &W<A,B,C,D>, /*f(ω)*/ P) -> P,
-    w: &W<A, B, C, D>,
-) -> P {
-    todo!("walk w, recurse into the boxed W occurrences, apply d")
+fn ind_nat<E>(ez: E, es: impl Fn(&Nat, E) -> E, n: &Nat) -> E
+where E: Clone {
+    match n {
+        Nat::Zero => ez,
+        Nat::Succ(pred) => {
+            let rec = ind_nat(ez.clone(), &es, pred); // the recursive call
+            es(pred, rec)
+        }
+    }
 }
 ```
 
 ```lean
--- Lean synthesizes exactly (5.6.7) for you when you write the inductive declaration;
--- `@W.rec` printed by #check has this precise shape, one motive-applied hypothesis
--- per strictly-positive recursive occurrence, generated by the kernel — you never
--- hand-write it, but it is (5.6.7) verbatim, specialized to your constructors.
-inductive Wex (A B C D : Type) where
-  | c : (A → Wex A B C D) → (B → C → Wex A B C D) → D → Wex A B C D → Wex A B C D
+-- Lean literally generates this from the `inductive` declaration:
+inductive Nat where
+  | zero : Nat
+  | succ : Nat → Nat
 
-#check @Wex.rec
+-- `Nat.rec` is indN; `Nat.rec_zero`, `Nat.rec_succ` are the ≡ computation rules,
+-- and they hold by `rfl` — i.e. by Lean's kernel-level definitional equality,
+-- exactly the judgmental ≡ the book writes.
 ```
 
----
+A subtlety worth flagging because the learning-goals thread (unification, `isDefEq`) depends on it: the computation rule is stated with $\equiv$, judgmental equality, not $=$, propositional equality. That distinction becomes the entire subject of §5.5.
 
-## 3. Inductive types *are* homotopy-initial algebras
+**What breaks without an induction principle, only a recursion principle?** A recursion principle lets you build $f : \mathbb N \to C$ for a *fixed* codomain $C$, with no access to "the property being proved about $n$." You could define `double : Nat -> Nat`, but you could *not* prove `∀ n, double(succ n) = succ(succ(double n))` by recursion alone — that statement's truth value depends on $n$, so its proof needs induction's dependent codomain $E : \mathbb N \to \mathcal U$. Recursion is the special case of induction where $E$ is constant.
 
-Everything so far has been syntax: a recipe for writing down constructors and mechanically
-reading off an eliminator. But *why* should this recipe pin down "the" type it defines, up to
-equality, rather than just being one possible implementation among many? The book's answer is a
-universal property, borrowed from category theory and adapted to homotopy: an inductive type is
-the **homotopy-initial algebra** for the endofunctor its constructors determine.
+The book proves something stronger than "the eliminator lets you define functions": *functions satisfying the recurrences are unique*, even only up to propositional equality (Theorem 5.1.1, by induction on $D(x) :\equiv f(x) = g(x)$). This uniqueness theorem is the load-bearing lemma for everything that follows — it's what lets you say "these two constructions of $\mathbb N$ produce the same type" without hand-waving.
 
-### Warm-up: $\mathbb N$-algebras
+## Uniqueness of inductive types via univalence (§5.2)
 
-Strip away everything specific to $\mathbb N$ except the *shape* of its constructors — a point
-and a self-map:
+Suppose you define $\mathbb N'$ with fresh constructors $0', \mathrm{succ}'$, syntactically distinct from $\mathbb N$ but obeying an identical-shaped induction principle. Traditionally you'd say "obviously the same" and move on — informally identifying isomorphic structures, at the cost of never making precise *how much* structure transfers.
 
-> **Definition 5.4.1.** An $\mathbb N$-**algebra** is a type $C$ equipped with $c_0 : C$ and
-> $c_s : C \to C$. $\mathrm{NAlg} :\equiv \sum_{C:\mathcal U} C \times (C \to C)$.
+HoTT does better because of a three-step argument that recurs constantly in this book:
+
+1. Build mutually inverse maps $f : \mathbb N \to \mathbb N'$ and $g : \mathbb N' \to \mathbb N$ using each side's recursion principle.
+2. Use the *uniqueness* theorem (5.1.1, and its "primed" twin) to show $g \circ f \sim \mathrm{id}$ and $f \circ g \sim \mathrm{id}$ — so $f$ is a quasi-inverse, giving $\mathbb N \simeq \mathbb N'$.
+3. Apply **univalence**: $\mathbb N \simeq \mathbb N' \Rightarrow \mathbb N =_{\mathcal U} \mathbb N'$. Now every construction on $\mathbb N$ transports *automatically* along this path to a construction on $\mathbb N'$ — no manual insertion of $f$s and $g$s into every lemma statement, which is what you'd otherwise have to do (the book works out `double′` both ways to make the contrast concrete).
+
+The book generalizes this immediately: *any* two types satisfying the same induction principle are equal, not just $\mathbb N$-shaped ones — e.g. $\mathrm{List}(\mathbf 1) \simeq \mathbb N$ by exhibiting a recurrence-compatible relabeling ($\mathrm{nil} \mapsto 0$, $\mathrm{cons}(\star,\ell) \mapsto \mathrm{succ}(\ell)$). This is the type-theoretic incarnation of the categorical fact "objects with the same universal property are canonically isomorphic" — which is exactly what §5.4 makes literal.
+
+## Initial algebras: the categorical universal property (§5.4)
+
+Here the chapter names the universal property inductive types actually have. Package $\mathbb N$'s constructor data as algebraic structure:
+
+> **Definition 5.4.1.** An $\mathbb N$-**algebra** is a type $C$ with $c_0 : C$ and $c_s : C \to C$: $\mathrm{NAlg} :\equiv \sum_{C:\mathcal U} C \times (C \to C)$.
 >
-> **Definition 5.4.2.** An $\mathbb N$-**homomorphism** between algebras $(C,c_0,c_s)$ and
-> $(D,d_0,d_s)$ is $h : C \to D$ with $h(c_0) = d_0$ and $h(c_s(c)) = d_s(h(c))$ for all $c:C$ —
-> i.e. a structure-preserving map, exactly the category-theorist's notion of algebra
-> homomorphism for the functor $F(X) :\equiv X + \mathbf 1$.
+> **Definition 5.4.2.** An $\mathbb N$-**homomorphism** $(C,c_0,c_s) \to (D,d_0,d_s)$ is $h : C \to D$ with $h(c_0) = d_0$ and $h(c_s(c)) = d_s(h(c))$ for all $c$.
 
-Any type with a distinguished point and a self-map is an $\mathbb N$-algebra — $\mathbb N$
-itself with $(0,\mathrm{succ})$, but also, say, $\mathbb Z$ with $(0, n\mapsto n+1)$, or
-$\mathbf 2$ with $(0_{\mathbf 2}, \lambda x.\,1_{\mathbf 2})$. What's special about $\mathbb N$ is
-that it's *initial* among these: from every other $\mathbb N$-algebra there is a unique (not
-just "a") structure-preserving map out of $\mathbb N$.
+$\mathbb N$-algebras and their homomorphisms form a category, and the claim — familiar to any category theorist as "$\mathbb N$ is a natural numbers object" — is that $(\mathbb N, 0, \mathrm{succ})$ is **initial** in it: there's a unique homomorphism out of it to any other algebra.
 
-> **Definition 5.4.3.** $I$ is **homotopy-initial** (h-initial) if for every $\mathbb N$-algebra
-> $C$, the *type* of homomorphisms $I \to C$ is **contractible** —
-> $\mathrm{isHinit}_{\mathbb N}(I) :\equiv \prod_{C:\mathrm{NAlg}} \mathrm{isContr}(\mathrm{NHom}(I,C))$.
+But "unique" in a category built from types that behave like $\infty$-groupoids can't mean "unique up to isomorphism" in the 1-categorical sense — every hom-type here is itself a type with potential higher path structure. So the book defines **homotopy-initiality**:
 
-Contractibility, not mere inhabitation, is the load-bearing upgrade over 1-categorical
-initiality: it says the homomorphism exists *and* any two such homomorphisms are connected by a
-canonical (in fact, unique-up-to-higher-path) identification, which is exactly what "uniqueness
-up to unique isomorphism" has to mean once you take the $\infty$-groupoid structure of types
-seriously — you cannot get away with mere set-level uniqueness for an $(\infty,1)$-categorical
-statement.
+$$\mathrm{isHinit}_{\mathbb N}(I) :\equiv \prod_{C : \mathrm{NAlg}} \mathrm{isContr}\big(\mathrm{NHom}(I,C)\big).$$
 
-**Theorem 5.4.5.** $(\mathbb N, 0, \mathrm{succ})$ is h-initial. *Proof sketch:* the recursion
-principle of $\mathbb N$ directly builds a homomorphism $f$ into any algebra $(C,c_0,c_s)$ by
-$f(0):\equiv c_0$, $f(\mathrm{succ}(n)):\equiv c_s(f(n))$; that's the center of contraction, and
-the uniqueness theorem for $\mathbb N$ (the propositional-uniqueness fact you get for free from
-having an *induction*, not just a recursion, principle) shows every other homomorphism equals
-it.
+Not "there exists a unique morphism" (a $\Sigma$-type sliced by a mere proposition) but "**the type of morphisms is contractible**" — literally has exactly one point up to a canonical path, and moreover that point's uniqueness proof is itself unique, and so on up the dimensions. This is the correct, homotopically-coherent replacement for 1-categorical initiality, and it sidesteps having to formally define $(\infty,1)$-categories to state it.
 
-And crucially, h-initial algebras are unique **as elements of a type**, not just "unique up to
-isomorphism" as a loose figure of speech:
+Two theorems then do the real work:
 
-> **Theorem 5.4.4.** Any two h-initial $\mathbb N$-algebras are equal. (Sketch: mutual
-> homomorphisms $f: I\to J$, $g:J\to I$ compose to homomorphisms $I \to I$ and $J \to J$; but
-> $\mathrm{NHom}(I,I)$ is contractible and contains $\mathrm{id}_I$, forcing $g\circ f =
-> \mathrm{id}_I$, and symmetrically $f \circ g = \mathrm{id}_J$. So $I \simeq J$, and by
-> **[[Formal-Metatheory#Univalence|univalence]]**, $I = J$.)
+- **Theorem 5.4.4** (uniqueness of h-initial objects): if $I,J$ are both h-initial, contractibility of $\mathrm{NHom}(I,J)$ and $\mathrm{NHom}(J,I)$ gives mutually-inverse homomorphisms $f,g$ whose composites equal identities *because* $\mathrm{NHom}(I,I)$ and $\mathrm{NHom}(J,J)$ are contractible (so any two self-homomorphisms are equal, in particular $g\circ f = \mathrm{id}$). Hence $I \simeq J$, hence $I = J$ by univalence — h-initial algebras aren't just isomorphic, they're a *mere proposition*: the type of proofs "$I$ is h-initial" has at most one inhabitant up to equality.
+- **Theorem 5.4.5**: $(\mathbb N, 0, \mathrm{succ})$ *is* h-initial. The recursion principle builds the unique-up-to-path homomorphism directly, and Theorem 5.1.1 supplies the contraction.
 
-This is the exact same "same universal property ⇒ equivalent ⇒ (by univalence) equal" move
-from §5.2's discussion of $\mathbb N$ vs. an isomorphic $\mathbb N'$ — except now it is stated
-*abstractly*, as a theorem about *any* h-initial algebra, rather than proved by hand for one
-pair of isomorphic-looking definitions each time.
-
-### The general case: polynomial functors and $W$-algebras
-
-The $\mathbb N$ story generalizes uniformly to $W$-types (and, implicitly, to any strictly
-positive constructor list, since — per §2 above — strict positivity is exactly what makes the
-associated functor polynomial). Given $A : \mathcal U$ and $B : A \to \mathcal U$, the
-**polynomial functor** they determine is
-
-$$P(X) :\equiv \sum_{x:A} \big(B(x) \to X\big) \tag{5.4.6}$$
-
-A **$P$-algebra** (equivalently, a $W$-algebra for $A,B$) is a type $C$ with a structure map
-$s_C : PC \to C$ — by the universal property of $\Sigma$-types, this unpacks to exactly
-$\prod_{a:A}(B(a) \to C) \to C$, i.e. "given a label and its $B(a)$-many children (already
-mapped into $C$), produce a $C$." A **homomorphism** $(C,s_C) \to (D,s_D)$ is $f : C \to D$
-together with a homotopy witnessing that the square
-
-```mermaid
-flowchart LR
-    PC -->|"Pf"| PD
-    PC -->|"sC"| C
-    PD -->|"sD"| D
-    C -->|"f"| D
-```
-
-commutes: $f \circ s_C \sim s_D \circ Pf$. And $(C,s_C)$ is h-initial exactly as before —
-contractible homomorphism-type into every $P$-algebra.
-
-**Theorem 5.4.7.** $(W_{(x:A)} B(x), \mathrm{sup})$ is h-initial. The proof pattern is identical
-in spirit to the $\mathbb N$ case (build the unique-up-to-contractibility homomorphism via the
-$W$-elimination and computation rules), but the *coherence* data is genuinely harder: showing
-$(f, s_f) = (g, s_g)$ for two homomorphisms requires exhibiting not just a path $e : f = g$ but
-a *higher* path $s_e$ between the two ways $s_f$ and $s_g$ transport along $e$ — an "algebra
-2-cell." This is the first place in the chapter where the "up to coherent homotopy" qualifier in
-"homotopy-initial" is doing real, unavoidable work rather than being a decorative prefix: at
-set-level, "unique up to isomorphism" is a single equation; at $\infty$-groupoid level, you need
-the *paths between the paths* to also cohere, and the book's proof of Theorem 5.4.7 is precisely
-[[Homotopical-Interpretation-of-Type-Theory#The construction|the construction]] of that missing layer.
-
-**Why this matters more than the syntax from §2:** the syntactic recipe (constructors →
-eliminator) tells you *how to compute with* an inductive type. The initial-algebra
-characterization tells you *what it means for a type to deserve the name* — it is the answer to
-"give me the free structure generated by these constructors and nothing else," stated as a
-universal property independent of any particular syntactic presentation. Two different-looking
-definitions (say, $\mathbb N$ built directly vs. $\mathbb N^w$ built as a $W$-type) are equal
-not because you laboriously check they satisfy the same rules by hand (§5.2's approach), but
-because *both* are h-initial algebras for the same functor, and h-initial algebras are
-unique by Theorem 5.4.4's argument, full stop.
-
-**Grounding.** The categorical vocabulary here — initial algebra for an endofunctor — is
-precisely "the least fixed point of a functor," which is the semantic justification for why
-`fold`/`catamorphism` is *the* canonical way to consume a recursive data structure in functional
-languages, and it is the exact abstraction Lean's kernel is implementing when it checks that
-your `.rec` satisfies the expected computation rules against the declared constructors:
-
-```lean
--- "PC → C" for the Nat functor F(X) := X + 1, spelled out:
-def NatAlg := Σ (C : Type), C × (C → C)
-
--- initiality, made executable: rec_N *is* the unique homomorphism out of Nat
-def natFold {C : Type} (c0 : C) (cs : C → C) : Nat → C
-  | .zero   => c0
-  | .succ n => cs (natFold c0 cs n)
--- uniqueness (Theorem 5.4.5's punch line) is what lets you prove any two
--- Nat → C functions satisfying the same recurrence are *equal*, by induction —
--- exactly the argument Theorem 5.4.4 makes abstract and reusable.
-```
+Generalizing $\mathbb N$'s algebra to an arbitrary $W$-type $W_{(a:A)}B(a)$, the book associates a **polynomial functor**
+$$P(X) :\equiv \sum_{x:A} \big(B(x) \to X\big),$$
+a $P$-algebra is $(C, s_C : PC \to C)$, and h-initiality is defined the same way (contractible hom-type into every other algebra). **Theorem 5.4.7**: $(W_{(x:A)}B(x), \mathrm{sup})$ is h-initial for this functor. The strict-positivity restriction from §5.6 exists *precisely* so that "the endofunctor associated to a constructor list" is always polynomial — general endofunctors need not have initial algebras at all (a fact from ordinary category theory the book flags in a footnote), so restricting to the polynomial case is what buys consistency for free.
 
 ```rust
-// A trait is a lightweight stand-in for "algebra for a functor": implementing
-// Fold for your own type is exactly supplying an F-algebra structure map,
-// and `fold` computed via structural recursion is the unique homomorphism
-// out of the initial algebra (your recursive enum) into it.
-trait NatAlgebra<C> {
-    fn zero(&self) -> C;
-    fn succ(&self, c: C) -> C;
+// The "algebra" and "polynomial functor" picture translated directly:
+// P(X) = Σ(a:A) (B(a) → X)   —   an algebra is a coalgebra-shaped carrier + a map PC → C
+trait NatAlgebra {
+    fn zero() -> Self;
+    fn succ(self) -> Self;
 }
-fn fold<C>(alg: &impl NatAlgebra<C>, n: u64) -> C {
-    if n == 0 { alg.zero() } else { alg.succ(fold(alg, n - 1)) }
+
+// A homomorphism is exactly a structure-preserving map:
+fn nat_hom<C: NatAlgebra, D: NatAlgebra>(
+    h: impl Fn(C) -> D,
+    c0: C, cs: impl Fn(C) -> C,
+) -> bool {
+    // laws that must hold, not something Rust's type system enforces on its own:
+    // h(c0) == D::zero()  and  h(cs(c)) == h(c).succ()
+    true // stand-in: in Rust these are propositions you'd prove externally,
+         // not types the compiler checks — this is exactly the gap a
+         // refinement-type / verifier layer exists to close.
 }
 ```
 
-**Load-bearing note (standing project):** this is the semantic backbone a from-scratch
-verifier needs if "accept a user-declared inductive type" is supposed to mean more than
-"generate *some* recursor by convention." Initiality is the theorem that tells you the generated
-recursor is not an arbitrary choice — it's *the* structure-preserving map, unique up to
-(higher) homotopy, which is precisely the soundness statement you want before trusting
-structural-recursion-based proofs your checker accepts as terminating and well-typed.
+The Rust sketch above is deliberately limited: Rust's trait system can state the *signature* of an algebra homomorphism but has no way to state, let alone check, the propositional laws $h(c_0)=d_0$ and $h(c_s(c))=d_s(h(c))$ as first-class obligations. That gap — "the type system can express the interface but not the contract" — is exactly what a refinement-type layer with Hoare-style pre/postconditions is for, which is one reason this initial-algebra picture is worth internalizing before designing such a system: your verifier's job is to make the homomorphism laws checkable obligations, not just comments.
 
----
+## Homotopy-inductive types: computing only up to a path (§5.5)
 
-## 4. Homotopy-inductive types: when the computation rule is only propositional
+Encode $\mathbb N$ as a $W$-type: $\mathbb N^w :\equiv W_{(b:\mathbf 2)}\,\mathrm{rec}_{\mathbf 2}(\mathcal U, \mathbf 0, \mathbf 1, b)$, with $0^w :\equiv \mathrm{sup}(0_{\mathbf 2}, \lambda x.\,\mathrm{rec}_{\mathbf 0}(\mathbb N^w,x))$ and $\mathrm{succ}^w :\equiv \lambda n.\,\mathrm{sup}(1_{\mathbf 2}, \lambda x.\,n)$. The *recursion* principle transfers cleanly (the book works `double` through it explicitly). But the **induction** principle doesn't: given $E : \mathbb N^w \to \mathcal U$ and recurrences $e_z, e_s$, the derived eliminator only satisfies them *propositionally* — up to a path, not up to $\equiv$. The judgmental computation rules for ordinary $\mathbb N$ cannot be recovered from the $W$-type encoding "in any obvious way."
 
-Section §5.5 asks a question that only becomes visible once you've built $\mathbb N$ as a
-$W$-type and tried to push the analogy all the way: does the $W$-type encoding of $\mathbb N$
-give you back the *same* induction principle, judgmentally, that you started with?
+Rather than treat this as a defect to route around, the book turns it into a *definition*: a **homotopy-inductive type** is one where every computation rule is asserted up to a path from the start — $\equiv$ replaced by $=$ everywhere, including in the type of the eliminator itself. Why bother?
 
-Recall from the [[Type-Formers-and-Their-Universal-Properties|W-types article]]:
-$\mathbb N^w :\equiv W_{(b:\mathbf 2)}\mathrm{rec}_{\mathbf 2}(\mathcal U,\mathbf 0,\mathbf 1,b)$.
-The *recursion* principle transfers cleanly — `double` on $\mathbb N^w$ computes exactly as
-expected, judgmentally, as the worked example in §5.3 shows step by step. But the **induction**
-principle does not transfer cleanly: given $E : \mathbb N^w \to \mathcal U$ with recurrences
-$e_z : E(0^w)$ and $e_s$, the best you can construct from $W$-elimination is a dependent
-function $r(E,e_z,e_s) : \prod_n E(n)$ satisfying the recurrences only **propositionally** — up
-to a path, not by judgmental (definitional) reduction. The judgmental computation rules baked
-into $\mathbb N$'s own induction principle simply don't fall out of the $W$-type's rules for
-free.
+- Not every h-initial algebra literally satisfies the strict, judgmental induction principle — but *every* h-initial algebra is a homotopy-inductive type. Homotopy-inductive types are the notion that exactly matches h-initiality; ordinary (judgmental) inductive types are a strictly stronger, and not always available, refinement.
+- The notion becomes **internal**: because propositional equalities are themselves data (paths, elements of a type), you can package "being a homotopy-$W$-type" as a single type and quantify over it — impossible for a notion resting on judgmental equality, which lives at the meta-level and can't be talked about *inside* the theory.
 
-This motivates a genuinely different notion: a **homotopy-inductive type** is one where *every*
-computation rule — recursor and inductor alike — is stated with `=` (propositional equality)
-instead of `≡` (judgmental equality) from the outset, rather than judgmental computation being
-the goal and propositional computation being a fallback you occasionally settle for. For the
-homotopy version of $W$-types, $W^h$, the computation rule reads:
+The book gives three equivalent packagings of "$X$ is a homotopy-$W$-type for $(A,B)$":
 
-$$\mathrm{rec}_{W^h}(E, e, \mathrm{sup}(a,f)) = e\big(a, f, \lambda b.\,\mathrm{rec}_{W^h}(E, f(b))\big)$$
+- $W^d(A,B)$ — carrier + supremum map + a full induction principle with *propositional* computation rule,
+- $W^s(A,B)$ — carrier + supremum + a plain (non-dependent) recursion principle, plus explicitly postulated uniqueness and coherence laws (since without induction, uniqueness is no longer derivable — it has to be an axiom),
+- $W^h(A,B)$ — the h-initial-algebra packaging directly: $\sum_{I : \mathrm{WAlg}(A,B)} \mathrm{isHinit}_W(A,B,I)$.
 
-— same shape as before, `=` instead of `≡`.
+**Lemma 5.5.4**: $W^d(A,B) \simeq W^s(A,B) \simeq W^h(A,B)$, and each is a *mere proposition* (Theorems 5.5.1–5.5.3) — being a homotopy-$W$-type is a property a type either has or doesn't, not extra structure with multiple witnesses to keep track of. **Theorem 5.5.5** sharpens 5.4.7: h-initial $W$-algebras are *precisely* the types satisfying the (propositional) formation/introduction/elimination/computation rules — not just "h-initiality implies you can build an eliminator," but the converse too, proved by the classic categorical trick of building $C :\equiv \sum_{w:W} C'(w)$, using h-initiality to get a section, and extracting the eliminator from it.
 
-### Why bother, if this is strictly weaker?
+For a compiler/kernel builder, the practical upshot: if your kernel's normalizer only ever needs `rfl`-style judgmental computation for canonicity and decidable type-checking, you want ordinary inductive types with strict $\equiv$ rules. If you're instead building a *model* of the type theory internally (e.g. proving consistency, or implementing HITs where strict computation for path constructors is provably unattainable — foreshadowing Chapter 6), homotopy-inductive types are the right level of strictness to demand, and no more.
 
-Homotopy-inductive types trade away judgmental computation — genuinely a loss, since a
-typechecker can no longer verify these equalities by silent unfolding; every use requires an
-explicit proof term. But three considerations make them worth having as a separate notion
-rather than a defect to route around:
+## Strict positivity: the syntactic condition that makes any of this legal (§5.6)
 
-1. **They're the honest converse of h-initiality.** §5.4 showed every ordinary inductive type is
-   an h-initial algebra. The converse fails at the "ordinary" level — not every h-initial
-   algebra satisfies a genuine (judgmental) induction principle — but it holds exactly at the
-   homotopy level: **every h-initial algebra is a homotopy-inductive type.** Homotopy-inductive
-   types are precisely the class for which "satisfies the universal property" and "satisfies an
-   induction/computation principle" coincide, with no residual gap.
-2. **They make the uniqueness argument from §5.2 available even when one side is only
-   homotopy-inductive** — e.g. exactly the case of showing $\mathbb N^w \simeq \mathbb N$, where
-   $\mathbb N^w$'s induction principle from the $W$-type encoding is only propositional.
-3. **The notion becomes internal to the type theory itself.** Because everything is stated with
-   `=` rather than `≡`, you can package "being a homotopy-$W$-type for $A,B$" as an actual *type*
-   — the book calls it $W^d(A,B)$ — and prove *theorems about the type of all such structures*,
-   something you cannot do about a judgmental rule, which lives at the meta-level of the
-   theory, not inside it.
+Steps back to ask: given an arbitrary list of constructor signatures, when is it a *legitimate* inductive definition at all — one for which a consistent recursion/induction principle can be derived?
 
-### Three equivalent characterizations, one mere proposition
+**The naive necessary condition.** Replace every occurrence of the type being defined, $W$, by a fresh variable $X$. Each constructor's domain must be expressible as a **covariant functor of $X$** — informally, "$X$ only ever appears in positions you could map over." $\mathrm{inl} : A \to A+B$: the functor is constant ($X \mapsto A$), trivially covariant. $\mathrm{succ} : \mathbb N \to \mathbb N$: the functor is the identity ($X \mapsto X$), covariant.
 
-The book gives three ways to package "being a homotopy-$W$-type for $A, B$":
+The book motivates this with a broken counterexample: a constructor $g : (C \to \mathbb N) \to C$. Given $f : C \to P$ under construction, the "recursive call" would need to apply $f$ to $\alpha : C \to \mathbb N$ — but $\alpha$ is a function *out of* $C$, so "$f(\alpha)$" doesn't typecheck; $C$ occurs *contravariantly* (on the left of an arrow) in the domain, and there is no way to functorially transform it along $f$.
 
-- $W^d(A,B)$ — directly, as a $\Sigma$-type bundling a type $W$, a `sup` map, and an induction
-  operator satisfying the propositional computation rule (the direct transcription of "has an
-  inductor").
-- $W^s(A,B)$ — via a **recursion** principle instead, plus explicit uniqueness and coherence
-  laws stated as extra data (since, unlike the judgmental case, propositional uniqueness is no
-  longer *derivable* from mere recursion — Theorem 5.3.1's argument used the induction
-  principle essentially — so it has to be *postulated*, together with a coherence law
-  describing how the uniqueness proof behaves on canonical elements).
-- $W^h(A,B)$ — the most concise: $\sum_{I:\mathrm{WAlg}(A,B)} \mathrm{isHinit}_W(A,B,I)$, i.e.
-  literally "being an h-initial algebra," packaged as a type.
+**Why covariance alone isn't enough.** The composite of two contravariant functors is covariant, so double-negation-shaped domains like $(X \to \mathrm{Prop}) \to \mathrm{Prop}$ pass the naive covariance test while still being dangerous — they let $W$ occur underneath a function arrow *twice*. The book then gives a full worked Cantor-style paradox: postulate
+$$k : \big((D \to \mathrm{Prop}) \to \mathrm{Prop}\big) \to D,$$
+and derive an injection of "the power set of $D$" into $D$ (via $f(\delta) :\equiv k(\lambda x.\,x = \delta)$), then a diagonal proposition $\theta(\gamma) :\equiv \neg\, p(\gamma)(\gamma)$ that forces $p(\delta)(\delta) = \neg p(\delta)(\delta)$ — a genuine logical contradiction, not merely a surprising type. **This is a live, checkable derivation of $\bot$, not a hand-wave** — it's the reason the restriction below is non-negotiable rather than a stylistic preference.
 
-**Lemma 5.5.4** states these three are all equivalent: $W^d(A,B) \simeq W^s(A,B) \simeq
-W^h(A,B)$. And each of $W^d$, $W^s$, $W^h$ is separately shown to be a **mere proposition**
-(Theorems 5.5.1–5.5.3) — there is at most one way (up to equality) for a type to *be* the
-homotopy-$W$-type for given $A, B$, exactly mirroring Theorem 5.4.4's uniqueness result but now
-proved for the weaker, propositional-computation notion.
+**Strict positivity.** Ban the type being defined from ever appearing *to the left of an arrow* in a constructor's domain — even nested arbitrarily deeply inside other arrows, so that a merely-eventually-covariant occurrence like $(X\to\mathrm{Prop})\to\mathrm{Prop}$ is still forbidden. (Occurrences in the domain of a dependent $\Pi$-type are forbidden too, for the same reason.) A constructor signature like
+$$c : (A \to W) \to (B \to C \to W) \to D \to W \to W$$
+is legal: every occurrence of $W$ is either absent from a component, or sits purely in a *codomain* position, however many arrows deep.
 
-The payoff, stated as **Theorem 5.5.5**: *the types satisfying the formation, introduction,
-elimination, and propositional computation rules for $W$-types are precisely the
-homotopy-initial $W$-algebras.* This is the exact converse the ordinary (judgmental) theory
-couldn't deliver — at the homotopy level, "satisfies the rules" and "is h-initial" become
-logically equivalent, not just one-directional.
+This is the general form the induction/recursion principles are read off of mechanically:
 
-**Grounding.** The judgmental-vs-propositional-computation distinction is precisely the
-difference between `rfl`-closable equalities and equalities that need an explicit proof term in
-Lean — and it is *exactly* the phenomenon your elaborator's `isDefEq` routine has to be
-prepared for: some reductions unfold silently during unification (judgmental, like $\iota$-
-reduction on a genuine `inductive`'s `.rec`), and some require the unifier to fall back to
-searching for an explicit propositional witness (`Eq.mpr`/`cast`-style coercions) because no
-sequence of judgmental unfoldings will close the gap.
+- **Recursion.** Build $f : W \to P$ by supplying, for the constructor above, a "compiled" function
+  $$d : (A \to W) \to (A \to P) \to (B \to C \to W) \to (B \to C \to P) \to D \to W \to P \to P,$$
+  i.e. *for every domain component that mentions $W$, add a parallel component with $W$ replaced by $P$* — that extra component is where the recursive call's result lands. The computation rule is then read off directly: $f(c(\alpha,\beta,\delta,\omega)) \equiv d(\alpha, f\!\circ\!\alpha,\ \beta, f\!\circ\!\beta,\ \delta,\ \omega,\ f(\omega))$.
+- **Induction.** Same recipe, but generalize $P$ to a family $P : W \to \mathcal U$ and replace each "recursive-call" component $A \to P$ by the dependent $\prod_{a:A} P(\alpha(a))$ — you don't just get "$f$ applied to the sub-piece," you get the *inductive hypothesis about* that sub-piece.
+- **Pattern matching** (§1.10's sugar, revisited here) is exactly writing definitional equations `f(c(α,β,δ,ω)) :≡ ⋯` where the right-hand side may mention recursive calls `f(α(a))`, `f(β(b,c))`, `f(ω)` — which desugars, mechanically, into exactly the $d$/$\mathrm{ind}_W$ term above.
+
+This is, essentially verbatim, the algorithm a kernel implementer runs: parse a constructor telescope, check every occurrence of the type-being-defined is strictly positive (a purely syntactic scan — no semantic reasoning needed, which is exactly why it's decidable and cheap enough to run on every declaration), then mechanically generate the eliminator's type by "twinning" each self-referential argument with a motive-instantiated counterpart. Lean, Coq/Rocq, and Agda all implement a variant of precisely this check as a compile-time gate before accepting an `inductive`/`data` declaration — reject anything with a negative occurrence, accept and auto-derive the eliminator otherwise.
 
 ```lean
--- Genuine inductive Nat: rec on `succ n` reduces *judgmentally*.
-example (c0 : Nat) (cs : Nat → Nat → Nat) (n : Nat) :
-    Nat.rec c0 cs (Nat.succ n) = cs n (Nat.rec c0 cs n) := rfl   -- succeeds: ≡
+-- Legal: W only appears in codomain position, however deep.
+inductive Tree (A B C D : Type) (W : Type) where
+  | c : (A → W) → (B → C → W) → D → W → W
 
--- A "homotopy-inductive" analogue would instead only give you a *propositional*
--- witness — imagine a hand-rolled encoding where the "computation rule" is
--- itself an axiom/theorem rather than a kernel-level ι-reduction:
-axiom Whcomp {W C : Type} (rec : W → C) (sup_ : W → W) (e : C → C) (w : W) :
-    rec (sup_ w) = e (rec w)   -- `=`, not `≡` — must be *cited*, never unfolds for free
+-- Illegal — Lean's positivity checker rejects this outright:
+-- inductive Bad where
+--   | g : (Bad → Nat) → Bad
+-- error: constructor 'Bad.g' has a non-positive occurrence
+--        of the inductive datatype 'Bad'
 ```
 
-`rfl` closes the first goal because Lean's kernel performs $\iota$-reduction (the judgmental
-computation rule) automatically during definitional-equality checking; the second is, by
-construction, the sort of fact your elaborator would have to invoke explicitly (`rw [Whcomp]` or
-similar) — it can never be discharged by silent unfolding, no matter how the kernel is tuned,
-because there is no reduction rule backing it, only a propositional axiom. This is the concrete,
-implementation-level shape of "what changes when computation becomes propositional instead of
-judgmental" — not an abstract nicety, but the literal difference between what `isDefEq` can
-solve unassisted and what it has to hand off to explicit proof search.
+```python
+# The mechanical "twinning" the recursion principle performs, sketched:
+# for a domain component X -> W, add a parallel component X -> P
+# (the slot where the recursive call's result goes).
+def derive_recursor_signature(ctor_domain_components, W, P):
+    hyp = []
+    for comp in ctor_domain_components:
+        hyp.append(comp)
+        if mentions(comp, W):
+            hyp.append(replace(comp, W, P))  # the "recursive call" slot
+    return hyp
+```
 
----
+Strict positivity is, concretely, a **decidable syntactic well-formedness check that stands between a user's type declaration and a sound kernel** — a smaller, sharper cousin of the termination/positivity checks that guard every proof assistant's trusted core. If you're scoping out a trusted computing base for a verifier, this is the shape that check takes: cheap, syntactic, and load-bearing for consistency, in contrast to termination checking (needed for total recursion, not discussed in this section) which is usually far more expensive and heuristic.
 
-## Where this leads
+## Synthesis
 
 ```mermaid
-flowchart TB
-    S["§5.6 General syntax +<br/>strict positivity"] --> R["Mechanically derived<br/>recursion / induction principles"]
-    R --> IA["§5.4 Inductive type =<br/>homotopy-initial algebra<br/>for a polynomial functor"]
-    IA --> U["§5.2/5.4 Uniqueness up to<br/>equality, via univalence"]
-    IA --> HI["§5.5 Homotopy-inductive types<br/>(propositional computation)"]
-    HI --> CONV["h-initial ⟺ satisfies<br/>homotopy-inductive rules<br/>(Thm 5.5.5, the missing converse)"]
-    IA --> CH6["Ch.6: Higher Inductive Types —<br/>constructors can now target *paths*,<br/>not just points"]
+flowchart TD
+    A["§5.1 Constructors + induction principle<br/>(freely generated, family resemblance across N, 2, List...)"]
+    B["§5.2 Uniqueness via univalence<br/>(same induction principle ⇒ equivalent ⇒ equal)"]
+    C["§5.4 Initial algebras<br/>(NAlg, h-initiality: Hom-type is contractible)"]
+    D["§5.5 Homotopy-inductive types<br/>(computation only up to a path; internal notion)"]
+    E["§5.6 Strict positivity<br/>(syntactic legality check; derives recursion/induction mechanically)"]
+    F["Ch. 6 Higher Inductive Types<br/>(path constructors — need propositional computation, i.e. §5.5's machinery)"]
+    G["Structure Identity Principle (Ch. 9)<br/>and univalent algebra generally"]
+
+    A --> B
+    A --> C
+    C --> D
+    E --> A
+    E --> C
+    D --> F
+    B --> G
+    C --> G
 ```
 
-This chapter is the last piece of "ordinary" (point-constructor-only) type theory before the
-book turns homotopical in earnest. Everything that follows leans on it: Chapter 6's **higher
-inductive types** are, syntactically, exactly this same general-constructor-list machinery, with
-one addition — constructors are now allowed to target *identity types* (produce paths, not just
-points), which is precisely what §5.6's syntax doesn't yet permit and Chapter 6 extends it to
-allow. The initial-algebra semantics from §5.4 is also the template Chapter 6 re-uses (higher
-inductive types are, again, initial algebras — just for a richer notion of "algebra" that
-tracks path data alongside point data).
+This chapter is the theory that everything calling itself "an inductive type" elsewhere in the book has to satisfy. The $W$-types of §2.2/§5.3 are the concrete polynomial-functor case; §5.6's strict positivity is precisely the condition that guarantees the associated endofunctor *is* polynomial, so that §5.4's h-initiality theorem applies to it. Chapter 6's [[Higher-Inductive-Types|higher inductive types]] push past ordinary strict positivity into constructors that produce *paths*, not just points — and the reason Chapter 6 needs the propositional-computation-rule apparatus of §5.5 at all is that path constructors essentially *never* admit judgmental computation rules, only propositional ones; §5.5 is where that idea is first isolated and studied on the comparatively tame $W$-type case, before Chapter 6 has to live with it as the norm rather than the exception. Later, the Structure Identity Principle (Chapter 9) and the "equality of algebraic structures via univalence" theme (already previewed in §2.14 and reused throughout §5.2) both generalize the exact "same universal property $\Rightarrow$ equal" argument built here into general categorical structures, not just inductive types.
 
-For the standing project: strict positivity is the exact syntactic gate a from-scratch
-kernel must implement before accepting *any* user-declared inductive type, and it is
-non-negotiable — skip it and your checker can derive `False` from a legal-looking declaration,
-as the $D$-type Cantor argument in §1 shows concretely rather than abstractly. The
-constructor-shape-to-eliminator-shape recipe in §5.6 (walk the arguments, add a recursive-result
-slot after every strictly-positive occurrence) is literally the algorithm a `.rec`/`.ind`
-generator runs, and it generalizes uniformly rather than needing a special case per type
-former — the same generic machine that handles `Nat` handles any inductive type the user throws
-at it. And the judgmental-vs-propositional-computation distinction from §5.5 is the precise,
-load-bearing fork your `isDefEq`/unifier has to navigate: which equalities close by silent
-unfolding, and which require explicit proof search — the exact boundary between "the kernel
-handles it" and "the elaborator has to go find a term."
+For the compiler-and-elaborator project this workbench is built around, this chapter is close to load-bearing in the most literal sense: strict positivity (§5.6) is the well-formedness gate your kernel runs on every user-declared inductive type before trusting it at all; the mechanical recursion/induction-principle derivation is the actual code you'd write to support user-defined `inductive` declarations rather than a hard-coded list of built-ins; and the initial-algebra semantics (§5.4) is the *specification* against which that generated eliminator's correctness should be judged — "does the eliminator I derived actually witness h-initiality" is a soundness question with a precise, checkable answer, not a matter of taste. [[Type-Theory-as-a-Foundational-System-Qwen#The distinction|The distinction]] between ordinary and homotopy-inductive types (§5.5) also foreshadows a design decision you'll face directly: whether your kernel demands judgmental ($\equiv$) computation for every eliminator (fast, decidable type-checking, but restrictive) or tolerates propositional ($=$) computation for some constructs (more expressive, but pushes proof obligations — and trust — outward from the kernel into user-supplied proof terms).

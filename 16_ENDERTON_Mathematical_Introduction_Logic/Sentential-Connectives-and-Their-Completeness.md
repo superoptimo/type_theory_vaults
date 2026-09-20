@@ -13,7 +13,7 @@ tags: [sentential-logic, boolean-functions, completeness, dnf, cnf, duality, int
 
 Section 1.4 finished building the machine: wffs, freely generated from sentence symbols by five formula-building operations, with a recursion theorem guaranteeing every truth assignment extends uniquely. Section 1.5 opens by pointing the machine back at its own blueprint and asking an oddly self-doubting question: *did we pick the right five connectives?*
 
-Enderton motivates this with a genuinely new connective — a three-place **majority symbol** $\#$, where $v((\#\alpha\beta\gamma))$ agrees with the majority of $v(\alpha), v(\beta), v(\gamma)$. Nothing stops you from adding it: extend the alphabet, add a sixth formula-building operation $E_\#(\alpha,\beta,\gamma) = (\#\alpha\beta\gamma)$, and specify how $v$ computes it. The question is whether this buys you anything. It doesn't — $(\#\alpha\beta\gamma)$ turns out to be tautologically equivalent to
+Enderton motivates this with a genuinely new connective — a three-place **majority symbol** $\#$, where $v((\#\alpha\beta\gamma))$ agrees with the majority of $v(\alpha), v(\beta), v(\gamma)$. Nothing stops you from adding it: extend [[Sentential-Propositional-Logic#The alphabet|the alphabet]], add a sixth formula-building operation $E_\#(\alpha,\beta,\gamma) = (\#\alpha\beta\gamma)$, and specify how $v$ computes it. The question is whether this buys you anything. It doesn't — $(\#\alpha\beta\gamma)$ turns out to be tautologically equivalent to
 $$
 (\alpha \wedge \beta) \vee (\alpha \wedge \gamma) \vee (\beta \wedge \gamma),
 $$
@@ -62,7 +62,7 @@ Two Boolean functions are literally `==` on their tables — no case analysis ne
 > (b) $\alpha \mathbin{|\!=\!|} \beta$ iff $B_\alpha = B_\beta$;
 > (c) $\models \alpha$ iff $B_\alpha$ is the constant function $T$.
 
-Part (a)'s proof is a direct unwinding of the definitions: $\alpha \models \beta$ means every truth assignment satisfying $\alpha$ satisfies $\beta$, i.e. whenever $B_\alpha(\vec X) = T$ then $B_\beta(\vec X) = T$ — which, with $F<T$, is exactly $B_\alpha \le B_\beta$ pointwise. Parts (b) and (c) are corollaries taking $\le$ in both directions and taking $\beta$ to be a fixed tautology, respectively. The theorem's real content is conceptual: passing from wffs to the Boolean functions they realize **identifies tautologically equivalent wffs**. In Rust terms, `B_alpha == B_beta` (equal truth tables) is precisely `alpha` and `beta` being interchangeable everywhere a SAT solver, a circuit synthesizer, or a proof search procedure would care — tautological equivalence collapses to bitmask equality.
+Part (a)'s proof is a direct unwinding of the definitions: $\alpha \models \beta$ means every truth assignment satisfying $\alpha$ satisfies $\beta$, i.e. whenever $B_\alpha(\vec X) = T$ then $B_\beta(\vec X) = T$ — which, with $F<T$, is exactly $B_\alpha \le B_\beta$ pointwise. Parts (b) and (c) are corollaries taking $\le$ in both directions and taking $\beta$ to be a fixed tautology, respectively. [[Godels-Incompleteness-Theorems#The theorem|The theorem]]'s real content is conceptual: passing from wffs to the Boolean functions they realize **identifies tautologically equivalent wffs**. In Rust terms, `B_alpha == B_beta` (equal truth tables) is precisely `alpha` and `beta` being interchangeable everywhere a SAT solver, a circuit synthesizer, or a proof search procedure would care — tautological equivalence collapses to bitmask equality.
 
 ## Every Boolean function is realizable — and how to build the wff
 
@@ -170,7 +170,7 @@ Two singleton completeness results stand out, both connecting directly to real h
 
 > **Example.** $\{\neg,\rightarrow\}$ is complete (eight of the ten "really binary" connectives, added to $\neg$, give a complete pair — only $+$ and $\leftrightarrow$ fail, Exercise 5). $\{\bot,\rightarrow\}$ is not just complete but **supercomplete** — it realizes even the two 0-place functions without needing $\bot$ and $\top$ as separate primitives, since $\bot$ is already in the set.
 
-This is exactly why real digital logic families standardize on **NAND-only** (or NOR-only) gate libraries: $\{\mid\}$'s completeness is the mathematical fact underlying "you can build any circuit out of nothing but NAND gates," which Section 1.6 (Switching Circuits) makes literal.
+This is exactly why real digital logic families standardize on **NAND-only** (or NOR-only) gate libraries: $\{\mid\}$'s completeness is the mathematical fact underlying "you can build any circuit out of nothing but NAND gates," which Section 1.6 ([[Switching-Circuits|Switching Circuits]]) makes literal.
 
 ## Duality (§1.2, Exercise 9, p. 28)
 

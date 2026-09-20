@@ -1,0 +1,30 @@
+<svg viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="13">
+  <style>
+    .axis { stroke: #888; stroke-width: 1; }
+    .oct { fill: #6699cc33; stroke: #4477aa; stroke-width: 2; }
+    .lbl { fill: #666; }
+  </style>
+  <!-- axes -->
+  <line x1="30" y1="180" x2="30" y2="20" class="axis"/>
+  <line x1="30" y1="180" x2="200" y2="180" class="axis"/>
+  <text x="8" y="30" class="lbl">v2</text>
+  <text x="190" y="200" class="lbl">v1</text>
+  <!-- octagon: axis-aligned + diagonal cuts -->
+  <polygon points="70,180 160,180 190,150 190,70 150,30 90,30 30,90 30,150"
+           class="oct"/>
+  <text x="80" y="18" class="lbl">v2 ≤ 5</text>
+  <text x="195" y="60" class="lbl">v1 ≤ 5</text>
+  <text x="150" y="200" class="lbl">−v1 ≤ −1</text>
+  <text x="0" y="70" class="lbl">−v2 ≤ −1</text>
+  <text x="185" y="115" class="lbl">v1 − v2 ≤ 2.5</text>
+  <text x="60" y="55" class="lbl">v2 − v1 ≤ 2</text>
+
+  <!-- rotated-basis box on the right -->
+  <g transform="translate(230,0)">
+    <line x1="30" y1="180" x2="30" y2="20" class="axis"/>
+    <line x1="30" y1="180" x2="180" y2="180" class="axis"/>
+    <polygon points="70,180 160,180 160,100 100,40 30,40 30,110"
+             fill="#cc669933" stroke="#aa4477" stroke-width="2"/>
+    <text x="100" y="18" class="lbl">rotated basis (π/4)</text>
+  </g>
+</svg>

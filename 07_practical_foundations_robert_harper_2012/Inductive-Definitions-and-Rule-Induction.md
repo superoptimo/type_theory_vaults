@@ -133,7 +133,7 @@ Book example: a derivation of $\mathsf{succ}(\mathsf{succ}(\mathsf{succ}(\mathsf
   <text x="590" y="100" class="lbl" text-anchor="end">(2.2b)</text>
 </svg>
 
-**Grounding.** A derivation is exactly a value of a recursive data type mirroring the judgment's constructors — the same idea as building a proof term in Lean:
+**[[Recursive-Types#Grounding|Grounding]].** A derivation is exactly a value of a recursive data type mirroring the judgment's constructors — the same idea as building a proof term in Lean:
 
 ```rust
 enum NatDerivation {

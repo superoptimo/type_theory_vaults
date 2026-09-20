@@ -189,7 +189,7 @@ Both are "intolerable... at variance with mathematical practice" and "compromise
 
 ### The fix: divorce dynamic binding from variables, attach it to symbols instead
 
-The insight of Chapter 33 is that everything dynamic scoping was trying to offer — "let me read a value that was set by some enclosing dynamic context, without threading it explicitly through every intermediate call" — is achievable *safely* if you attach it to a **symbol** instead of a **variable**. A symbol, recall, is a parameter to a family of operations, not a name resolved by substitution — so there's no alpha-renaming hazard, and its typing can be tracked statically via the signature $\Sigma$, restoring type safety.
+The insight of Chapter 33 is that everything dynamic scoping was trying to offer — "let me read a value that was set by some enclosing dynamic context, without threading it explicitly through every intermediate call" — is achievable *safely* if you attach it to a **symbol** instead of a **variable**. A symbol, recall, is a parameter to a family of operations, not a name resolved by substitution — so there's no alpha-renaming hazard, and its typing can be tracked statically via the signature $\Sigma$, restoring type [[State-and-Assignables#Safety|safety]].
 
 The new constructs, extending $L\{\texttt{sym}\}$ from Ch. 32 into $L\{\texttt{fluid}\}$:
 

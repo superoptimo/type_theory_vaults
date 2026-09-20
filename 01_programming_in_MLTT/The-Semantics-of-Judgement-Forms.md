@@ -14,7 +14,11 @@ tags: [type-theory, MLTT, judgement-forms, contexts, hypothetical-judgements, de
 
 Chapter 3 gave you a purely syntactic apparatus — application, abstraction, combination, selection, arities — for writing expressions down and mechanically deciding whether two of them are the same expression (definitional [[Propositions-as-Sets-(The-Curry-Howard-Correspondence)#Equality|equality]], $\equiv$). None of that machinery says anything about *sets*, *types*, or *truth*. That's deliberate. The authors want the entire proof-theoretic superstructure of the book — every formation, introduction, elimination and equality rule from Chapter 5 onward — to rest on a semantics that is stated exactly once, here, and never quietly presupposed anywhere else.
 
-The stakes are higher than the page count suggests. It would be easy to write "$A\ set$" and lean on the reader's background notion of set from ZFC, or on "type" from whatever language they last used. The book explicitly refuses that move — it is one of the chapter's own key questions: *what does it mean, at the semantic level, to know that $A$ is a set — and why does this explanation not presuppose any other mathematical theory?* The answer is built from something more primitive than sets: **computation**. Every judgement form in this chapter is explained directly in terms of the mechanical process of evaluating a closed expression to a value. That's the whole trick, and it's why this short chapter is the bedrock the rest of the book stands on — including the "[[General-Proof-Rules|General Proof Rules]]" of Chapter 5, which the book explicitly justifies *by appeal back to this semantics*, not by fiat.
+The stakes are higher than the page count suggests. It would be easy to write "$A\ set$" and lean on the reader's background notion of set from ZFC, or on "type" from whatever language they last used. ==The book explicitly refuses that move — it is one of the chapter's own key questions==: 
+
+> *what does it mean, at the semantic level, to know that $A$ is a set — and why does this explanation not presuppose any other mathematical theory?*
+
+The answer is built from something more primitive than sets: **computation**. Every judgement form in this chapter is explained directly in terms of the mechanical process of evaluating a closed expression to a value. That's the whole trick, and it's why this short chapter is the bedrock the rest of the book stands on — including the "[[General-Proof-Rules|General Proof Rules]]" of Chapter 5, which the book explicitly justifies *by appeal back to this semantics*, not by fiat.
 
 This is also, not coincidentally, the chapter that matters most for anyone building a type checker or a proof checker: judgement forms are the shared ancestor of both. A type checker answers "$a\in A$?"; a proof checker answers "is this proof of $A$ valid?" — and in a Curry–Howard system these are *the same question*, asked in the same judgement form. Everything below is written with that correspondence kept explicit, not left as a footnote.
 
@@ -24,7 +28,7 @@ This is also, not coincidentally, the chapter that matters most for anyone build
 
 Before you can say "to know $A$ is a set is to know how to form its elements," you need a prior, theory-independent notion of *element as value* — otherwise the definition is circular (sets in terms of elements, elements in terms of... sets). The book supplies this with **canonical expressions**: closed, saturated expressions that represent *values*, in the same sense that `3`, `true`, `cons(1, cons(2, nil))`, and `λx.x` are values in an ordinary programming language, while `3+5`, `if 3=4 then fst(⟨3,4⟩) else snd(⟨3,4⟩)`, and `(λx.x+1)(12+13)` are not — they still have work to do.
 
-Because every primitive constant in the language has an arity of the shape $\alpha_1\otimes\cdots\otimes\alpha_n\to 0$ (Chapter 3's arity discipline is doing real work here), the normal form of any closed saturated expression is always headed by a constant: $c(e_1,\ldots,e_n)$. That head constant alone tells you whether the expression is canonical or noncanonical — the book therefore classifies the *constants themselves* into canonical and noncanonical ones, and attaches a computation rule to every noncanonical constant.
+Because every primitive constant in the language has an arity of the shape $\alpha_1\otimes\cdots\otimes\alpha_n\to 0$ (Chapter 3's arity discipline is doing real work here), the normal form of any closed saturated expression is always headed by a constant: $c(e_1,\ldots,e_n)$. ==That head constant alone tells you whether the expression is canonical or noncanonical== — the book therefore classifies the *constants themselves* into canonical and noncanonical ones, and attaches a computation rule to every noncanonical constant.
 
 ### Evaluated versus fully evaluated
 
@@ -201,38 +205,7 @@ $$
 
 Such a list is a **context**. This is a telescope in the fully dependent sense — $A_2$ is a *family* indexed by whatever $x_1$ turns out to be, not a fixed set chosen in advance.
 
-<svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="14">
-  <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 Z" fill="#8a8a8a"/>
-    </marker>
-  </defs>
-
-  <!-- boxes -->
-  <rect x="20"  y="70" width="130" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="85"  y="95" text-anchor="middle" fill="#c8c8c8">x₁ ∈ C₁</text>
-
-  <rect x="190" y="70" width="150" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="265" y="95" text-anchor="middle" fill="#c8c8c8">x₂ ∈ C₂(x₁)</text>
-
-  <rect x="380" y="70" width="150" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="455" y="95" text-anchor="middle" fill="#c8c8c8">x₃ ∈ C₃(x₁,x₂)</text>
-
-  <rect x="570" y="70" width="110" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="625" y="95" text-anchor="middle" fill="#c8c8c8">…</text>
-
-  <!-- dependency arrows curving up from a box's type back to the vars it uses -->
-  <path d="M 265,70 Q 175,20 85,70" fill="none" stroke="#8a8a8a" stroke-width="1.3" marker-end="url(#arrowhead)"/>
-  <path d="M 455,70 Q 320,-10 85,70" fill="none" stroke="#8a8a8a" stroke-width="1.3" marker-end="url(#arrowhead)"/>
-  <path d="M 455,70 Q 370,20 265,70" fill="none" stroke="#8a8a8a" stroke-width="1.3" marker-end="url(#arrowhead)"/>
-
-  <text x="350" y="150" text-anchor="middle" fill="#9a9a9a" font-size="13">
-    each Cᵢ may depend on every variable bound before it — a genuine telescope,
-  </text>
-  <text x="350" y="170" text-anchor="middle" fill="#9a9a9a" font-size="13">
-    not just a flat list of independent declarations
-  </text>
-</svg>
+![[judgement_telescope.svg]]
 
 ### Meaning by induction on context length
 

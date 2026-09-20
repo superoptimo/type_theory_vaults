@@ -6,13 +6,13 @@ pages: "printed pp. 167–180 (PDF pp. 175–188)"
 tags: [linear-logic, logic-programming, sequent-calculus, multiset-rewriting, theorem-proving, lolli, rust]
 ---
 
-# Linear Logic Programming
+# [[Linear-Logic|Linear Logic]] Programming
 
 [[book-guidelines|↩ Back to guidelines]]
 
 ## Why this chapter is the payoff
 
-Everything up to this point in the book — the sequent calculus, focusing, the L1/L2 goal-directed proof systems for linear logic — was machinery. This chapter is where the machinery starts *doing something you'd recognize as programming*. The core trick, stated as plainly as possible: **a linear logic context is a multiset, and linear logic's proof rules for consuming formulas out of that context are, operationally, exactly the rules for consuming items out of a `Vec` you're only allowed to move out of once.** Once you see that, every example in the chapter — permuting a list, rewriting a multiset, running a theorem prover — is just "what does it mean to run a program whose state is a multiset that you can only linearly consume."
+Everything up to this point in the book — [[The-Sequent-Calculus|the sequent calculus]], focusing, the L1/L2 goal-directed proof systems for linear logic — was machinery. This chapter is where the machinery starts *doing something you'd recognize as programming*. The core trick, stated as plainly as possible: **a linear logic context is a multiset, and linear logic's proof rules for consuming formulas out of that context are, operationally, exactly the rules for consuming items out of a `Vec` you're only allowed to move out of once.** Once you see that, every example in the chapter — permuting a list, rewriting a multiset, running a theorem prover — is just "what does it mean to run a program whose state is a multiset that you can only linearly consume."
 
 This matters beyond the cute-encoding-trick level. Section 8.5 and Section 8.7 aren't warm-up exercises — they are a worked blueprint for writing a theorem prover's context-management logic as a logic program. If you're building something like a Rust verifier with an embedded prover, this chapter is close to a spec for the "hypothesis context" data structure and its manipulation rules.
 

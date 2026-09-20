@@ -16,155 +16,155 @@ Enderton wrote the book as an introductory textbook for junior-senior mathematic
 
 ## Topic List
 
-1. **Foundational Set-Theoretic Apparatus**
+1. **Foundational Set-Theoretic Apparatus** : [[Foundational-Set-Theoretic-Apparatus|Link]]
    - Sets relations functions and operations
-   - Ordered pairs and finite sequences
-   - Equivalence relations and ordering relations
-   - Countability and finiteness
-   - Trees as informal pictures of structure
-   - Zorns lemma and the axiom of choice
-   - Cardinal numbers and cardinal arithmetic
-   - The Schröder–Bernstein theorem
+   - Ordered pairs and finite sequences : [[The-Deductive-Calculus-for-First-Order-Logic|Link]]
+   - Equivalence relations and ordering relations : [[Nonstandard-Analysis|Link]]
+   - Countability and finiteness : [[Soundness-and-Completeness|Link1]], [[Models-of-Theories|Link2]]
+   - Trees as informal pictures of structure : [[Foundational-Set-Theoretic-Apparatus|Link]]
+   - Zorns lemma and the axiom of choice : [[Foundational-Set-Theoretic-Apparatus|Link]]
+   - Cardinal numbers and cardinal arithmetic : [[Foundational-Set-Theoretic-Apparatus|Link]]
+   - The Schröder–Bernstein theorem : [[Foundational-Set-Theoretic-Apparatus|Link]]
 
-2. **Sentential (Propositional) Logic**
-   - The formal language of sentential logic
-   - Well-formed formulas and unique readability
-   - Truth assignments and the extension theorem
-   - Tautological implication and tautological equivalence
-   - Truth tables as a decision procedure
+2. **Sentential (Propositional) Logic** : [[Sentential-Propositional-Logic|Link]]
+   - The formal language of sentential logic : [[Compactness-for-Sentential-Logic|Link]]
+   - Well-formed formulas and unique readability : [[First-Order-Languages|Link]]
+   - Truth assignments and the extension theorem : [[Godels-Incompleteness-Theorems|Link]]
+   - Tautological implication and tautological equivalence : [[Sentential-Propositional-Logic|Link]]
+   - Truth tables as a decision procedure : [[Sentential-Propositional-Logic|Link]]
    - The P versus NP problem as a limit on truth-table efficiency
 
-3. **Induction and Recursion on Freely Generated Sets**
-   - Sets generated from a base by operations
-   - The abstract induction principle
-   - Free generation and the recursion theorem
-   - The unique readability theorem for wffs
+3. **Induction and Recursion on Freely Generated Sets** : [[Induction-and-Recursion-on-Freely-Generated-Sets|Link]]
+   - Sets generated from a base by operations : [[Sentential-Propositional-Logic|Link]]
+   - The abstract induction principle : [[Induction-and-Recursion-on-Freely-Generated-Sets|Link]]
+   - Free generation and the recursion theorem : [[Representability-and-Recursive-Functions|Link1]], [[The-Deductive-Calculus-for-First-Order-Logic|Link2]], [[Induction-and-Recursion-on-Freely-Generated-Sets|Link3]]
+   - The unique readability theorem for wffs : [[Induction-and-Recursion-on-Freely-Generated-Sets|Link]]
 
-4. **Sentential Connectives and Their Completeness**
-   - Boolean functions and their realization by wffs
-   - Disjunctive and conjunctive normal form
-   - Complete sets of connectives
-   - Duality and the interpolation theorem
+4. **Sentential Connectives and Their Completeness** : [[Sentential-Connectives-and-Their-Completeness|Link]]
+   - Boolean functions and their realization by wffs : [[Sentential-Connectives-and-Their-Completeness|Link]]
+   - Disjunctive and conjunctive normal form : [[Skolem-Functions-and-Normal-Forms|Link1]], [[Representability-and-Recursive-Functions|Link2]]
+   - Complete sets of connectives : [[Sentential-Connectives-and-Their-Completeness|Link]]
+   - Duality and the interpolation theorem : [[Sentential-Connectives-and-Their-Completeness|Link1]], [[Interpretations-Between-Theories|Link2]]
 
-5. **Switching Circuits**
-   - Boolean functions as circuit behavior
+5. **Switching Circuits** : [[Switching-Circuits|Link]]
+   - Boolean functions as circuit behavior : [[Sentential-Connectives-and-Their-Completeness|Link]]
    - Delay and cost of a circuit
-   - Circuit minimization and available device catalogs
+   - Circuit minimization and available device catalogs : [[Switching-Circuits|Link]]
 
-6. **Compactness for Sentential Logic**
+6. **Compactness for Sentential Logic** : [[Compactness-for-Sentential-Logic|Link]]
    - Finite satisfiability versus satisfiability
    - Maximal finitely satisfiable sets
    - Zorns lemma as an alternative existence proof
 
-7. **First-Order Languages**
-   - Logical symbols versus parameters
-   - Terms atomic formulas and well-formed formulas
-   - Free and bound variable occurrence
-   - Translating English and set theory into first-order form
-   - The parsing algorithm and unique readability for terms and wffs
+7. **First-Order Languages** : [[First-Order-Languages|Link]]
+   - Logical symbols versus parameters : [[First-Order-Languages|Link]]
+   - Terms atomic formulas and well-formed formulas : [[First-Order-Languages|Link]]
+   - Free and bound variable occurrence : [[First-Order-Languages|Link]]
+   - Translating English and set theory into first-order form : [[First-Order-Languages|Link]]
+   - The parsing algorithm and unique readability for terms and wffs : [[First-Order-Languages|Link]]
 
-8. **Structures Truth and Satisfaction**
-   - Structures as interpretations of a language
-   - Satisfaction of a formula by a structure and assignment
+8. **Structures Truth and Satisfaction** : [[Structures-Truth-and-Satisfaction|Link]]
+   - Structures as interpretations of a language : [[Structures-Truth-and-Satisfaction|Link]]
+   - Satisfaction of a formula by a structure and assignment : [[Structures-Truth-and-Satisfaction|Link]]
    - The independence of satisfaction from irrelevant variable values
-   - Logical implication logical validity and logical equivalence
-   - Substitution alphabetic variants and quantifier capture
+   - Logical implication logical validity and logical equivalence : [[Structures-Truth-and-Satisfaction|Link]]
+   - Substitution alphabetic variants and quantifier capture : [[Structures-Truth-and-Satisfaction|Link]]
 
-9. **The Deductive Calculus for First-Order Logic**
-   - Logical axioms and modus ponens
-   - Deductions as finite construction sequences
-   - Generalization on constants and the deduction theorem
+9. **The Deductive Calculus for First-Order Logic** : [[The-Deductive-Calculus-for-First-Order-Logic|Link]]
+   - Logical axioms and modus ponens : [[The-Deductive-Calculus-for-First-Order-Logic|Link]]
+   - Deductions as finite construction sequences : [[The-Deductive-Calculus-for-First-Order-Logic|Link]]
+   - Generalization on constants and the deduction theorem : [[The-Deductive-Calculus-for-First-Order-Logic|Link]]
    - Substitutability of a term for a variable
 
-10. **Soundness and Completeness**
-    - The soundness theorem
+10. **Soundness and Completeness** : [[Soundness-and-Completeness|Link]]
+    - The soundness theorem : [[Soundness-and-Completeness|Link]]
     - Henkin witnesses and complete consistent extensions
-    - The completeness theorem
-    - The compactness theorem for first-order logic
-    - The Löwenheim–Skolem theorem
-    - The enumerability of validities
+    - The completeness theorem : [[Soundness-and-Completeness|Link]]
+    - The compactness theorem for first-order logic : [[Compactness-for-Sentential-Logic|Link1]], [[Soundness-and-Completeness|Link2]], [[The-Deductive-Calculus-for-First-Order-Logic|Link3]], [[Many-Sorted-and-General-Second-Order-Logic|Link4]]
+    - The Löwenheim–Skolem theorem : [[Soundness-and-Completeness|Link]]
+    - The enumerability of validities : [[Soundness-and-Completeness|Link]]
 
-11. **Models of Theories**
+11. **Models of Theories** : [[Models-of-Theories|Link]]
     - Finite models and arbitrarily large finite models
-    - Elementarily definable classes EC and ECΔ
-    - Decidability of the theory of a finite structure
-    - Elimination of quantifiers
-    - Definable sets and the diagonal argument for undefinability
-    - Elementary equivalence and elementary substructures
-    - The Tarski–Vaught test
-    - Categoricity and Łoś–Vaught test for completeness
-    - Noncreative definitions and well-definedness
+    - Elementarily definable classes EC and ECΔ : [[Models-of-Theories|Link]]
+    - Decidability of the theory of a finite structure : [[Models-of-Theories|Link]]
+    - Elimination of quantifiers : [[Models-of-Theories|Link1]], [[Weak-Fragments-of-Number-Theory|Link2]]
+    - Definable sets and the diagonal argument for undefinability : [[Models-of-Theories|Link]]
+    - Elementary equivalence and elementary substructures : [[Models-of-Theories|Link]]
+    - The Tarski–Vaught test : [[Models-of-Theories|Link]]
+    - Categoricity and Łoś–Vaught test for completeness : [[Models-of-Theories|Link]]
+    - Noncreative definitions and well-definedness : [[Models-of-Theories|Link]]
 
-12. **Interpretations Between Theories**
-    - Relative interpretability of one theory in another
-    - Translating quantifiers and defined relations across languages
-    - Faithful interpretations
+12. **Interpretations Between Theories** : [[Interpretations-Between-Theories|Link]]
+    - Relative interpretability of one theory in another : [[Interpretations-Between-Theories|Link1]], [[Soundness-and-Completeness|Link2]]
+    - Translating quantifiers and defined relations across languages : [[Structures-Truth-and-Satisfaction|Link]]
+    - Faithful interpretations : [[Interpretations-Between-Theories|Link]]
 
-13. **Nonstandard Analysis**
+13. **Nonstandard Analysis** : [[Nonstandard-Analysis|Link]]
     - Nonstandard models of the reals via compactness
-    - Infinitesimals finite and infinite elements
-    - The relation of being infinitely close
+    - Infinitesimals finite and infinite elements : [[Nonstandard-Analysis|Link]]
+    - The relation of being infinitely close : [[Nonstandard-Analysis|Link]]
     - Standard parts and transfer of properties
 
-14. **The Language and Structure of Number Theory**
-    - The intended structure N and its reducts
-    - Definability of relations in N and its reducts
-    - Numerals and naming every natural number
+14. **The Language and Structure of Number Theory** : [[The-Language-and-Structure-of-Number-Theory|Link]]
+    - The intended structure N and its reducts : [[The-Language-and-Structure-of-Number-Theory|Link]]
+    - Definability of relations in N and its reducts : [[Weak-Fragments-of-Number-Theory|Link]]
+    - Numerals and naming every natural number : [[The-Language-and-Structure-of-Number-Theory|Link]]
     - The three guiding questions decidability definability nonstandard models
 
-15. **Weak Fragments of Number Theory**
-    - Successor arithmetic and its decidability
-    - Presburger arithmetic and its decidability
-    - Elimination of quantifiers for weak theories
-    - Z-chains in nonstandard models
+15. **Weak Fragments of Number Theory** : [[Weak-Fragments-of-Number-Theory|Link]]
+    - Successor arithmetic and its decidability : [[Weak-Fragments-of-Number-Theory|Link]]
+    - Presburger arithmetic and its decidability : [[Weak-Fragments-of-Number-Theory|Link]]
+    - Elimination of quantifiers for weak theories : [[Models-of-Theories|Link]]
+    - Z-chains in nonstandard models : [[Weak-Fragments-of-Number-Theory|Link]]
 
-16. **Arithmetization of Syntax**
-    - Gödel numbering of expressions and sequences
-    - Recursively numbered languages
-    - Representable relations and functions
-    - Coding deductions as numbers
+16. **Arithmetization of Syntax** : [[Arithmetization-of-Syntax|Link]]
+    - Gödel numbering of expressions and sequences : [[Arithmetization-of-Syntax|Link]]
+    - Recursively numbered languages : [[Arithmetization-of-Syntax|Link]]
+    - Representable relations and functions : [[Representability-and-Recursive-Functions|Link]]
+    - Coding deductions as numbers : [[Arithmetization-of-Syntax|Link]]
 
-17. **Representability and Recursive Functions**
-    - Representable versus functionally representable relations
-    - Primitive recursion and minimization
-    - The catalog of representable functions
-    - Church's thesis
-    - Universal machines Kleene's normal form theorem
-    - Decidable semidecidable and recursively enumerable sets
+17. **Representability and Recursive Functions** : [[Representability-and-Recursive-Functions|Link]]
+    - Representable versus functionally representable relations : [[Representability-and-Recursive-Functions|Link]]
+    - Primitive recursion and minimization : [[Representability-and-Recursive-Functions|Link]]
+    - The catalog of representable functions : [[Representability-and-Recursive-Functions|Link]]
+    - Church's thesis : [[Representability-and-Recursive-Functions|Link]]
+    - Universal machines Kleene's normal form theorem : [[Representability-and-Recursive-Functions|Link]]
+    - Decidable semidecidable and recursively enumerable sets : [[Compactness-for-Sentential-Logic|Link1]], [[Representability-and-Recursive-Functions|Link2]]
 
-18. **Gödel's Incompleteness Theorems**
-    - The fixed-point lemma and self-reference
-    - Tarski's undefinability theorem
-    - The first Gödel incompleteness theorem
-    - The self-reference diagonalization and computability approaches compared
-    - Provability predicates and derivability conditions
-    - The second Gödel incompleteness theorem and consistency statements
-    - Sufficiently strong theories
+18. **Gödel's Incompleteness Theorems** : [[Godels-Incompleteness-Theorems|Link]]
+    - The fixed-point lemma and self-reference : [[Godels-Incompleteness-Theorems|Link]]
+    - Tarski's undefinability theorem : [[Godels-Incompleteness-Theorems|Link]]
+    - The first Gödel incompleteness theorem : [[Godels-Incompleteness-Theorems|Link]]
+    - The self-reference diagonalization and computability approaches compared : [[Godels-Incompleteness-Theorems|Link]]
+    - Provability predicates and derivability conditions : [[Godels-Incompleteness-Theorems|Link]]
+    - The second Gödel incompleteness theorem and consistency statements : [[Godels-Incompleteness-Theorems|Link]]
+    - Sufficiently strong theories : [[Godels-Incompleteness-Theorems|Link]]
 
-19. **Representing Exponentiation and the Gödel β-Function**
-    - Pairing and projection functions
-    - The Chinese remainder theorem
+19. **Representing Exponentiation and the Gödel β-Function** : [[Representing-Exponentiation-and-the-Godel-Beta-Function|Link]]
+    - Pairing and projection functions : [[Representing-Exponentiation-and-the-Godel-Beta-Function|Link]]
+    - The Chinese remainder theorem : [[Representing-Exponentiation-and-the-Godel-Beta-Function|Link]]
     - The Gödel β-function as a sequence-decoding device
-    - Strong undecidability of arithmetic with multiplication
+    - Strong undecidability of arithmetic with multiplication : [[Representing-Exponentiation-and-the-Godel-Beta-Function|Link]]
 
-20. **Second-Order Logic**
-    - Predicate and function variables and quantification over them
-    - Absolute second-order semantics
+20. **Second-Order Logic** : [[Second-Order-Logic|Link]]
+    - Predicate and function variables and quantification over them : [[Second-Order-Logic|Link]]
+    - Absolute second-order semantics : [[Second-Order-Logic|Link1]], [[Many-Sorted-and-General-Second-Order-Logic|Link2]]
     - Categoricity results for the natural numbers and the reals
-    - Failure of compactness and Löwenheim–Skolem for second-order logic
-    - Comprehension formulas
+    - Failure of compactness and Löwenheim–Skolem for second-order logic : [[Second-Order-Logic|Link]]
+    - Comprehension formulas : [[Second-Order-Logic|Link]]
 
-21. **Skolem Functions and Normal Forms**
-    - Skolem normal form for second-order formulas
-    - Skolemization and equal satisfiability
+21. **Skolem Functions and Normal Forms** : [[Skolem-Functions-and-Normal-Forms|Link]]
+    - Skolem normal form for second-order formulas : [[Skolem-Functions-and-Normal-Forms|Link]]
+    - Skolemization and equal satisfiability : [[Models-of-Theories|Link]]
     - Undecidability of universal and existential first-order sentences
 
-22. **Many-Sorted and General Second-Order Logic**
-    - Many-sorted first-order languages simulating second order
-    - Membership and evaluation parameters
-    - General structures and general models
-    - Recovery of compactness Löwenheim–Skolem and enumerability
-    - Analysis as second-order number theory and ω-models
+22. **Many-Sorted and General Second-Order Logic** : [[Many-Sorted-and-General-Second-Order-Logic|Link]]
+    - Many-sorted first-order languages simulating second order : [[Many-Sorted-and-General-Second-Order-Logic|Link]]
+    - Membership and evaluation parameters : [[Many-Sorted-and-General-Second-Order-Logic|Link]]
+    - General structures and general models : [[Many-Sorted-and-General-Second-Order-Logic|Link]]
+    - Recovery of compactness Löwenheim–Skolem and enumerability : [[Second-Order-Logic|Link]]
+    - Analysis as second-order number theory and ω-models : [[Weak-Fragments-of-Number-Theory|Link]]
 
 ---
 
@@ -203,13 +203,13 @@ Enderton wrote the book as an introductory textbook for junior-senior mathematic
 
 **Key Definitions & Concepts by Section:**
 - **1.0 Informal Remarks on Formal Languages** — the three components of a formal language (alphabet, grammar/wffs, translation to English); illustration via chemistry-lab example sentences.
-- **1.1 The Language of Sentential Logic** — sentential connective symbols $\neg, \wedge, \vee, \rightarrow, \leftrightarrow$; sentence symbols (parameters); expression, concatenation; well-formed formula (wff) defined via the formula-building operations $E_\neg, E_\wedge, E_\vee, E_\rightarrow, E_\leftrightarrow$; construction sequence; the Induction Principle for wffs.
-- **1.2 Truth Assignments** — truth values $\{F,T\}$; truth assignment $v : S \to \{F,T\}$; the extension $\bar v$ satisfying conditions 0–5 (Theorem 12A); satisfies; tautological implication ($\Gamma \models \tau$); tautology ($\models \tau$); tautological equivalence ($\sigma \mathbin{|\!=\!|} \tau$); statement of the Compactness Theorem (proved later); truth tables as a decision procedure; a selected list of standard tautologies (De Morgan's laws, contraposition, exportation, etc.).
-- **1.3 A Parsing Algorithm** — Lemma 13A (balanced parentheses) and Lemma 13B (no proper initial segment of a wff is a wff); the four-step parsing algorithm and its correctness (unique readability, informally); Polish notation; conventions for omitting parentheses.
-- **1.4 Induction and Recursion** — sets generated from a base $B$ by functions $f,g$ (defined "top down," via inductive sets, and "bottom up," via construction sequences, shown equivalent); the general Induction Principle; freely generated sets; the Recursion Theorem, and its proof via the union of "acceptable" partial functions; the Unique Readability Theorem restated as: the wffs are freely generated from the sentence symbols by the five formula-building operations.
-- **1.5 Sentential Connectives** — Boolean function; realizing a Boolean function by a wff; disjunctive/conjunctive normal form; complete set of connectives; examples of complete and incomplete sets ($\{\wedge,\vee,\neg\}$, Sheffer stroke $\mid$, NOR $\downarrow$); duality; the interpolation theorem.
-- **1.6 Switching Circuits** — Boolean function realized by a device/circuit; AND, OR, NOT gates; delay (depth) of a circuit; circuit minimization; relay circuits and bridge circuits; literal, implicant, prime implicant.
-- **1.7 Compactness and Effectiveness** — finitely satisfiable set; proof of the Compactness Theorem via a maximal finitely satisfiable extension $\Gamma^*$ and the truth assignment it induces; discussion of effectiveness and decidability of the set of tautologies.
+- **1.1 The Language of Sentential Logic** — sentential connective symbols $\neg, \wedge, \vee, \rightarrow, \leftrightarrow$; sentence symbols (parameters); expression, concatenation; well-formed formula (wff) defined via the formula-building operations $E_\neg, E_\wedge, E_\vee, E_\rightarrow, E_\leftrightarrow$; construction sequence; the Induction Principle for wffs. : [[Compactness-for-Sentential-Logic|Link]]
+- **1.2 Truth Assignments** — truth values $\{F,T\}$; truth assignment $v : S \to \{F,T\}$; the extension $\bar v$ satisfying conditions 0–5 (Theorem 12A); satisfies; tautological implication ($\Gamma \models \tau$); tautology ($\models \tau$); tautological equivalence ($\sigma \mathbin{|\!=\!|} \tau$); statement of the Compactness Theorem (proved later); truth tables as a decision procedure; a selected list of standard tautologies (De Morgan's laws, contraposition, exportation, etc.). : [[Compactness-for-Sentential-Logic|Link1]], [[Sentential-Propositional-Logic|Link2]]
+- **1.3 A Parsing Algorithm** — Lemma 13A (balanced parentheses) and Lemma 13B (no proper initial segment of a wff is a wff); the four-step parsing algorithm and its correctness (unique readability, informally); Polish notation; conventions for omitting parentheses. : [[First-Order-Languages|Link1]], [[Sentential-Propositional-Logic|Link2]]
+- **1.4 Induction and Recursion** — sets generated from a base $B$ by functions $f,g$ (defined "top down," via inductive sets, and "bottom up," via construction sequences, shown equivalent); the general Induction Principle; freely generated sets; the Recursion Theorem, and its proof via the union of "acceptable" partial functions; the Unique Readability Theorem restated as: the wffs are freely generated from the sentence symbols by the five formula-building operations. : [[Induction-and-Recursion-on-Freely-Generated-Sets|Link]]
+- **1.5 Sentential Connectives** — Boolean function; realizing a Boolean function by a wff; disjunctive/conjunctive normal form; complete set of connectives; examples of complete and incomplete sets ($\{\wedge,\vee,\neg\}$, Sheffer stroke $\mid$, NOR $\downarrow$); duality; the interpolation theorem. : [[Sentential-Connectives-and-Their-Completeness|Link]]
+- **1.6 Switching Circuits** — Boolean function realized by a device/circuit; AND, OR, NOT gates; delay (depth) of a circuit; circuit minimization; relay circuits and bridge circuits; literal, implicant, prime implicant. : [[Switching-Circuits|Link]]
+- **1.7 Compactness and Effectiveness** — finitely satisfiable set; proof of the Compactness Theorem via a maximal finitely satisfiable extension $\Gamma^*$ and the truth assignment it induces; discussion of effectiveness and decidability of the set of tautologies. : [[Nonstandard-Analysis|Link1]], [[Compactness-for-Sentential-Logic|Link2]]
 
 **Key Questions:**
 1. Why is the existence of a unique extension $\bar v$ of a truth assignment $v$ not obvious, and what two facts (about freely generated sets) does its proof actually rest on?
@@ -224,14 +224,14 @@ Enderton wrote the book as an introductory textbook for junior-senior mathematic
 
 **Key Definitions & Concepts by Section:**
 - **2.0 Preliminary Remarks** — motivation for moving beyond sentential logic; informal translation examples (number theory, set theory) motivating quantifiers and predicate/function symbols.
-- **2.1 First-Order Languages** — logical symbols (parentheses, $\rightarrow, \neg$, variables $v_1,v_2,\dots$, optional equality $=$) versus parameters (quantifier symbol $\forall$, predicate symbols, constant symbols, function symbols); term and wff defined inductively; free versus bound variable occurrence; example languages (pure predicate, set theory, elementary number theory).
+- **2.1 First-Order Languages** — logical symbols (parentheses, $\rightarrow, \neg$, variables $v_1,v_2,\dots$, optional equality $=$) versus parameters (quantifier symbol $\forall$, predicate symbols, constant symbols, function symbols); term and wff defined inductively; free versus bound variable occurrence; example languages (pure predicate, set theory, elementary number theory). : [[First-Order-Languages|Link]]
 - **2.2 Truth and Models** — structure $\mathfrak{A}$ assigning a universe $|\mathfrak{A}|$ and interpretations to parameters; satisfaction $\models_{\mathfrak{A}} \varphi[s]$ defined by recursion on terms, atomic formulas, and connectives/quantifiers; Theorem 22A (satisfaction depends only on free variables); logical implication $\Gamma \models \tau$, validity, logical equivalence.
-- **2.3 A Parsing Algorithm** — unique readability for terms and wffs of first-order languages, extending the Chapter 1 result.
-- **2.4 A Deductive Calculus** — deduction as proof-substitute; logical axioms $\Lambda$ in six groups (tautologies; $\forall x\,\alpha \rightarrow \alpha^t_x$ with substitutability; distribution of $\forall$ over $\rightarrow$; vacuous quantification; equality axioms $x=x$ and substitution of equals); modus ponens as sole rule of inference; deduction $\Gamma \vdash \varphi$; substitutable term $t$ for $x$ in $\alpha$, guarding against quantifier capture.
-- **2.5 Soundness and Completeness Theorems** — Soundness Theorem ($\Gamma \vdash \varphi \Rightarrow \Gamma \models \varphi$) via validity of logical axioms and the Substitution Lemma; consistency; the Completeness Theorem ($\Gamma \models \varphi \Rightarrow \Gamma \vdash \varphi$) via Henkin's method of adding witnessing constants and extending to a complete consistent set; derived Compactness Theorem, Löwenheim–Skolem Theorem, and Enumerability Theorem for first-order logic.
-- **2.6 Models of Theories** — Theorem 26A (arbitrarily large finite models imply an infinite model, via compactness); elementary class $\mathrm{EC}$ and $\mathrm{EC}_\Delta$; theory of a structure $\mathrm{Th}\,\mathfrak{A}$; decidability of finite structures' theories; elimination of quantifiers; elementary equivalence and elementary substructure; the Tarski–Vaught test; noncreative definitions and well-definedness (Theorem 27A).
-- **2.7 Interpretations Between Theories** — relative strength of theories in different languages; translating quantifiers and defined relations (e.g. $(\mathbb{Z};+,\cdot)$ interpreting $(\mathbb{N};0,S)$ via Lagrange's four-square theorem); faithful interpretation.
-- **2.8 Nonstandard Analysis** — nonstandard model $^*\mathbb{R}$ of the reals obtained via compactness; finite elements $F$, infinitesimals $I$; $F$ a subring, $I$ an ideal in $F$; infinitely close ($x \simeq y$); Theorem 28D — every finite $x$ is infinitely close to a unique standard real (its standard part).
+- **2.3 A Parsing Algorithm** — unique readability for terms and wffs of first-order languages, extending the Chapter 1 result. : [[First-Order-Languages|Link1]], [[Sentential-Propositional-Logic|Link2]]
+- **2.4 A Deductive Calculus** — deduction as proof-substitute; logical axioms $\Lambda$ in six groups (tautologies; $\forall x\,\alpha \rightarrow \alpha^t_x$ with substitutability; distribution of $\forall$ over $\rightarrow$; vacuous quantification; equality axioms $x=x$ and substitution of equals); modus ponens as sole rule of inference; deduction $\Gamma \vdash \varphi$; substitutable term $t$ for $x$ in $\alpha$, guarding against quantifier capture. : [[The-Deductive-Calculus-for-First-Order-Logic|Link]]
+- **2.5 Soundness and Completeness Theorems** — Soundness Theorem ($\Gamma \vdash \varphi \Rightarrow \Gamma \models \varphi$) via validity of logical axioms and the Substitution Lemma; consistency; the Completeness Theorem ($\Gamma \models \varphi \Rightarrow \Gamma \vdash \varphi$) via Henkin's method of adding witnessing constants and extending to a complete consistent set; derived Compactness Theorem, Löwenheim–Skolem Theorem, and Enumerability Theorem for first-order logic. : [[Soundness-and-Completeness|Link1]], [[Godels-Incompleteness-Theorems|Link2]]
+- **2.6 Models of Theories** — Theorem 26A (arbitrarily large finite models imply an infinite model, via compactness); elementary class $\mathrm{EC}$ and $\mathrm{EC}_\Delta$; theory of a structure $\mathrm{Th}\,\mathfrak{A}$; decidability of finite structures' theories; elimination of quantifiers; elementary equivalence and elementary substructure; the Tarski–Vaught test; noncreative definitions and well-definedness (Theorem 27A). : [[Models-of-Theories|Link]]
+- **2.7 Interpretations Between Theories** — relative strength of theories in different languages; translating quantifiers and defined relations (e.g. $(\mathbb{Z};+,\cdot)$ interpreting $(\mathbb{N};0,S)$ via Lagrange's four-square theorem); faithful interpretation. : [[Interpretations-Between-Theories|Link]]
+- **2.8 Nonstandard Analysis** — nonstandard model $^*\mathbb{R}$ of the reals obtained via compactness; finite elements $F$, infinitesimals $I$; $F$ a subring, $I$ an ideal in $F$; infinitely close ($x \simeq y$); Theorem 28D — every finite $x$ is infinitely close to a unique standard real (its standard part). : [[Nonstandard-Analysis|Link]]
 
 **Key Questions:**
 1. Why does the Soundness Theorem reduce entirely to showing that every logical axiom is valid and that modus ponens preserves logical implication — and where exactly does the Substitution Lemma enter that argument?
@@ -245,15 +245,15 @@ Enderton wrote the book as an introductory textbook for junior-senior mathematic
 **Summary:** Enderton develops the arithmetization of syntax for the language of number theory, uses it to build self-referential sentences via the fixed-point lemma, and derives Tarski's undefinability theorem, Gödel's first and second incompleteness theorems, and the undecidability of arithmetic — presenting the results from three complementary angles (self-reference, diagonalization, and computability) and connecting them to the theory of recursive functions.
 
 **Key Definitions & Concepts by Section:**
-- **3.0 Number Theory** — the intended structure $\mathfrak{N} = (\mathbb{N}; 0, S, <, +, \cdot, E)$ and its reducts $\mathfrak{N}_S, \mathfrak{N}_L, \mathfrak{N}_A, \mathfrak{N}_M$; numerals $S^k0$; Gödel number $\sharp\alpha$; preview of the self-reference, diagonalization, and computability approaches to incompleteness; Theorem 30A and Corollary 30B (undefinability of $\mathrm{Th}\,\mathfrak{N}$'s Gödel-number set); Theorem 30C/30D previewing undecidability and non-enumerability of $\mathrm{Th}\,\mathfrak{N}$.
-- **3.1 Natural Numbers with Successor** — the weak structure $\mathfrak{N}_S = (\mathbb{N};0,S)$; decidability of $\mathrm{Th}\,\mathfrak{N}_S$; Z-chains in nonstandard models.
-- **3.2 Other Reducts of Number Theory** — $\mathfrak{N}_L$ (adding $<$) and $\mathfrak{N}_A$ (adding $+$, i.e. Presburger arithmetic); decidability results and quantifier elimination for these weaker theories.
-- **3.3 A Subtheory of Number Theory** — axiom set $A_E$; primitive recursion, minimization; catalog of representable functions; representable and functionally representable relations/functions.
-- **3.4 Arithmetization of Syntax** — Gödel numbering $h$ of symbols and $\sharp$ of expressions; recursively numbered language; showing syntactic relations (e.g. "is the Gödel number of a term/wff/deduction") are representable in $\mathrm{Cn}\,A_E$.
-- **3.5 Incompleteness and Undecidability** — the Fixed-Point Lemma ($A_E \vdash \sigma \leftrightarrow \beta(S^{\sharp\sigma}0)$); Tarski's Undefinability Theorem (1933); Corollary 35A (undecidability of $\mathrm{Th}\,\mathfrak{N}$); Gödel's (First) Incompleteness Theorem (1931); Lemma 35B (recursiveness preserved under adding axioms); the Strong Undecidability of $\mathrm{Cn}\,A_E$.
-- **3.6 Recursive Functions** — Church's thesis; closure of recursive functions under composition and minimization; the normal form theorem, universal relation $T_1$/function $U$; decidable, semidecidable, and recursively enumerable sets.
-- **3.7 Second Incompleteness Theorem** — the provability predicate $\mathrm{Prb}_T\sigma$; Lemma 37A (reflection); sufficiently strong theories and the three derivability conditions; the consistency sentence $\mathrm{Cons}\,T$; the Second Incompleteness Theorem — a sufficiently strong consistent theory cannot prove its own consistency.
-- **3.8 Representing Exponentiation** — representability of exponentiation in $\mathrm{Cn}\,A_M$; the pairing function $J$ and projections $K,L$; the Gödel $\beta$-function and the Chinese Remainder Theorem (Lemma 38A/38B); Theorem 38C; summary Table X comparing decidability/definability across the reducts of $\mathfrak{N}$.
+- **3.0 Number Theory** — the intended structure $\mathfrak{N} = (\mathbb{N}; 0, S, <, +, \cdot, E)$ and its reducts $\mathfrak{N}_S, \mathfrak{N}_L, \mathfrak{N}_A, \mathfrak{N}_M$; numerals $S^k0$; Gödel number $\sharp\alpha$; preview of the self-reference, diagonalization, and computability approaches to incompleteness; Theorem 30A and Corollary 30B (undefinability of $\mathrm{Th}\,\mathfrak{N}$'s Gödel-number set); Theorem 30C/30D previewing undecidability and non-enumerability of $\mathrm{Th}\,\mathfrak{N}$. : [[The-Language-and-Structure-of-Number-Theory|Link1]], [[Weak-Fragments-of-Number-Theory|Link2]]
+- **3.1 Natural Numbers with Successor** — the weak structure $\mathfrak{N}_S = (\mathbb{N};0,S)$; decidability of $\mathrm{Th}\,\mathfrak{N}_S$; Z-chains in nonstandard models. : [[The-Language-and-Structure-of-Number-Theory|Link]]
+- **3.2 Other Reducts of Number Theory** — $\mathfrak{N}_L$ (adding $<$) and $\mathfrak{N}_A$ (adding $+$, i.e. Presburger arithmetic); decidability results and quantifier elimination for these weaker theories. : [[Weak-Fragments-of-Number-Theory|Link1]], [[The-Language-and-Structure-of-Number-Theory|Link2]]
+- **3.3 A Subtheory of Number Theory** — axiom set $A_E$; primitive recursion, minimization; catalog of representable functions; representable and functionally representable relations/functions. : [[Weak-Fragments-of-Number-Theory|Link1]], [[The-Language-and-Structure-of-Number-Theory|Link2]]
+- **3.4 Arithmetization of Syntax** — Gödel numbering $h$ of symbols and $\sharp$ of expressions; recursively numbered language; showing syntactic relations (e.g. "is the Gödel number of a term/wff/deduction") are representable in $\mathrm{Cn}\,A_E$. : [[Arithmetization-of-Syntax|Link]]
+- **3.5 Incompleteness and Undecidability** — the Fixed-Point Lemma ($A_E \vdash \sigma \leftrightarrow \beta(S^{\sharp\sigma}0)$); Tarski's Undefinability Theorem (1933); Corollary 35A (undecidability of $\mathrm{Th}\,\mathfrak{N}$); Gödel's (First) Incompleteness Theorem (1931); Lemma 35B (recursiveness preserved under adding axioms); the Strong Undecidability of $\mathrm{Cn}\,A_E$. : [[Sentential-Connectives-and-Their-Completeness|Link1]], [[Skolem-Functions-and-Normal-Forms|Link2]]
+- **3.6 Recursive Functions** — Church's thesis; closure of recursive functions under composition and minimization; the normal form theorem, universal relation $T_1$/function $U$; decidable, semidecidable, and recursively enumerable sets. : [[Representability-and-Recursive-Functions|Link]]
+- **3.7 Second Incompleteness Theorem** — the provability predicate $\mathrm{Prb}_T\sigma$; Lemma 37A (reflection); sufficiently strong theories and the three derivability conditions; the consistency sentence $\mathrm{Cons}\,T$; the Second Incompleteness Theorem — a sufficiently strong consistent theory cannot prove its own consistency. : [[Godels-Incompleteness-Theorems|Link]]
+- **3.8 Representing Exponentiation** — representability of exponentiation in $\mathrm{Cn}\,A_M$; the pairing function $J$ and projections $K,L$; the Gödel $\beta$-function and the Chinese Remainder Theorem (Lemma 38A/38B); Theorem 38C; summary Table X comparing decidability/definability across the reducts of $\mathfrak{N}$. : [[Representing-Exponentiation-and-the-Godel-Beta-Function|Link]]
 
 **Key Questions:**
 1. How does the Fixed-Point Lemma let one construct a sentence $\sigma$ that "talks about itself," and why is this not literal self-reference but rather an artifact of Gödel numbering plus representability?
@@ -267,10 +267,10 @@ Enderton wrote the book as an introductory textbook for junior-senior mathematic
 **Summary:** The closing chapter studies second-order logic, which gains expressive power (categorical characterizations of $\mathbb{N}$ and $\mathbb{R}$) by quantifying over predicate and function variables, at the cost of losing compactness, the Löwenheim–Skolem theorem, and effective enumerability of validity under the standard ("absolute") semantics; an alternative many-sorted ("general") semantics recovers these metatheorems by giving up full categoricity.
 
 **Key Definitions & Concepts by Section:**
-- **4.1 Second-Order Languages** — predicate and function variables $X_i^n, F_i^n$; individual variables; extended satisfaction clauses for $\forall X^n\varphi$ and $\forall F^n\varphi$; categorical second-order characterizations of $(\mathbb{N};0,S)$ via the Peano induction postulate, and of the real ordered field via the least-upper-bound sentence; relation/function comprehension formulas; Theorem 41A (failure of compactness); Theorem 41B (a sentence true exactly in sets of cardinality $2^{\aleph_0}$); Theorem 41C (non-definability, hence non-enumerability, of second-order validity).
-- **4.2 Skolem Functions** — Skolem function for a formula $\forall x \exists y\, \varphi$ in a structure; the Skolem Normal Form Theorem (any first-order formula is logically equivalent to a second-order $\exists^*\forall^*$ formula); Corollary 42A (reduction to equisatisfiable universal formulas via Skolemization); Corollary 42B (undecidability of satisfiability for universal, and validity for existential, first-order sentences).
-- **4.3 Many-Sorted Logic** — recasting second-order logic as a many-sorted first-order language with sorts for individuals, $n$-place predicates, and $n$-place functions; membership parameters $\varepsilon^n$ and evaluation parameters $E^n$; Theorem 44A relating many-sorted structures to genuine second-order structures via a homomorphism.
-- **4.4 General Structures** — general pre-structure (relation and function universes added to an ordinary structure) and general structure (one satisfying all comprehension sentences); satisfaction $\models^G_{\mathfrak{A}}$ via the many-sorted translation; recovered Löwenheim–Skolem, Compactness, and Enumerability Theorems for general second-order logic; absolute versus general second-order semantics compared; models of analysis and $\omega$-models.
+- **4.1 Second-Order Languages** — predicate and function variables $X_i^n, F_i^n$; individual variables; extended satisfaction clauses for $\forall X^n\varphi$ and $\forall F^n\varphi$; categorical second-order characterizations of $(\mathbb{N};0,S)$ via the Peano induction postulate, and of the real ordered field via the least-upper-bound sentence; relation/function comprehension formulas; Theorem 41A (failure of compactness); Theorem 41B (a sentence true exactly in sets of cardinality $2^{\aleph_0}$); Theorem 41C (non-definability, hence non-enumerability, of second-order validity). : [[First-Order-Languages|Link1]], [[Second-Order-Logic|Link2]]
+- **4.2 Skolem Functions** — Skolem function for a formula $\forall x \exists y\, \varphi$ in a structure; the Skolem Normal Form Theorem (any first-order formula is logically equivalent to a second-order $\exists^*\forall^*$ formula); Corollary 42A (reduction to equisatisfiable universal formulas via Skolemization); Corollary 42B (undecidability of satisfiability for universal, and validity for existential, first-order sentences). : [[Skolem-Functions-and-Normal-Forms|Link]]
+- **4.3 Many-Sorted Logic** — recasting second-order logic as a many-sorted first-order language with sorts for individuals, $n$-place predicates, and $n$-place functions; membership parameters $\varepsilon^n$ and evaluation parameters $E^n$; Theorem 44A relating many-sorted structures to genuine second-order structures via a homomorphism. : [[Many-Sorted-and-General-Second-Order-Logic|Link]]
+- **4.4 General Structures** — general pre-structure (relation and function universes added to an ordinary structure) and general structure (one satisfying all comprehension sentences); satisfaction $\models^G_{\mathfrak{A}}$ via the many-sorted translation; recovered Löwenheim–Skolem, Compactness, and Enumerability Theorems for general second-order logic; absolute versus general second-order semantics compared; models of analysis and $\omega$-models. : [[Many-Sorted-and-General-Second-Order-Logic|Link]]
 
 **Key Questions:**
 1. Why does the very expressiveness that lets second-order logic categorically characterize $\mathbb{N}$ and $\mathbb{R}$ simultaneously force the failure of compactness and the Löwenheim–Skolem theorem for its (absolute) semantics?

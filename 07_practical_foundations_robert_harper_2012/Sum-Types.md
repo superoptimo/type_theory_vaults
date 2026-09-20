@@ -88,7 +88,7 @@ Case analysis peels off the tag, substitutes the payload into the matching branc
 
 Harper closes the section with the expected coherence result, proved the same way as every other [[Dynamic-Classification#Safety|safety]] theorem in the book — preservation by induction on the dynamics rules, progress by induction on the [[Symbols-and-Dynamic-Binding#Statics|statics]] rules:
 
-> **Theorem 12.1 (Safety).**
+> **Theorem 12.1 ([[State-and-Assignables#Safety|Safety]]).**
 > 1. If $e:\tau$ and $e\mapsto e'$, then $e':\tau$.
 > 2. If $e:\tau$, then either $e\ \mathsf{val}$ or $e \mapsto e'$ for some $e'$.
 

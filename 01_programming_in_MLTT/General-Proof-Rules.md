@@ -87,36 +87,7 @@ and the book spells out three side conditions this rule actually carries (p. 36)
 
 The conclusion's context $[\Gamma, \Delta]$ is then $\Gamma$ followed by whichever assumptions of $\Delta$ don't already occur in $\Gamma$ — a genuine context-merge operation, not string concatenation.
 
-<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Short form versus full form of the Pi-formation rule, showing context merging">
-  <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 Z" fill="#5b8dbe" />
-    </marker>
-  </defs>
-  <text x="20" y="28" font-family="sans-serif" font-size="15" fill="#7d8590">Short form (as usually printed in the book)</text>
-  <text x="150" y="66" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#7d8590">A set</text>
-  <text x="330" y="66" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#7d8590">B(x) set [x &#8712; A]</text>
-  <line x1="110" y1="84" x2="620" y2="84" stroke="#7d8590" stroke-width="1.5" />
-  <text x="300" y="108" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#7d8590">&#928;(A, B) set</text>
-
-  <line x1="365" y1="126" x2="365" y2="164" stroke="#5b8dbe" stroke-width="1.5" marker-end="url(#arrowhead)" />
-  <text x="380" y="150" font-family="sans-serif" font-size="12" fill="#5b8dbe">expose the discharged assumption lists</text>
-
-  <text x="20" y="198" font-family="sans-serif" font-size="15" fill="#7d8590">Full form (what a checker actually threads through)</text>
-  <text x="110" y="238" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#7d8590">A set [&#915;]</text>
-  <text x="330" y="238" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#7d8590">B(x) set [&#916;, x &#8712; A]</text>
-  <line x1="90" y1="256" x2="650" y2="256" stroke="#7d8590" stroke-width="1.5" />
-  <text x="270" y="282" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#7d8590">&#928;(A, B) set [&#915;, &#916;]</text>
-
-  <line x1="110" y1="296" x2="110" y2="326" stroke="#5b8dbe" stroke-width="1" stroke-dasharray="3,3" />
-  <text x="20" y="342" font-family="sans-serif" font-size="12" fill="#5b8dbe">&#915; must not already bind x</text>
-
-  <line x1="470" y1="296" x2="470" y2="326" stroke="#5b8dbe" stroke-width="1" stroke-dasharray="3,3" />
-  <text x="330" y="342" font-family="sans-serif" font-size="12" fill="#5b8dbe">shared vars in &#915;, &#916; need identical (defeq) types</text>
-
-  <line x1="270" y1="288" x2="270" y2="368" stroke="#5b8dbe" stroke-width="1" stroke-dasharray="3,3" />
-  <text x="60" y="384" font-family="sans-serif" font-size="12" fill="#5b8dbe">[&#915;, &#916;] = &#915; followed by &#916;'s assumptions not already in &#915;</text>
-</svg>
+![[pi_formation_rules.svg]]
 
 This is not academic pedantry. If you implement the "short form" literally and skip the well-formedness side conditions it silently assumes — skip checking that a premise of the form $a \in A$ carries an implicit obligation that $A\ set$ already holds, skip merging contexts correctly — you get a checker that *accepts ill-formed derivations*. The book itself flags this elision explicitly: "if a rule has a premise of the form $a \in A$, we will often exclude the premise $A\ set$… That these premises are required follows from the explanation of $a \in A$…" (p. 36). A Rust verifier that mirrors the printed short forms without reconstructing these implicit checks is not a faithful implementation of the system — it's a faithful implementation of the book's *typography*.
 

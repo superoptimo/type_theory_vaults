@@ -307,7 +307,7 @@ e0 = make_tau_bad()
 
 ## 23.4 Safety: why subsumption complicates the safety proof
 
-Harper closes the chapter by sketching, for product-type subtyping specifically, why proving type safety is more delicate once subsumption is in the language. The core issue: the rule of subsumption means **the static type of an expression only partially determines its runtime shape** — an expression typed at $\tau$ might, at runtime, actually be carrying extra structure belonging to some unknown subtype $\tau'$. Preservation and progress proofs, and the auxiliary **inversion lemmas** they lean on, all have to be restated to account for this.
+Harper closes the chapter by sketching, for product-type subtyping specifically, why proving type [[State-and-Assignables#Safety|safety]] is more delicate once subsumption is in the language. The core issue: the rule of subsumption means **the static type of an expression only partially determines its runtime shape** — an expression typed at $\tau$ might, at runtime, actually be carrying extra structure belonging to some unknown subtype $\tau'$. Preservation and progress proofs, and the auxiliary **inversion lemmas** they lean on, all have to be restated to account for this.
 
 Concretely, for [[Product-Types|product types]] with subtyping given by Rules (23.3) and (23.5):
 

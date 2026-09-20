@@ -1,0 +1,35 @@
+<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, monospace" font-size="14">
+  <style>
+    .lbl { fill: #4a4a4a; }
+    .box { fill: none; stroke: #6b6b6b; stroke-width: 1.5; }
+    .arrow { stroke: #6b6b6b; stroke-width: 1.5; marker-end: url(#ah); }
+    .hi { fill: #2f6f4f; font-weight: bold; }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#6b6b6b"/>
+    </marker>
+  </defs>
+  <text x="20" y="24" class="hi">principal branch: A0 → A1 → … → An</text>
+
+  <rect x="20" y="50" width="90" height="34" class="box"/>
+  <text x="35" y="72" class="lbl">A0 (hyp)</text>
+  <line x1="110" y1="67" x2="150" y2="67" class="arrow"/>
+
+  <rect x="150" y="50" width="120" height="34" class="box"/>
+  <text x="160" y="72" class="lbl">A1 (elim concl.)</text>
+  <line x1="270" y1="67" x2="310" y2="67" class="arrow"/>
+
+  <rect x="310" y="50" width="30" height="34" class="box"/>
+  <text x="317" y="72" class="lbl">…</text>
+  <line x1="340" y1="67" x2="380" y2="67" class="arrow"/>
+
+  <rect x="380" y="50" width="150" height="34" class="box"/>
+  <text x="390" y="72" class="lbl">An (conclusion)</text>
+
+  <text x="20" y="130" class="lbl">Each A_i is the PRINCIPAL PREMISE of the elimination producing A_(i+1).</text>
+  <text x="20" y="154" class="lbl">A0 is an undischarged hypothesis — so An is a subformula of A0.</text>
+  <text x="20" y="190" class="lbl">Case 3 of the proof: above A0's elimination chain there is never</text>
+  <text x="20" y="212" class="lbl">an introduction immediately feeding the next elimination — that</text>
+  <text x="20" y="234" class="lbl">configuration would itself be a redex, contradicting normality.</text>
+</svg>

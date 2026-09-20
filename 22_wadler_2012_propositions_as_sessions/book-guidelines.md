@@ -16,84 +16,84 @@ Wadler seeks to give concurrent/session-typed programming as firm a logical foun
 
 ## Topic List
 
-1. **[[The-Curry-Howard-Correspondence-for-Concurrency|The Curry-Howard Correspondence for Concurrency]]**
-   - [[The-Curry-Howard-Correspondence-for-Concurrency|Propositions as types and proofs as programs]]
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|Propositions as session types and proofs as processes]]
-   - [[Commuting-Conversions-and-Cut-Elimination|Cut elimination as communication]]
-   - [[The-Curry-Howard-Correspondence-for-Concurrency|Deadlock freedom as a consequence of proof normalization]]
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|Prior translations from linear logic to process calculi]]
+1. **The Curry-Howard Correspondence for Concurrency** : [[The-Curry-Howard-Correspondence-for-Concurrency|Link]]
+   - Propositions as types and proofs as programs : [[The-Curry-Howard-Correspondence-for-Concurrency|Link]]
+   - Propositions as session types and proofs as processes : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
+   - Cut elimination as communication : [[Commuting-Conversions-and-Cut-Elimination|Link1]], [[Output-and-Input-via-the-Multiplicatives|Link2]], [[Polymorphism-in-CP|Link3]]
+   - Deadlock freedom as a consequence of proof normalization : [[The-Curry-Howard-Correspondence-for-Concurrency|Link]]
+   - Prior translations from linear logic to process calculi : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
 
-2. **[[The-Twist-Reinterpreting-the-Linear-Connectives|The Twist Reinterpreting the Linear Connectives]]**
+2. **The Twist Reinterpreting the Linear Connectives** : [[The-Twist-Reinterpreting-the-Linear-Connectives|Link]]
    - The pairing interpretation of tensor and par
-   - [[Related-Work-and-Extensions-to-CP|The session-typed interpretation of tensor and par]]
+   - The session-typed interpretation of tensor and par : [[Related-Work-and-Extensions-to-CP|Link1]], [[GV-a-Session-Typed-Functional-Language|Link2]]
    - Channel identity preserved across hypothesis and conclusion
    - Why the twist yields an intuitive reading of par
    - Intuitionistic versus classical presentations of the twist
 
-3. **[[CP-a-Classical-Linear-Logic-Process-Calculus|CP a Classical Linear Logic Process Calculus]]**
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|The grammar of propositions as session types]]
+3. **CP a Classical Linear Logic Process Calculus** : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
+   - The grammar of propositions as session types : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
    - Duality of propositions
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|The grammar of processes]]
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|The axiom rule as forwarding]]
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|The cut rule as parallel composition]]
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|Structural cut equivalences for swap and associativity]]
+   - The grammar of processes : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
+   - The axiom rule as forwarding : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
+   - The cut rule as parallel composition : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
+   - Structural cut equivalences for swap and associativity : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
 
-4. **[[Output-and-Input-via-the-Multiplicatives|Output and Input via the Multiplicatives]]**
-   - [[Output-and-Input-via-the-Multiplicatives|The tensor rule for output]]
-   - [[Output-and-Input-via-the-Multiplicatives|The par rule for input]]
-   - [[Commuting-Conversions-and-Cut-Elimination|Principal cut reduction between output and input]]
-   - [[Output-and-Input-via-the-Multiplicatives|The multiplicative units]]
+4. **Output and Input via the Multiplicatives** : [[Output-and-Input-via-the-Multiplicatives|Link]]
+   - The tensor rule for output : [[Output-and-Input-via-the-Multiplicatives|Link]]
+   - The par rule for input : [[Output-and-Input-via-the-Multiplicatives|Link]]
+   - Principal cut reduction between output and input : [[Commuting-Conversions-and-Cut-Elimination|Link1]], [[Output-and-Input-via-the-Multiplicatives|Link2]], [[Selection-and-Choice-via-the-Additives|Link3]]
+   - The multiplicative units : [[Output-and-Input-via-the-Multiplicatives|Link]]
    - A buying and selling protocol example
 
-5. **[[Selection-and-Choice-via-the-Additives|Selection and Choice via the Additives]]**
-   - [[Selection-and-Choice-via-the-Additives|The plus rule for selection]]
-   - [[Selection-and-Choice-via-the-Additives|The with rule for choice]]
-   - [[Output-and-Input-via-the-Multiplicatives|Principal cut reduction between selection and choice]]
-   - [[Selection-and-Choice-via-the-Additives|The additive units]]
-   - [[Selection-and-Choice-via-the-Additives|Combining services with selection and choice]]
+5. **Selection and Choice via the Additives** : [[Selection-and-Choice-via-the-Additives|Link]]
+   - The plus rule for selection : [[Selection-and-Choice-via-the-Additives|Link]]
+   - The with rule for choice : [[Selection-and-Choice-via-the-Additives|Link]]
+   - Principal cut reduction between selection and choice : [[Output-and-Input-via-the-Multiplicatives|Link1]], [[Commuting-Conversions-and-Cut-Elimination|Link2]], [[Selection-and-Choice-via-the-Additives|Link3]]
+   - The additive units : [[Selection-and-Choice-via-the-Additives|Link]]
+   - Combining services with selection and choice : [[Selection-and-Choice-via-the-Additives|Link]]
 
-6. **[[Servers-and-Clients-via-the-Exponentials|Servers and Clients via the Exponentials]]**
-   - [[Servers-and-Clients-via-the-Exponentials|Server accept and client request]]
-   - [[Servers-and-Clients-via-the-Exponentials|Weakening for no clients]]
-   - [[Servers-and-Clients-via-the-Exponentials|Contraction for multiple clients]]
-   - [[Output-and-Input-via-the-Multiplicatives|Principal cut reductions for exponentials]]
-   - [[Servers-and-Clients-via-the-Exponentials|A replicated server serving multiple clients]]
+6. **Servers and Clients via the Exponentials** : [[Servers-and-Clients-via-the-Exponentials|Link]]
+   - Server accept and client request : [[Servers-and-Clients-via-the-Exponentials|Link]]
+   - Weakening for no clients : [[Servers-and-Clients-via-the-Exponentials|Link]]
+   - Contraction for multiple clients : [[Servers-and-Clients-via-the-Exponentials|Link]]
+   - Principal cut reductions for exponentials : [[Output-and-Input-via-the-Multiplicatives|Link1]], [[Commuting-Conversions-and-Cut-Elimination|Link2]]
+   - A replicated server serving multiple clients : [[Servers-and-Clients-via-the-Exponentials|Link]]
 
-7. **[[Polymorphism-in-CP|Polymorphism in CP]]**
+7. **Polymorphism in CP** : [[Polymorphism-in-CP|Link]]
    - Existential quantification as type instantiation
-   - [[Translating-GV-into-CP|Universal quantification as type generalisation]]
-   - [[Output-and-Input-via-the-Multiplicatives|Principal cut reduction for quantifiers]]
-   - [[Polymorphism-in-CP|Church numerals encoded via polymorphism]]
+   - Universal quantification as type generalisation : [[Translating-GV-into-CP|Link]]
+   - Principal cut reduction for quantifiers : [[Output-and-Input-via-the-Multiplicatives|Link1]], [[Selection-and-Choice-via-the-Additives|Link2]]
+   - Church numerals encoded via polymorphism : [[Polymorphism-in-CP|Link]]
 
-8. **[[Commuting-Conversions-and-Cut-Elimination|Commuting Conversions and Cut Elimination]]**
-   - [[Commuting-Conversions-and-Cut-Elimination|Commuting conversions pushing cuts inside communication]]
+8. **Commuting Conversions and Cut Elimination** : [[Commuting-Conversions-and-Cut-Elimination|Link]]
+   - Commuting conversions pushing cuts inside communication : [[Commuting-Conversions-and-Cut-Elimination|Link]]
    - The anti-Barendregt naming convention
-   - [[Commuting-Conversions-and-Cut-Elimination|Top-level cut elimination]]
+   - Top-level cut elimination : [[Commuting-Conversions-and-Cut-Elimination|Link]]
    - Subject reduction
-   - [[Related-Work-and-Extensions-to-CP|Cut elimination corresponding to deadlock freedom]]
+   - Cut elimination corresponding to deadlock freedom : [[Related-Work-and-Extensions-to-CP|Link]]
 
-9. **[[GV-a-Session-Typed-Functional-Language|GV a Session-Typed Functional Language]]**
-   - [[CP-a-Classical-Linear-Logic-Process-Calculus|The grammar of session types]]
-   - [[Translating-GV-into-CP|Duality of session types]]
+9. **GV a Session-Typed Functional Language** : [[GV-a-Session-Typed-Functional-Language|Link]]
+   - The grammar of session types : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link1]], [[GV-a-Session-Typed-Functional-Language|Link2]]
+   - Duality of session types : [[Translating-GV-into-CP|Link]]
    - Linear versus unlimited types
-   - [[GV-a-Session-Typed-Functional-Language|The term grammar for channel operations]]
-   - [[GV-a-Session-Typed-Functional-Language|Connect and terminate for channel creation and deallocation]]
+   - The term grammar for channel operations : [[GV-a-Session-Typed-Functional-Language|Link]]
+   - Connect and terminate for channel creation and deallocation : [[GV-a-Session-Typed-Functional-Language|Link]]
    - Differences from Gay and Vasconcelos's original system
 
-10. **[[Translating-GV-into-CP|Translating GV into CP]]**
-    - [[Translating-GV-into-CP|Continuation-passing style translation of terms]]
-    - [[Translating-GV-into-CP|The surprising duality in the translation of session types]]
-    - [[Translating-GV-into-CP|Translation of general types]]
-    - [[Translating-GV-into-CP|The translation preserves types]]
+10. **Translating GV into CP** : [[Translating-GV-into-CP|Link]]
+    - Continuation-passing style translation of terms : [[Translating-GV-into-CP|Link]]
+    - The surprising duality in the translation of session types : [[Translating-GV-into-CP|Link]]
+    - Translation of general types : [[Translating-GV-into-CP|Link]]
+    - The translation preserves types : [[Translating-GV-into-CP|Link]]
 
-11. **[[Related-Work-and-Extensions-to-CP|Related Work and Extensions to CP]]**
-    - [[CP-a-Classical-Linear-Logic-Process-Calculus|The history of session types]]
-    - [[Related-Work-and-Extensions-to-CP|Alternative approaches to deadlock freedom]]
-    - [[Related-Work-and-Extensions-to-CP|Linear types for process calculi]]
-    - [[Related-Work-and-Extensions-to-CP|Linear proof search and logic programming]]
-    - [[Related-Work-and-Extensions-to-CP|DILL versus CLL as competing foundations]]
+11. **Related Work and Extensions to CP** : [[Related-Work-and-Extensions-to-CP|Link]]
+    - The history of session types : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link1]], [[GV-a-Session-Typed-Functional-Language|Link2]], [[Related-Work-and-Extensions-to-CP|Link3]], [[Translating-GV-into-CP|Link4]]
+    - Alternative approaches to deadlock freedom : [[Related-Work-and-Extensions-to-CP|Link]]
+    - Linear types for process calculi : [[Related-Work-and-Extensions-to-CP|Link]]
+    - Linear proof search and logic programming : [[Related-Work-and-Extensions-to-CP|Link]]
+    - DILL versus CLL as competing foundations : [[Related-Work-and-Extensions-to-CP|Link]]
     - The Mix rule and Binary Cut as reintroducing races and deadlock
-    - [[Translating-GV-into-CP|Multiparty session types as future work]]
+    - Multiparty session types as future work : [[Translating-GV-into-CP|Link]]
 
 ---
 
@@ -138,17 +138,17 @@ Wadler seeks to give concurrent/session-typed programming as firm a logical foun
 
 ### Chapter 3: Classical linear logic as a process calculus (pp. 5–22)
 
-**Summary:** Presents CP in full: the grammar of propositions/session types, duality, the process grammar, and the core typing rules, followed by seven subsections working through structural rules, each dual pair of connectives, polymorphism, commuting conversions, and cut elimination, interleaved with worked internet-commerce examples.
+**Summary:** Presents CP in full: the grammar of propositions/session types, duality, the process grammar, and the core typing rules, followed by seven subsections working through structural rules, each dual pair of connectives, polymorphism, commuting conversions, and cut elimination, interleaved with worked internet-commerce examples. : [[CP-a-Classical-Linear-Logic-Process-Calculus|Link]]
 
 **Key Definitions & Concepts by Section:**
 - **3 (front matter)** — CP; the propositions/session types grammar ($X$, $X^\perp$, $A\otimes B$, $A\parr B$, $A\oplus B$, $A\& B$, $!A$, $?A$, $\exists X.B$, $\forall X.B$, $1$, $\bot$, $0$, $\top$); duality $(\cdot)^\perp$ as an involution; substitution $B\{A/X\}$; environments $\Gamma,\Delta,\Theta$ under linear maintenance; the process grammar (link, parallel composition, output, input, selection, choice, server accept, client request, type output/input, empty forms); judgments $P \vdash x_1:A_1,\dots,x_n:A_n$
-- **3.1 Structural rules** — Axiom as forwarding along dual channels; Cut as parallel composition with name restriction; structural equivalences (Swap), (Assoc); reduction (AxCut) simplifying a cut against an axiom
-- **3.2 Output and input** — the $\otimes$ rule (output $A$ then behave as $B$); the $\parr$ rule (input $A$ then behave as $B$); principal reduction $(\beta_{\otimes\parr})$ corresponding to communication; the isomorphism $A\otimes B \cong B\otimes A$; the multiplicative units $1$ and $\bot$; a worked buy/sell commerce example
-- **3.3 Selection and choice** — the $\oplus$ rules (left/right selection); the $\&$ rule (offering a choice); principal reduction $(\beta_{\oplus\&})$; the additive units $0$ (no rule, no reduction) and $\top$; worked shop/quote and combined select/choice examples
-- **3.4 Servers and clients** — the $!$ rule (server accept, spawning a fresh copy per request); the three client rules for $?$ (dereliction, weakening, contraction); principal reductions $(\beta_{!?})$, $(\beta_{!W})$, $(\beta_{!C})$; the priming convention for replicated names; a worked replicated-server example
-- **3.5 Polymorphism** — the $\exists$ rule (instantiation, transmitting a proposition); the $\forall$ rule (generalisation, receiving a proposition); principal reduction $(\beta_{\exists\forall})$; Church numerals encoded via polymorphic quantification
-- **3.6 Commuting conversions** — pushing a cut inside a communication operation; the anti-Barendregt naming convention; why $(\kappa_\parr)$, pushing a cut inside input, remains sound
-- **3.7 Cut elimination** — congruence rules for cuts; Theorem 1 (subject reduction — well-typed processes reduce to well-typed processes); Theorem 2 (top-level cut elimination — every process reduces to a non-cut process); the correspondence between top-level cut elimination and deadlock freedom
+- **3.1 Structural rules** — Axiom as forwarding along dual channels; Cut as parallel composition with name restriction; structural equivalences (Swap), (Assoc); reduction (AxCut) simplifying a cut against an axiom : [[Output-and-Input-via-the-Multiplicatives|Link1]], [[CP-a-Classical-Linear-Logic-Process-Calculus|Link2]], [[Servers-and-Clients-via-the-Exponentials|Link3]], [[Selection-and-Choice-via-the-Additives|Link4]]
+- **3.2 Output and input** — the $\otimes$ rule (output $A$ then behave as $B$); the $\parr$ rule (input $A$ then behave as $B$); principal reduction $(\beta_{\otimes\parr})$ corresponding to communication; the isomorphism $A\otimes B \cong B\otimes A$; the multiplicative units $1$ and $\bot$; a worked buy/sell commerce example : [[Output-and-Input-via-the-Multiplicatives|Link]]
+- **3.3 Selection and choice** — the $\oplus$ rules (left/right selection); the $\&$ rule (offering a choice); principal reduction $(\beta_{\oplus\&})$; the additive units $0$ (no rule, no reduction) and $\top$; worked shop/quote and combined select/choice examples : [[Selection-and-Choice-via-the-Additives|Link]]
+- **3.4 Servers and clients** — the $!$ rule (server accept, spawning a fresh copy per request); the three client rules for $?$ (dereliction, weakening, contraction); principal reductions $(\beta_{!?})$, $(\beta_{!W})$, $(\beta_{!C})$; the priming convention for replicated names; a worked replicated-server example : [[Servers-and-Clients-via-the-Exponentials|Link]]
+- **3.5 Polymorphism** — the $\exists$ rule (instantiation, transmitting a proposition); the $\forall$ rule (generalisation, receiving a proposition); principal reduction $(\beta_{\exists\forall})$; Church numerals encoded via polymorphic quantification : [[Polymorphism-in-CP|Link]]
+- **3.6 Commuting conversions** — pushing a cut inside a communication operation; the anti-Barendregt naming convention; why $(\kappa_\parr)$, pushing a cut inside input, remains sound : [[Commuting-Conversions-and-Cut-Elimination|Link]]
+- **3.7 Cut elimination** — congruence rules for cuts; Theorem 1 (subject reduction — well-typed processes reduce to well-typed processes); Theorem 2 (top-level cut elimination — every process reduces to a non-cut process); the correspondence between top-level cut elimination and deadlock freedom : [[Commuting-Conversions-and-Cut-Elimination|Link]]
 
 **Key Questions:**
 1. Why must the environments $\Gamma$ and $\Delta$ in the Cut rule be disjoint, and how does that disjointness guarantee freedom from races?
@@ -161,11 +161,11 @@ Wadler seeks to give concurrent/session-typed programming as firm a logical foun
 
 ### Chapter 4: A session-typed functional language (pp. 23–31)
 
-**Summary:** Introduces GV, a linear functional language with session-typed channel primitives, modifying Gay and Vasconcelos's original system (splitting `end` into dual $\mathsf{end}_!$/$\mathsf{end}_?$, replacing accept/request/fork with connect/terminate) to guarantee deadlock freedom, then gives its full continuation-passing-style translation into CP.
+**Summary:** Introduces GV, a linear functional language with session-typed channel primitives, modifying Gay and Vasconcelos's original system (splitting `end` into dual $\mathsf{end}_!$/$\mathsf{end}_?$, replacing accept/request/fork with connect/terminate) to guarantee deadlock freedom, then gives its full continuation-passing-style translation into CP. : [[GV-a-Session-Typed-Functional-Language|Link]]
 
 **Key Definitions & Concepts by Section:**
 - **4 (front matter)** — GV's typing rules (Id, Unit, Weaken, Contract, $\multimap$-I/E, $\to$-I/E, $\otimes$-I/E, Send, Receive, Select, Case, Connect, Terminate); differences from Gay and Vasconcelos (splitting `end` into $\mathsf{end}_!/\mathsf{end}_?$; replacing accept/request/fork with with-connect-to/terminate); the session types grammar ($!T.S$, $?T.S$, $\oplus\{l_i:S_i\}$, $\&\{l_i:S_i\}$, $\mathsf{end}_!$, $\mathsf{end}_?$); duality of session types; the general type grammar (session types, tensor product, linear and unlimited function types, Unit); linear versus unlimited classification; the term grammar (identifier, unit, abstraction, application, pair construction/deconstruction, send, receive, select, case, connect, terminate); the Send and Receive typing rules and why channels thread linearly through operations; the Connect rule (creating a channel at dual types $S$ and $\overline S$) and Terminate rule (deallocating an exhausted channel); a worked buy/sell example re-expressed in GV
-- **4.1 Translation** — the translation of session types into CP propositions and its surprising duality (GV output translates to CP $\parr$, GV input to CP $\otimes$); the translation of general types; the continuation-passing-style translation of terms $\llbracket M \rrbracket z$; Theorem 3 (the translation preserves types)
+- **4.1 Translation** — the translation of session types into CP propositions and its surprising duality (GV output translates to CP $\parr$, GV input to CP $\otimes$); the translation of general types; the continuation-passing-style translation of terms $\llbracket M \rrbracket z$; Theorem 3 (the translation preserves types) : [[Translating-GV-into-CP|Link]]
 
 **Key Questions:**
 1. Why does GV split Gay and Vasconcelos's single `end` type into two dual terminators, and why does that matter for deadlock freedom?
@@ -176,7 +176,7 @@ Wadler seeks to give concurrent/session-typed programming as firm a logical foun
 
 ### Chapter 5: Related work (pp. 31–33)
 
-**Summary:** Situates CP and GV against the broader literature — the origins and development of session types, alternative approaches to guaranteeing deadlock freedom, linear type systems for process calculi, the analogy between logic programming and proof search, polymorphic extensions, and, at greatest length, a comparison between Caires-Pfenning's intuitionistic DILL-based approach and this paper's classical CLL-based approach.
+**Summary:** Situates CP and GV against the broader literature — the origins and development of session types, alternative approaches to guaranteeing deadlock freedom, linear type systems for process calculi, the analogy between logic programming and proof search, polymorphic extensions, and, at greatest length, a comparison between Caires-Pfenning's intuitionistic DILL-based approach and this paper's classical CLL-based approach. : [[Related-Work-and-Extensions-to-CP|Link]]
 
 **Key Definitions & Concepts:**
 - Session types (Honda; Takeuchi, Honda and Kubo; Yoshida and Vasconcelos); subtyping for session types (Gay and Hole); GV's origin in Gay and Vasconcelos's linear functional language

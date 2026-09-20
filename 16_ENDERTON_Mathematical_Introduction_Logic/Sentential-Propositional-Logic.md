@@ -129,7 +129,7 @@ Because wffs are freely generated, you get a proof principle for free:
 
 > **Induction Principle.** If $S$ is a set of wffs containing all the sentence symbols and closed under all five formula-building operations, then $S$ is the set of *all* wffs.
 
-Enderton gives two proofs — one via "walk up the ancestral tree," one via "strong induction on position in the construction sequence" — because they're the same argument seen two ways, and both generalize (Section 1.4) to induction on *any* freely generated set, not just wffs. He immediately puts it to use to show **every wff has equally many left and right parentheses** (the set of "balanced" expressions contains the sentence symbols and is closed under all five operations, so by the Induction Principle it contains every wff) — a fact whose only job in this chapter is to be Lemma 13A in Section 1.3.
+Enderton gives two proofs — one via "walk up the ancestral tree," one via "strong induction on position in [[Godels-Incompleteness-Theorems#The construction|the construction]] sequence" — because they're the same argument seen two ways, and both generalize (Section 1.4) to induction on *any* freely generated set, not just wffs. He immediately puts it to use to show **every wff has equally many left and right parentheses** (the set of "balanced" expressions contains the sentence symbols and is closed under all five operations, so by the Induction Principle it contains every wff) — a fact whose only job in this chapter is to be Lemma 13A in Section 1.3.
 
 This is worth sitting with as a mechanism, not just a fact: **structural induction on an AST is the Induction Principle**, and it is the proof technique your verifier will use for *every* soundness argument once you're proving properties of typing judgments or Hoare triples over an AST — "closed under all the constructors, therefore true of everything" is the shape those proofs will take too.
 
@@ -175,7 +175,7 @@ $$\Gamma \models \tau \iff \text{every truth assignment satisfying every member 
 This is **tautological implication**. Two edge cases matter:
 
 - $\Gamma = \varnothing$: vacuously, every assignment satisfies every member of $\varnothing$, so $\varnothing \models \tau$ reduces to *every* assignment satisfies $\tau$ — this case is called $\tau$ being a **tautology**, written $\models \tau$.
-- No assignment satisfies every member of $\Gamma$ (e.g. $\Gamma = \{A, \neg A\}$): then $\Gamma \models \tau$ *for every* $\tau$, vacuously — $\{A, \neg A\} \models B$ for a completely unrelated $B$. There's no deep principle here, just the shape of the definition ("ex falso" is a corollary of "for all," not a separate axiom).
+- No assignment satisfies every member of $\Gamma$ (e.g. $\Gamma = \{A, \neg A\}$): then $\Gamma \models \tau$ *for every* $\tau$, vacuously — $\{A, \neg A\} \models B$ for a completely unrelated $B$. There's no deep principle here, just the shape of [[Interpretations-Between-Theories#The definition|the definition]] ("ex falso" is a corollary of "for all," not a separate axiom).
 
 If $\sigma \models \tau$ and $\tau \models \sigma$ both hold, $\sigma$ and $\tau$ are **tautologically equivalent**, $\sigma \mathbin{|\!=\!|} \tau$ — e.g. the two Section 1.0 translations $\neg(C \vee K)$ and $(\neg C) \wedge (\neg K)$ are tautologically equivalent (this is De Morgan's law making its first appearance).
 

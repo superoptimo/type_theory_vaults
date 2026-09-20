@@ -88,7 +88,7 @@ fn derivable(hyps: &[Judgment], rules: &[Rule], target: &Judgment) -> bool {
 
 Theorem 3.1's stability is precisely why you can keep adding `Rule` variants to a language's type checker as the language grows, and every previously-successful `derivable` call still succeeds — nothing you add can *retract* a derivation, because a derivation is just a finite tree of rule applications that's still sitting there.
 
-**Grounding — Lean.** Lean's `have h : P := proof_of_P; exact proof_using_h` is transitivity of derivability in miniature: you replace a use of a hypothesis with an actual proof term for it. And Lean's kernel is stable under extension in exactly Harper's sense — adding a new `theorem` or `def` to an environment never invalidates a previously type-checked term, because the old proof only ever used the rules (and prior definitions) that were already there.
+**[[Recursive-Types#Grounding|Grounding]] — Lean.** Lean's `have h : P := proof_of_P; exact proof_using_h` is transitivity of derivability in miniature: you replace a use of a hypothesis with an actual proof term for it. And Lean's kernel is stable under extension in exactly Harper's sense — adding a new `theorem` or `def` to an environment never invalidates a previously type-checked term, because the old proof only ever used the rules (and prior definitions) that were already there.
 
 ### Admissibility: closure under already-derivable judgments
 
@@ -134,7 +134,7 @@ If someone later adds `PrimitiveRule::SuccJunk` (an axiom with no premises, mirr
 
 ### Hypothetical rules with global and local hypotheses
 
-**What breaks without this refinement.** Ordinary inductive definitions (Chapter 2) let a rule's premises be plain judgments. But once you're inside a hypothetical setting, a premise of a rule is naturally *itself* a hypothetical judgment — and different premises of the same rule often need *different* extra assumptions in scope. Think of a typing rule for `let x = e1 in e2`: to type-check the body `e2` you need everything already in scope *plus* the new binding `x : τ1`, but to type-check `e1` you only need what was already in scope. A flat notion of "premises are judgments" can't express that asymmetry.
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]] refinement.** Ordinary inductive definitions (Chapter 2) let a rule's premises be plain judgments. But once you're inside a hypothetical setting, a premise of a rule is naturally *itself* a hypothetical judgment — and different premises of the same rule often need *different* extra assumptions in scope. Think of a typing rule for `let x = e1 in e2`: to type-check the body `e2` you need everything already in scope *plus* the new binding `x : τ1`, but to type-check `e1` you only need what was already in scope. A flat notion of "premises are judgments" can't express that asymmetry.
 
 **The mechanism.** A **hypothetical rule** has the general shape
 

@@ -1,0 +1,28 @@
+<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, monospace" font-size="14">
+  <!-- edges -->
+  <line x1="280" y1="55" x2="150" y2="120" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="280" y1="55" x2="400" y2="120" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="400" y1="150" x2="400" y2="205" stroke="#8a8a8a" stroke-width="1.5"/>
+
+  <!-- root: + -->
+  <rect x="245" y="20" width="70" height="36" rx="6" fill="none" stroke="#5b8dee" stroke-width="1.6"/>
+  <text x="280" y="43" text-anchor="middle" fill="#5b8dee">+</text>
+  <text x="280" y="72" text-anchor="middle" fill="#8a8a8a" font-size="12">arity 0⊗0→0</text>
+
+  <!-- left leaf: y -->
+  <rect x="115" y="120" width="70" height="36" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.4"/>
+  <text x="150" y="143" text-anchor="middle" fill="#8a8a8a">y</text>
+  <text x="150" y="172" text-anchor="middle" fill="#8a8a8a" font-size="12">arity 0</text>
+
+  <!-- right node: sin -->
+  <rect x="365" y="120" width="70" height="36" rx="6" fill="none" stroke="#5b8dee" stroke-width="1.6"/>
+  <text x="400" y="143" text-anchor="middle" fill="#5b8dee">sin</text>
+  <text x="400" y="172" text-anchor="middle" fill="#8a8a8a" font-size="12">arity 0→0</text>
+
+  <!-- sin's argument: y -->
+  <rect x="365" y="205" width="70" height="36" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.4"/>
+  <text x="400" y="228" text-anchor="middle" fill="#8a8a8a">y</text>
+
+  <!-- overall result label -->
+  <text x="280" y="15" text-anchor="middle" fill="#8a8a8a" font-size="12">+(y, sin(y))  :  arity 0</text>
+</svg>

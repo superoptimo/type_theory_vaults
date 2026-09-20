@@ -50,7 +50,7 @@ $$
 
 **Rust [[Bounded-Quantification#Grounding|grounding]].** Rust doesn't have first-class type-level lambdas, but a generic type constructor is the closest everyday analogue to a type operator: `struct Pair<Y, Z>(Y, Z)` is a *function from two types to a type* — you can't use `Pair` on its own as a type, only `Pair<Nat, Bool>`, exactly the proper-type-vs-operator distinction below. A trait with an associated type, `trait Container { type Item; }`, is closer still to a genuine type-level function computed from context.
 
-**Python grounding.** If you wanted to actually *run* type-level beta-reduction as a five-line interpreter (which is exactly what a typechecker does internally), it's just substitution:
+**Python [[ML-Implementation-Techniques#Grounding|grounding]].** If you wanted to actually *run* type-level beta-reduction as a five-line interpreter (which is exactly what a typechecker does internally), it's just substitution:
 
 ```python
 def subst_type(var, arg, ty):

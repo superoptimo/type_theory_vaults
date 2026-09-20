@@ -1,242 +1,178 @@
 ---
 title: Real Numbers and Analysis
-source: "Homotopy Type Theory: Univalent Foundations of Mathematics"
-chapters: "Chapter 11 §§11.1–11.6 (pp. 373–422)"
-tags: [type-theory, hott, real-numbers, higher-inductive-inductive-types, dedekind-cuts, cauchy-sequences, constructive-analysis, compactness, surreal-numbers, choice]
+book: Homotopy Type Theory - Univalent Foundations of Mathematics
+chapters: "Chapter 11: Real Numbers (pp. 373-422)"
+tags: [hott, real-numbers, higher-inductive-types, inductive-inductive-types, constructive-mathematics, dedekind-cuts, cauchy-completion, compactness, surreal-numbers]
 ---
 
 # Real Numbers and Analysis
 
 [[book-guidelines|↩ Back to guidelines]]
 
-## What problem does this solve?
+## Why this chapter exists, and why it comes this late
 
-Every foundation of mathematics eventually has to build $\mathbb{R}$, and the book is candid about why this is a genuinely hard chapter rather than a routine one: "any foundation of mathematics worthy of its name must eventually address [[Homotopical-Interpretation-of-Type-Theory#The construction|the construction]] of real numbers... namely as a complete archimedean ordered field." There are two classically-equivalent notions of completeness — Cauchy's (every Cauchy sequence converges) and Dedekind's (every cut has a supremum) — and classically you build either one, prove the field axioms, and move on without a second thought, because excluded middle and choice paper over every constructive wrinkle.
+By Chapter 11, the book has built dependent types, identity types and paths, [[Higher-Inductive-Types|higher inductive types]], the univalence axiom, and — in Chapter 10 — a full internal set theory (the cumulative hierarchy, cardinals, ordinals). Real numbers are the payoff of that investment, and also its stress test. "Real number" sounds like the most basic mathematical object there is, yet constructing $\mathbb{R}$ forces you to confront every foundational choice you've made so far: What is a proposition, exactly? Do you have excluded middle? Do you have choice? Does a quotient by an equivalence relation actually give you what you think it gives you? Classical analysis quietly assumes "yes" to all of these and never notices. Constructive type theory cannot look away, because every one of those assumptions has to be *built*, not postulated by fiat.
 
-Homotopy type theory does not get to assume excluded middle or choice for free — [[Formal-Metatheory#Univalence|univalence]] is actively *incompatible* with the strongest classical excluded-middle-flavored propositions-as-types reading (see [[The-Univalence-Axiom-and-Its-Consequences]]) — so this chapter has to face the wrinkles head-on. And it turns out the traditional construction of Cauchy reals (take the set of Cauchy sequences, quotient by "eventually close") secretly leans on the **axiom of countable choice**: to prove the quotient is itself Cauchy complete, you need to take a sequence of *equivalence classes* of Cauchy sequences and lift it to an actual sequence of *sequences* — and that lift is a choice principle in disguise. Dedekind cuts sidestep this, but pay a different constructive tax: they need power sets (impredicativity) to even typecheck as a definition.
+This is the mechanism-first reading of the chapter: what actually breaks, at the level of definitions and proofs, when you refuse to assume excluded middle and refuse to assume the axiom of choice — and how homotopy type theory's higher inductive-inductive types repair the breakage.
 
-The chapter's central technical contribution, and the reason this topic belongs in the same neighborhood as [[Higher-Inductive-Types]] and [[Inductive-Definitions-and-Initial-Algebras]] rather than in a generic analysis textbook, is a *third* way to build the Cauchy reals: as a **higher inductive-inductive type**. This gets you Cauchy completeness on the nose, without countable choice and without power sets. It is the chapter's headline example of "surprising economy" — the same construction philosophy that gave you $S^1$ and pushouts for free now gives you a metric completion for free.
+## 1. The rational numbers: the field you get almost for free
 
-```mermaid
-flowchart TD
-    Q["§11.1  Q — the field of rationals<br/>quotient of Z×N, decidable equality"]
-    Q --> Rd["§11.2  Dedekind reals R_d<br/>cuts (L,U) ⊆ Q×Q, needs Ω/power sets<br/>final archimedean ordered field"]
-    Q --> Rc["§11.3  Cauchy reals R_c<br/>higher inductive-inductive type with ~ε<br/>initial Cauchy-complete archimedean ordered field"]
-    Rc -->|"embeds, §11.4"| Rd
-    Rd -->|"coincide under LEM or countable choice"| Rc
-    Rc --> Comp["§11.5  Compactness of [0,1]<br/>metric ✓ · Bolzano–Weierstraß ⇒ LPO ✗ · Heine–Borel via inductive covers ✓"]
-    Rd --> No["§11.6  Surreal numbers No<br/>higher inductive-inductive: cut + ≤ + < simultaneously<br/>generalizes both R_d and the ordinals Ord"]
+The book doesn't dwell here, and neither will we, but it's worth being precise about [[Sets-in-Univalent-Foundations#The construction|the construction]] because it sets the pattern for everything after. Integers $\mathbb{Z}$ were built in an earlier chapter as a quotient of $\mathbb{N} \times \mathbb{N}$ (pairs standing for differences). Rationals repeat the trick one level up:
+
+$$\mathbb{Q} :\equiv (\mathbb{Z} \times \mathbb{N}) / {\approx}, \qquad (u, a) \approx (v, b) :\equiv \big(u \cdot (b+1) = v \cdot (a+1)\big).$$
+
+A pair $(u, a)$ represents $u / (1+a)$ — the "$+1$" on the denominator is a cheap trick to make division-by-zero syntactically impossible, since $a : \mathbb{N}$ ranges over $0, 1, 2, \dots$ but $1+a$ never hits $0$. Because there's a canonical representative for each equivalence class (lowest terms), the earlier machinery for quotients-by-idempotent-generated-relations applies cleanly, and $\mathbb{Q}$ comes out as a *set* with **decidable equality and decidable order**. This matters: it means every later construction gets to treat $q < r$ for $q, r : \mathbb{Q}$ as computable, and the entire theory of real numbers is built as various kinds of limiting or completing operations *on top of* this decidable base. $\mathbb{Q}$ is also, up to isomorphism, the *initial ordered field* — the field every ordered field embeds a copy of.
+
+```python
+# The gist, ignoring the HoTT quotient machinery: canonical lowest-terms pairs
+from math import gcd
+
+def make_rational(u: int, a: int):        # represents u / (1 + a)
+    d = 1 + a
+    g = gcd(abs(u), d) or 1
+    return (u // g, d // g - 1)           # canonical (numerator, denominator-1)
 ```
 
-**What breaks without this chapter.** Every later analytic result in the book — anything about continuous maps, uniform continuity, integration-flavored exercises — is stated over *some* type of reals. If you don't settle which one and why it's well-behaved, "the real numbers" silently becomes three incompatible objects (a setoid of Cauchy sequences, a subset of $\mathcal{P}(\mathbb{Q})^2$, an admission of classical logic) depending on which section you're reading, and none of the universal-property theorems (11.2.14, 11.3.50) that let you *compare* constructions would be available.
+## 2. Dedekind reals: completing $\mathbb{Q}$ by cuts
 
-## §11.1 — The field of rational numbers $\mathbb{Q}$
+### The motivating picture
 
-Nothing conceptually new here — it's a direct reuse of the quotient-type machinery from the integers construction (§6.10, referenced by the book). $\mathbb{Z}$ was built as $(\mathbb{N} \times \mathbb{N})/\!\approx$; $\mathbb{Q}$ is built the same way one level up:
+A Dedekind cut is the type-theoretic version of "the point that separates the rationals below it from the rationals above it." The book uses the symmetric, two-sided formulation (a *pair* of subsets $L, U \subseteq \mathbb{Q}$) rather than the more familiar one-sided "$L$ alone" version, because the symmetric version behaves well both classically and constructively.
 
-$$\mathbb{Q} :\equiv (\mathbb{Z} \times \mathbb{N})/\!\approx \qquad (u, a) \approx (v, b) :\equiv \bigl(u(b+1) = v(a+1)\bigr).$$
+**Definition 11.2.1.** A pair of predicates $L, U : \mathbb{Q} \to \Omega$ is a Dedekind cut when:
 
-A pair $(u, a)$ represents $u/(1+a)$ — the $+1$ on the denominator is a cheap trick to avoid division by zero as a side condition. Because there's a canonical choice of representative (lowest terms), the quotient recipe from Lemma 6.10.8 hands you a genuine **set** $\mathbb{Q}$ with **decidable equality** and **decidable order** — no propositional truncation needed anywhere, no choice principle invoked. $\mathbb{Q}$ is the *initial ordered field*: every ordered field has a unique structure-preserving map out of $\mathbb{Q}$. The chapter also fixes notation $\mathbb{Q}_+ :\equiv \{q : \mathbb{Q} \mid q > 0\}$, which becomes the indexing type for "precision" throughout the rest of the chapter — this is the constructive substitute for "$\forall \epsilon > 0$."
-
-**[[Homotopical-Interpretation-of-Type-Theory#Grounding|Grounding]].** This is exactly a `newtype` over a normalized pair, and any language can express it:
-
-```rust
-// Rust: Q as reduced (numerator, denominator) pairs.
-// Decidable equality and order come for free from i64/u64 comparison
-// once you enforce the reduced-form invariant in the constructor.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct Q { num: i64, den: u64 } // den > 0, gcd(|num|, den) == 1
-
-impl Q {
-    fn new(num: i64, den: i64) -> Self {
-        assert!(den != 0);
-        let g = gcd(num.unsigned_abs(), den.unsigned_abs());
-        let sign = if (num < 0) != (den < 0) { -1 } else { 1 };
-        Q { num: sign * (num.abs() / g as i64), den: den.unsigned_abs() / g }
-    }
-}
-```
-
-Nothing about $\mathbb{Q}$'s construction is HoTT-specific; skip straight to §11.2 for the first genuinely novel material.
-
-## §11.2 — Dedekind reals $R_d$: completion as "the set of gaps"
-
-**The idea, before the symbols.** A real number can be pinned down by *where it sits relative to every rational* — everything below it, and everything above it. Formally: a **Dedekind cut** is a pair of subsets $(L, U)$ of $\mathbb{Q}$ — think "strictly less than $x$" and "strictly greater than $x$" — satisfying four conditions that together say "there's no rational number missing from the classification, and no rational is claimed by both sides, and the split is razor-thin with no gap." $\pi$, for instance, *is* the pair (all rationals $< \pi$, all rationals $> \pi$) — the cut doesn't approximate $\pi$, it *is* $\pi$, by definition.
-
-**The definition.** $(L, U)$, with $L, U : \mathbb{Q} \to \Omega$ (mere predicates valued in a fixed type of propositions $\Omega$, discussed below), is a Dedekind cut when:
-
-1. **inhabited**: $\exists(q).\, L(q)$ and $\exists(r).\, U(r)$,
-2. **rounded**: $L(q) \Leftrightarrow \exists(r).\, (q<r) \wedge L(r)$, and symmetrically for $U$ — this says the cuts are *open*, never claiming the boundary point itself,
+1. **inhabited** (bounded): $\exists q. L(q)$ and $\exists r. U(r)$,
+2. **rounded**: $L(q) \Leftrightarrow \exists r.\, (q<r) \wedge L(r)$, and symmetrically for $U$ — cuts are *open*, they never claim to contain "the point itself,"
 3. **disjoint**: $\neg(L(q) \wedge U(q))$,
-4. **located**: $q < r \Rightarrow L(q) \vee U(r)$ — no wide gap between the two sides.
+4. **located**: $q < r \Rightarrow L(q) \vee U(r)$ — there's no unbridged gap between $L$ and $U$.
 
-$$R_d :\equiv \{(L,U) : (\mathbb{Q}\to\Omega)\times(\mathbb{Q}\to\Omega) \mid \mathrm{isCut}(L,U)\}.$$
+$$\mathbb{R}_d :\equiv \{ (L, U) : (\mathbb{Q} \to \Omega) \times (\mathbb{Q} \to \Omega) \mid \mathrm{isCut}(L,U) \}.$$
 
-**Why $\Omega$ and not `Bool`, and why that's a real constructive tax.** Classically you'd write $L, U : \mathbb{Q} \to \mathbf{2}$ and be done. Constructively, "is $q$ in the lower cut" is a genuinely propositional (not decidable) fact in general, so you need $L, U : \mathbb{Q} \to \mathrm{Prop}_{\mathcal{U}_i}$ for some universe level $i$ — and then $R_d$ itself lives one universe up, its power set two levels up, and so on, an infinite regress of bureaucracy. The book's workaround is to *posit* a single type of propositions $\Omega$ sufficient for everything (via propositional resizing, or by fully committing to classical logic where $\Omega \equiv \mathbf{2}$, or — the most parsimonious option — taking $\Omega$ to be the *initial $\sigma$-frame*, a lattice closed under countable joins, which is itself constructible as a higher inductive-inductive type; the book flags this last option and declines to pursue it, saving that trick for $R_c$ instead). **This power-set dependency is exactly the "impredicativity tax" the introduction warned about** — it's the price of Dedekind's approach, and it's precisely what $R_c$'s HII construction below is built to avoid.
+**What breaks without locatedness.** Drop condition (iv) and you get the *lower* and *upper* reals — one-sided approximations useful for semi-continuous functions, but you lose the ability to compare two such objects with a decidable-ish order; locatedness is exactly the "no gap" condition that makes $<$ on $\mathbb{R}_d$ behave like a real order relation rather than a mere preorder on approximations.
 
-**Algebraic structure, briefly.** Addition, negation, multiplication, order ($\leq$, $<$) are all defined pointwise on the cuts — e.g. $L_{x+y}(q) :\equiv \exists(r,s).\, L_x(r) \wedge L_y(s) \wedge q = r+s$ — using interval-arithmetic-style formulas for multiplication (the min/max of four cross-products, mirroring $[a,b]\cdot[c,d]$). The book does this carefully but treats it as routine, not conceptually novel, and neither will this note — the interesting content is in what *replaces* excluded middle:
+### The universe-bookkeeping problem, and why $\Omega$ is a knob you turn
 
-- **Weak linearity** replaces trichotomy: $(x<y) \Rightarrow (x<z)\vee(z<y)$ (Eq. 11.2.3) — read as "linearity up to a small numerical error": taking $x \equiv u-\epsilon$, $y\equiv u+\epsilon$ gives $(u-\epsilon<z)\vee(z<u+\epsilon)$, i.e. you can decide order only down to whatever precision you've actually computed. This is the constructive fingerprint of the whole chapter: **classical facts about $<$ survive as facts about $<$-up-to-$\epsilon$.**
-- **Apartness** $x \# y :\equiv (x<y)\vee(y<x)$ replaces $\neg(x=y)$ as the condition for invertibility (Theorem 11.2.4: *a real is invertible iff it is apart from $0$*) — apartness implies inequality but the converse needs excluded middle, so constructively these are genuinely different notions, and "invertible iff nonzero" quietly becomes false without apartness.
+Here is the chapter's first genuinely constructive headache. If $L, U : \mathbb{Q} \to \mathrm{Prop}_{\mathcal U_i}$, then $\mathbb{R}_d$ lives in $\mathcal U_{i+1}$, a *property of reals* lives in $\mathcal U_{i+2}$, and so on — an infinite regress of universe bumps for something that is supposed to be one fixed mathematical object. The book sidesteps this by fixing a single "type of propositions" $\Omega$ and listing four ways to justify doing so: track universes explicitly and pay the bureaucracy tax; assume **propositional resizing** (collapses all $\mathrm{Prop}_{\mathcal U_i}$ to one level); assume **excluded middle**, in which case $\Omega \equiv \mathbf 2$ and you're doing ordinary classical analysis; or take $\Omega$ to be the **initial $\sigma$-frame** (a lattice with countable joins where binary meets distribute over them) — a minimal predicative choice that itself turns out to be constructible as a higher inductive-inductive type.
 
-**Two completeness theorems, and why they matter for comparison later.** §11.2.2 shows $R_d$ is **Cauchy complete** (every Cauchy approximation — defined below — has a limit, Theorem 11.2.12, existence *not merely existence*), and §11.2.3 shows $R_d$ is **Dedekind complete** in the strongest possible sense: **Theorem 11.2.14**, *every archimedean ordered field admissible for $\Omega$ embeds into $R_d$* — i.e. $R_d$ is the **final** (terminal) archimedean ordered field. This finality is the fact that makes §11.4's comparison theorem possible.
+This is a recurring shape in the chapter worth naming explicitly for anyone building a checker: *"what counts as a proposition" is not a fixed background fact but a parameter of the construction*, and different choices of that parameter (LEM vs. resizing vs. a free frame) yield definitionally different but classically-coincident theories. A trusted kernel that wants to support both classical and constructive modes would need to make this parameterization a first-class design choice, not an afterthought.
 
-## §11.3 — Cauchy reals $R_c$: the headline higher inductive-inductive construction
+### Algebraic structure — and why multiplication is worse than addition
 
-**The problem restated precisely.** Classically, $R_c$ is $\{\text{Cauchy sequences in }\mathbb{Q}\}/\!\approx$. To show this quotient is *itself* Cauchy complete, take a Cauchy sequence of equivalence classes $x : \mathbb{N} \to C/\!\approx$, and you need to *lift* it to a sequence of actual representative sequences $\bar x : \mathbb{N} \to C$ — pick, for each $n$, one Cauchy sequence out of the (possibly infinite, unquotiented) set of sequences representing $x(n)$. That's literally an application of the axiom of countable choice. Constructive mathematics has three traditional escape hatches (pretend the reals are a setoid and never actually complete them; just accept countable choice; give up and use Dedekind reals instead, which have their own power-set tax) — and the book offers a fourth.
+Addition and negation on cuts read almost like Minkowski sums:
 
-**The idea, before the symbols.** Think of $R_c$ as **the free complete metric space generated by $\mathbb{Q}$** — the same "free gadget" idea that built free groups and free monoids as higher inductive types in §6.11 ([[Higher-Inductive-Types]]), now applied to "completion under limits" as the free operation. The catch: to state "$x$ is a Cauchy sequence of *real numbers*" you need a notion of distance between reals — but reals are exactly what you're in the middle of constructing. The way out is to not build the full metric all at once, but to build only the *finite-precision* comparisons you actually need: a family of relations $u \sim_\epsilon v$ meaning "$u$ and $v$ are within $\epsilon$" for each $\epsilon : \mathbb{Q}_+$ — and to define **the type $R_c$ and the relation $\sim_\epsilon$ by simultaneous induction**. That simultaneity is exactly what "higher inductive-*inductive*" means: an ordinary inductive-inductive definition (§5.7) lets you define a type and a family indexed by it together; the "higher" upgrade lets both carry path constructors too. (This is the general pattern flagged in the closing synthesis below — it recurs almost verbatim for the surreal numbers in §11.6.)
+$$L_{x+y}(q) :\equiv \exists r,s.\, L_x(r) \wedge L_y(s) \wedge q = r+s, \qquad L_{-x}(q) :\equiv \exists r.\, U_x(r) \wedge q = -r.$$
 
-**Definition 11.3.2 — the constructors, verbatim.** $R_c$ and $\sim : \mathbb{Q}_+ \times R_c \times R_c \to \mathcal{U}$ are generated simultaneously by:
+Multiplication is genuinely more cumbersome, because "the sign of $x\cdot y$" is not locally determined the way "the sign of $x+y$" is — you need all four sign combinations of bounds on $x$ and $y$:
 
-*Constructors of $R_c$:*
-- **rational points**: for $q : \mathbb{Q}$, a point $\mathrm{rat}(q) : R_c$.
-- **limit points**: for $x : \mathbb{Q}_+ \to R_c$ satisfying $\forall(\delta,\epsilon).\; x_\delta \sim_{\delta+\epsilon} x_\epsilon$ (a **Cauchy approximation**), a point $\lim(x) : R_c$.
-- **paths**: for $u, v : R_c$ with $\forall(\epsilon).\; u\sim_\epsilon v$, a path $\mathrm{eq}_{R_c}(u,v) : u =_{R_c} v$.
+$$L_{x\cdot y}(q) :\equiv \exists a,b,c,d.\; L_x(a)\wedge U_x(b)\wedge L_y(c)\wedge U_y(d) \wedge q < \min(ac,ad,bc,bd),$$
 
-*Constructors of $\sim$* (for $q,r$ rational; $\delta,\epsilon,\eta$ positive rational; $u,v$ reals; $x,y$ Cauchy approximations):
-- if $-\epsilon < q-r < \epsilon$, then $\mathrm{rat}(q)\sim_\epsilon \mathrm{rat}(r)$,
-- if $\mathrm{rat}(q)\sim_{\epsilon-\delta} x_\delta$, then $\mathrm{rat}(q)\sim_\epsilon \lim(x)$,
-- if $x_\delta \sim_{\epsilon-\delta}\mathrm{rat}(r)$, then $\lim(x)\sim_\epsilon \mathrm{rat}(r)$,
-- if $x_\delta \sim_{\epsilon-\delta-\eta} y_\eta$, then $\lim(x)\sim_\epsilon \lim(y)$,
-- $\sim_\epsilon$ takes values in mere propositions (propositional truncation, built into the constructor).
+which is literally interval-arithmetic multiplication $[a,b]\cdot[c,d] = [\min(ac,ad,bc,bd), \max(ac,ad,bc,bd)]$ lifted to cuts. If you've ever implemented interval arithmetic or affine arithmetic in a numerics library, this is *exactly* that idea, promoted to be the actual definition of multiplication rather than an approximation of it.
 
-**Reading these constructors as "one operation used only once."** Notice what's *not* here: no explicit quotient, and — crucially — no separate "take a sequence and produce its limit" step that has to be applied *iteratively*. In the classical/choice-assuming setting, Cauchy-completing $\mathbb{Q}$ is a one-shot operation because choice lets you flatten any nested limit-of-limits back down to a single limit; without choice, a "free completion" would naively need to iterate the limit operation transfinitely (limits of limits of limits...) the way a free group needs arbitrarily long words. The higher-inductive-inductive trick sidesteps this entirely: because $\lim$ and $\mathrm{eq}_{R_c}$ and $\sim$ are all generated *together*, a limit-of-a-Cauchy-approximation-of-limits is already just another instance of the $\lim$ constructor — there's no iteration to do. This is the "surprising economy" the introduction alluded to.
+An **ordered field** (Definition 11.2.7) axiomatizes what you'd want any of these constructions to satisfy: a commutative ring, an apartness relation $\#$ (irreflexive, symmetric, cotransitive — $x \# y \Rightarrow x\#z \vee y\#z$), invertibility iff apart-from-zero, and the usual compatibility laws between $\le, <, +, \cdot$. **Theorem 11.2.4**: a Dedekind real is invertible iff it is apart from $0$ — note this is a genuinely *constructive* strengthening of "nonzero implies invertible," because in the absence of LEM, "$x \ne 0$" (negation of equality) is strictly weaker than "$x \# 0$" (positively witnessed apartness). This is the real-number-theory analogue of a distinction that shows up constantly in refinement-type and SMT contexts: a *negative* fact ("not equal") is not the same computational commodity as a *positive* witness ("provably apart," i.e. you can exhibit a rational separating them), and only the positive fact lets you build an actual inverse.
 
-**The induction principle — why it has to be so much more elaborate than an ordinary HIT's.** Because $\sim$ is indexed by *two copies* of $R_c$, motive families must come in a linked pair: $A : R_c \to \mathcal{U}$ and $B : \prod_{x,y:R_c} A(x) \to A(y) \to \prod_{\epsilon} (x\sim_\epsilon y) \to \mathcal{U}$, written suggestively as $(x,a) \frown_\epsilon (y,b)$ — "$a$ and $b$ agree with the fact that $x,y$ are $\epsilon$-close." The full $(R_c,\sim)$-induction principle specializes to two familiar special cases that are worth knowing by name because the book uses them constantly afterward:
+### Completeness comes in two flavors, and $\mathbb{R}_d$ gets both
 
-- **$R_c$-induction** (freeze $\sim$-dependence, i.e. take $B$ constant): to prove a mere property of all reals, it suffices to check it on rationals and show it's preserved by $\lim$. *Immediate payoff*: Lemma 11.3.8 ($u \sim_\epsilon u$ for all $u$) and **Theorem 11.3.9: $R_c$ is a set** — both proved this way in a few lines, because the reflexivity of the coincidence relation combined with the path constructor of $R_c$ satisfies the hypotheses of Theorem 7.2.2 (a reflexive mere relation implying identity forces set-truncation) — a direct echo of the encode-decode technique from [[Identity-Types-and-Path-Structure]].
-- **$\sim$-induction** (freeze $R_c$-dependence): "if we take $R_c$ as given, $\sim_\epsilon$ is inductively generated by its constructors." Used to prove e.g. **symmetry of $\sim$** (Lemma 11.3.12) in one clean case split.
+- **Cauchy complete** (Theorem 11.2.12): every Cauchy approximation $x : \mathbb{Q}^+ \to \mathbb{R}_d$ (satisfying $|x_\delta - x_\epsilon| < \delta+\epsilon$) has a limit in $\mathbb{R}_d$.
+- **Dedekind complete** (Corollary 11.2.16): every Dedekind cut *of Dedekind reals* is realized by an actual Dedekind real — cutting $\mathbb{R}_d$ doesn't produce anything new.
 
-**Characterizing $\sim$ by encode-decode (Theorem 11.3.16 / 11.3.32).** Just as identity types on inductive types can "contain more than was put in" unless you check via an encode/decode argument (§5.8, [[Identity-Types-and-Path-Structure]]), the same worry applies here: did the five constructors of $\sim$ produce *exactly* the closeness relation intended, or could the HII machinery have smuggled in extra witnesses? The book resolves this by defining a *recursively computed* comparison relation $\approx_\epsilon$ (that evaluates directly on `rat`/`lim` the way a decision procedure would) and proving $(u\sim_\epsilon v) = (u\approx_\epsilon v)$ by a genuinely delicate double-recursion (the proof spans several pages precisely because $\approx$ has to satisfy roundedness and a two-sided triangle inequality simultaneously with its own definition — this is the technical heart of the section, and the book itself calls the result "a fibration of codes for $\sim$"). The payoff, Theorem 11.3.44, is the theorem that makes $R_c$ usable as an actual metric space: $(u\sim_\epsilon v) \simeq (|u-v| < \mathrm{rat}(\epsilon))$ — the type-theoretic $\sim_\epsilon$ *is* the ordinary metric $\epsilon$-ball, once you've built enough algebraic structure to state it.
-
-**Algebraic structure via `Lipschitz` extension.** Rather than defining $+,-,\times$ on cuts pointwise (as $R_d$ does), $R_c$'s arithmetic is built by a single reusable lemma: *any non-expanding (Lipschitz) function $\mathbb{Q} \to \mathbb{Q}$ extends uniquely to a Lipschitz function $R_c \to R_c$* (Lemma 11.3.15, itself proved by $(R_c,\sim)$-recursion). Negation, $\min$, $\max$, absolute value, and (via a min/max-based patchwork, since squaring isn't globally Lipschitz but is on every bounded interval) squaring and multiplication are all obtained this way — a genuinely elegant reuse of one lemma across the whole algebraic structure. The chapter closes §11.3 with: **Theorem 11.3.49**, every Cauchy approximation in $R_c$ has a limit (Cauchy completeness, essentially by construction), and **Theorem 11.3.50**, $R_c$ **embeds into every Cauchy-complete archimedean ordered field** — $R_c$ is the *initial* such field, dually to $R_d$ being final.
-
-**What breaks without the HII construction.** Drop the simultaneity and try to define $\sim$ *after* $R_c$ by ordinary recursion on an already-built $R_c$ (an inductive-*recursive* definition, which the book explicitly considers and rejects in Remark 11.3.1): you lose the strong induction principle needed to prove basic facts like Theorem 11.3.9 ($R_c$ is a set) and — the book notes — such definitions are harder to justify in the homotopical (simplicial-set) semantics at all. The inductive-inductive route is not a stylistic preference; it's load-bearing for the theory that follows.
-
-**Grounding — the pattern, not the analysis.** The book's own framing ("free complete metric space") suggests the closest engineering analogue is *how you'd represent an idealized numeric type as an AST with an attached equivalence/refinement, generated together* — not floating point (which is a fixed-precision approximation of $\mathbb{Q}$, not a completion of it). A shape that at least carries the right idea in Rust:
+The proof of the second is a beautiful bit of "no more turtles" reasoning. **Theorem 11.2.14** shows every archimedean ordered field *admissible for $\Omega$* (meaning $<$ factors through $\Omega$, not just some ambient `Prop`) embeds into $\mathbb{R}_d$ via $x \mapsto (\{q \mid q<x\}, \{q \mid x<q\})$. Then **Lemma 11.2.15** shows the Dedekind completion of an admissible field is again admissible. Apply Theorem 11.2.14 *twice* — once to $\mathbb{R}_d$ itself and once to its own completion $\bar{\mathbb{R}}_d$ — and you get embeddings each way; since both are order-preserving field maps fixing the dense subfield $\mathbb{Q}$, they must be mutually inverse. $\mathbb{R}_d$ is therefore the **final archimedean ordered field admissible for $\Omega$** — the terminal object in exactly the category you'd expect real numbers to be terminal in. This "final object" characterization is the payoff of doing 11.2 at all: it's a universal-property proof, not a "just believe me, it's the reals" proof.
 
 ```rust
-// A (non-HoTT!) sketch of the *shape* of the R_c constructors — NOT a
-// faithful implementation, since Rust has no path constructors and no
-// quotient-by-construction; `PartialEq` here is ordinary decidable
-// equality standing in for the propositional path constructor.
-enum CauchyReal {
-    Rat(Q),
-    // A "Cauchy approximation": for every positive rational epsilon,
-    // an approximant, together with (morally) a proof that any two
-    // approximants are within delta+epsilon of each other.
-    Lim(Box<dyn Fn(Q /* epsilon, den > 0 */) -> CauchyReal>),
-}
-```
-
-The genuinely load-bearing idea to take from this section — independent of real analysis — is the **general pattern of inductive-inductive definition**: whenever a type and a relation/family *on* that type are mutually dependent from the start, defining them by ordinary induction-then-recursion forces a choice of which comes first, and that choice can be unjustifiable (as it is here) or can silently weaken the induction principle you get to use later. Lean's kernel supports exactly this shape via **mutual inductive types with indices**, and this HII is close in spirit to a mutual `inductive` block:
-
-```lean
--- Genuinely mimicking the *proof-relevant, simultaneous* character of
--- Definition 11.3.2 (elided: the higher path constructor `eqRc`, which
--- Lean's ordinary mutual inductives cannot express without a quotient).
-mutual
-  inductive CauchyReal : Type where
-    | rat (q : ℚ) : CauchyReal
-    | limit (x : ℚ → CauchyReal) (h : ∀ δ ε, close δ x δ ε (x ε)) : CauchyReal
-  -- `close` would need to be mutually defined alongside CauchyReal;
-  -- Lean's inductive-inductive support is limited, so a real
-  -- implementation typically threads the invariant as a separate
-  -- Prop-valued relation defined afterward by well-founded recursion,
-  -- which is precisely the inductive-*recursive* alternative the book
-  -- considers and rejects in Remark 11.3.1.
-end
-```
-
-That gap — Lean happily doing inductive-recursive definitions but being awkward about genuine inductive-*inductive* ones — is itself a faithful reflection of the book's own remark that the two approaches are not interchangeable.
-
-## §11.4 — Comparing $R_c$ and $R_d$
-
-Since $R_c$ is admissible for $\Omega$ (its strict order factors through $\Omega$) and archimedean, Theorem 11.2.14's finality of $R_d$ immediately gives an embedding $R_c \hookrightarrow R_d$ fixing $\mathbb{Q}$. The interesting question is whether it's an *equivalence*.
-
-**Lemma 11.4.1** isolates exactly the extra ingredient needed: if for every $x : R_d$ there **purely** (not merely) exists a decision procedure $c$ choosing, for any $q<r$, between $q<x$ and $x<r$ — an *untruncated* version of weak linearity — then $R_c \simeq R_d$. The proof is a clean bisection argument: starting from bounds $a<x<b$, repeatedly trisect $[q_n,r_n]$ using $c$ to decide which third to keep, producing two Cauchy sequences of rationals squeezing down onto $x$.
-
-**Corollary 11.4.3**: excluded middle *or* countable choice each suffice to manufacture such a $c$ (excluded middle directly decides $x<z$ vs. $\neg(x<z)$; countable choice turns the *merely*-existing located witness for each of the countably many pairs $(q,r) \in \mathbb{Q}\times\mathbb{Q}$ into a genuine choice function). So **the two constructions coincide exactly under the assumptions the HII construction was built to avoid** — without either assumption, the inclusion $R_c \hookrightarrow R_d$ may be strict. This is the cleanest illustration in the whole chapter of the book's broader thesis about constructive mathematics: classically-identical objects can bifurcate, and *how much* extra logical strength is needed to re-glue them becomes a precise, provable quantity rather than a hand-wave.
-
-## §11.5 — Compactness of $[0,1]$: three notions, three fates
-
-Classically, "metrically compact," "Bolzano–Weierstraß compact" (every sequence has a convergent subsequence), and "Heine–Borel compact" (every open cover has a finite subcover) are all equivalent. Constructively they split apart, and the book walks through exactly where and why.
-
-1. **Metric compactness — survives cleanly.** $[0,1]$ is complete (it's a Lipschitz retract of $R$, via $r(x) = \max(0,\min(1,x))$, which commutes with limits) and totally bounded (an explicit $\epsilon$-net $\{i/k : 0\le i\le k\}$ for $2/k<\epsilon$ — note this is *pure*, not merely, existence: you get an actual algorithm producing the net, not just a proof one exists). This buys a genuinely useful corollary, **Theorem 11.5.7**: a uniformly continuous $f$ on a totally bounded metric space attains its supremum, constructed explicitly as the limit of the maxima over successively finer nets — a real *algorithm* for extremum-finding, not a pure-existence theorem.
-
-2. **Bolzano–Weierstraß compactness — actively fails constructively.** **Theorem 11.5.9**: assuming it for $[0,1]$ implies the **limited principle of omniscience** (LPO) — deciding, for any binary sequence $\alpha$, whether $\alpha$ is eventually all-$0$ or has *some* $1$. LPO is a full instance of excluded middle over an infinite domain, and no one expects a computer to decide it (it would mean deciding a halting-problem-shaped question about an arbitrary infinite input stream in finite time). The proof constructs a sequence that jumps from $0$ to $1$ the moment $\alpha$ first hits $1$, and reads LPO's answer straight off wherever a hypothetical convergent subsequence lands. **This is the section's sharpest "what breaks without care" moment**: a compactness notion that *looks* purely topological turns out to smuggle in an undecidable proposition.
-
-3. **Heine–Borel compactness — recoverable, but only after redesigning "cover."** A naive pointwise cover (∃ some interval in the family containing each point, truncated existential) is too weak to extract a finite subcover from constructively — the book gives an explicit counterexample sketch (you can't even show two open intervals cover $[1,4]$ without a non-constant map to $\mathbf{2}$, i.e. without deciding something). The fix, borrowed from formal/pointfree topology, is **Definition 11.5.13**: define the covering relation $\triangleleft$ *inductively*, as a mere-propositional higher inductive type, generated by explicit closure rules (reflexivity, transitivity, monotonicity under interval inclusion, localization under intersection, and two rules specific to the real line — overlap-covering and interior-covering). Because $\triangleleft$ is built by induction rather than asserted by a truncated quantifier, **Lemma 11.5.14** — any interval strictly inside a $\triangleleft$-covered interval has a genuine finite subcover — is provable *by induction on the derivation of the cover itself*, i.e. by structural induction on a proof tree, exactly the way a type-checker or proof search procedure extracts a witness by recursing on the *shape of the derivation* rather than by search over an infinite space. Theorem 11.5.16 then reconciles the two notions: an inductive cover is always a pointwise cover, and the converse holds if you assume excluded middle — so **the difference between the two notions of cover isn't which intervals get covered, but what the covering proofs are allowed to look like.**
-
-**Grounding — this is the section with the clearest transferable mechanism.** The inductive-cover relation $\triangleleft$ is, structurally, exactly a **proof-search judgment defined by inference rules**, and Lemma 11.5.14's proof-by-induction-on-the-derivation is precisely how a Prolog-style solver or a type-checker's `isDefEq` recovers a concrete witness (here: a finite list of intervals) from an abstract provability judgment, by pattern-matching on which rule produced the proof:
-
-```rust
-// The shape of Definition 11.5.13 as a derivation type — closely
-// analogous to how a small-step or big-step judgment is represented
-// as an inductively defined proof object in a Rust-hosted checker.
-enum Covers {
-    Reflexivity   { i: usize },
-    Transitivity  { via: Box<Covers>, sub: Vec<Covers> },
-    Monotonicity  { subset_of: (Rational, Rational), proof: Box<Covers> },
-    Localization  { proof: Box<Covers>, window: (Rational, Rational) },
-    Overlap       { q: Rational, s: Rational, t: Rational, r: Rational }, // rule (v)
-    Interior      { q: Rational, r: Rational },                          // rule (vi)
+// The shape of an admissible ordered field embedding — not runnable HoTT,
+// but the type signature that Theorem 11.2.14 is proving exists uniquely.
+trait AdmissibleOrderedField {
+    fn lt(&self, other: &Self) -> Prop;      // < : F -> F -> Omega, not just bool
 }
 
-// Lemma 11.5.14 is then literally a recursive function over this type
-// that pattern-matches on the constructor and returns a Vec<Interval>
-// -- structural recursion over a proof object, exactly like extracting
-// a finite subcover from a formal-topology derivation.
-fn extract_finite_subcover(proof: &Covers) -> Vec<(Rational, Rational)> {
-    match proof {
-        Covers::Reflexivity { i } => vec![/* F(i) */],
-        Covers::Transitivity { via, sub } => {
-            sub.iter().flat_map(extract_finite_subcover).collect()
-        }
-        // ... one arm per constructor, mirroring the six-case proof.
-        _ => unimplemented!(),
+fn embed<F: AdmissibleOrderedField>(x: F) -> DedekindCut {
+    DedekindCut {
+        lower: Box::new(move |q: Rational| q.lt_field(&x)),
+        upper: Box::new(move |r: Rational| x.lt_field(&r)),
     }
 }
 ```
 
-## §11.6 — The surreal numbers: the pattern repeats, sharper
+## 3. Cauchy reals: the fourth way out of a classic constructive trap
 
-Conway's surreals $\mathrm{No}$, classically, are pairs of sets of surreals $\{L \mid R\}$ with every element of $L$ strictly below every element of $R$ — visibly inductive, except for exactly the same three obstructions the book flagged for $R_c$:
+### The trap
 
-1. **$<$ must be defined simultaneously with $\mathrm{No}$** (an inductive-inductive dependency, chosen over inductive-recursive for the same reasons as $\sim$).
-2. **$L, R$ must be $\mathcal{U}$-small families**, not arbitrary predicates $\mathrm{No}\to\mathrm{Prop}$ (which wouldn't be strictly positive and couldn't be a valid constructor argument) — so the constructor has the *positive* shape $\prod_{L,R:\mathcal{U}} (L\to\mathrm{No})\to(R\to\mathrm{No})\to(\text{ordering condition})\to \mathrm{No}$, echoing the cumulative-hierarchy construction from [[Sets-in-Univalent-Foundations|§10.5's cumulative hierarchy]].
-3. **Equality-by-mutual-inequality** ($x=y$ iff $x\le y \wedge y\le x$) is, without choice, exactly the same "can't safely lift equivalence classes back to representative cuts" problem $R_c$ faced — so it's solved the same way: **a path constructor built into $\mathrm{No}$ itself.**
+The textbook classical construction — Cauchy sequences in $\mathbb{Q}$, quotiented by "converges to the same limit" — hides a subtle use of choice. To prove the quotient $C/{\approx}$ is itself Cauchy complete, you take a Cauchy sequence *of equivalence classes* $x : \mathbb{N} \to C/{\approx}$ and need to *lift* it to an actual sequence of representative sequences $\bar x : \mathbb{N} \to C$. That lift is exactly one instance of the **axiom of countable choice**. Any construction of the reals whose last step is "quotient, then hope you can lift" inherits this dependency. The book lists three traditional constructive escape hatches — treat reals as a bare setoid and never actually quotient; just accept countable choice (it's true in most computational/realizability models anyway); or give up on Cauchy reals and only build Dedekind reals (which, as §11.2 showed, has its *own* universe-level headaches).
 
-**Definition 11.6.1, verbatim shape.** $\mathrm{No}$, with $<,\le : \mathrm{No}\to\mathrm{No}\to\mathcal{U}$, is generated higher inductive-inductively:
-- for $L,R:\mathcal{U}$ and $L\to\mathrm{No}$, $R\to\mathrm{No}$ (writing values $x^L, x^R$) such that $\forall L,R.\, x^L < x^R$, a surreal $x$ (a **cut**);
-- for $x\le y$ and $y\le x$, a path $x=y$;
-- $\le$'s constructor: $x^L < y \,\forall L$ and $x < y^R\, \forall R$ implies $x\le y$ (plus truncation);
-- $<$'s constructors: $\exists L.\, x\le y^L$, or $\exists R.\, x^R\le y$ (plus truncation).
+### The fourth way: higher inductive-inductive types
 
-Notice the deliberate departure from Conway: he defines $<$ *negatively* in terms of $\le$ ($x<y :\equiv x\le y \wedge y\not\ge x$), which is classically fine but a negative definition is disallowed as a HIT-constructor hypothesis (§5.6's positivity discipline again) — so the book gives $<$ its *own* positive constructors and derives Conway's characterization as a theorem instead of taking it as the definition.
+The idea: define $\mathbb{R}_c$ as the **free complete metric space generated by $\mathbb{Q}$**, using a higher inductive type to add "take a limit" as a genuine *constructor* rather than a derived quotient operation. The circularity to defeat is: a Cauchy sequence of reals needs a notion of "distance between reals," but distance between reals is itself a real number you haven't built yet. The fix is to not need full distance — only a family of *closeness* relations $\sim_\epsilon$ for each rational $\epsilon > 0$, meaning "within $\epsilon$." Since $\sim_\epsilon$ is indexed by two copies of the very type being defined, this cannot be an ordinary inductive definition — it must be **inductive-inductive**, and because it also carries path constructors, **higher inductive-inductive**.
 
-**The induction principle, and what it buys you.** Structurally identical to $(R_c,\sim)$-induction but now threading *two* auxiliary relations ($\frown$ tracking $\le$, $\triangleleft$ tracking $<$) alongside the motive $A$. Corollary 11.6.5 reprises Theorem 11.3.9's trick exactly: $x\le x \wedge y\le x$ implies identity (No-induction gives reflexivity, the path constructor turns the reflexive relation into identity, Theorem 7.2.2 finishes it) — **$\mathrm{No}$ is a 0-type**, by the same encode-decode-flavored argument used for $R_c$.
+**Definition 11.3.2.** $\mathbb{R}_c$ and $\mathord\sim : \mathbb{Q}^+ \times \mathbb{R}_c \times \mathbb{R}_c \to \mathcal U$ are defined *simultaneously* by:
 
-**Conway's simplicity theorem** (11.6.2) and worked examples — $\iota_\mathbb{N}, \iota_\mathbb{Z}, \iota_{\mathbb{Q}_D}$ (dyadic rationals), $\iota_{R_d} : R_d \to \mathrm{No}$ (embedding *Dedekind* reals, not Cauchy — because dyadic rationals as a countable dense subset play better with $R_d$'s $\Omega$-valued cuts), and $\iota_{\mathrm{Ord}} : \mathrm{Ord}\to\mathrm{No}$ (embedding the ordinals of [[Sets-in-Univalent-Foundations|§10.3]]) — demonstrate that $\mathrm{No}$ genuinely is the common generalization the section claims: it contains a full copy of the reals *and* a full copy of the ordinals as substructures, plus exotic elements like $\omega, 1/\omega, \omega-1$ that are neither. Negation and addition are constructed by the same joint-recursion discipline as $R_c$'s arithmetic — e.g. addition's defining equation $x+y :\equiv \{x^L+y,\, x+y^L \mid x^R+y,\, x+y^R\}$ requires simultaneously threading four inequality obligations through a nested outer-recursion/inner-induction, structurally the same shape as Theorem 11.3.40's Lipschitz-extension argument for $R_c$'s addition.
+Constructors of $\mathbb{R}_c$:
+- $\mathsf{rat}(q) : \mathbb{R}_c$ for every $q : \mathbb{Q}$,
+- $\mathsf{lim}(x) : \mathbb{R}_c$ for every $x : \mathbb{Q}^+ \to \mathbb{R}_c$ satisfying $\forall \delta,\epsilon.\ x_\delta \sim_{\delta+\epsilon} x_\epsilon$ (a *Cauchy approximation*),
+- $\mathsf{eq}_{\mathbb{R}_c}(u,v) : u =_{\mathbb{R}_c} v$ whenever $\forall \epsilon.\ u \sim_\epsilon v$.
 
-**The book's own closing philosophical note is worth preserving verbatim in spirit**, because it's the most direct statement in the chapter of why HITs matter beyond real numbers specifically: Conway argued that any "reasonably constructive" way of creating objects, plus any desired equivalence relation on them, should be formalizable in *some* standard foundation. The book observes that condition (i) — reasonably constructive creation — is precisely **strict positivity of inductive constructors**, and condition (ii) — arbitrary desired equality — is precisely **higher inductive path constructors**. Univalent foundations isn't just *a* setting where Conway's proposal can be carried out; its inductive-definition machinery is close to a formal reading of what Conway was gesturing at informally.
+Constructors of $\sim$ (mutually, at the same time):
+- $-\epsilon < q-r < \epsilon \Rightarrow \mathsf{rat}(q)\sim_\epsilon \mathsf{rat}(r)$,
+- $\mathsf{rat}(q)\sim_{\epsilon-\delta} y_\delta \Rightarrow \mathsf{rat}(q)\sim_\epsilon \mathsf{lim}(y)$,
+- $x_\delta \sim_{\epsilon-\delta} \mathsf{rat}(r) \Rightarrow \mathsf{lim}(x)\sim_\epsilon \mathsf{rat}(r)$,
+- $x_\delta \sim_{\epsilon-\delta-\eta} y_\eta \Rightarrow \mathsf{lim}(x)\sim_\epsilon \mathsf{lim}(y)$,
+- $\sim_\epsilon$ is propositionally truncated (a mere relation).
 
-## Comparison table: the two real-number constructions
+Read this as: *rationals are real numbers*; *any Cauchy approximation valued in reals-you-already-have gets a limit, for free, as a new point*; *two Cauchy approximations that stay $\sim_\epsilon$-close for every $\epsilon$ produce the same real*. The closeness relation's four "real" clauses say precisely what you'd hope — closeness of rationals is ordinary rational $\epsilon$-closeness, and closeness involving a `lim` unfolds via how close the approximants are to their own limit.
 
-| | Dedekind reals $R_d$ | Cauchy reals $R_c$ |
-|---|---|---|
-| Built from | subsets of $\mathbb{Q}$ (cuts) | HII type: points + limits + $\sim_\epsilon$ |
-| Constructive cost | needs $\Omega$ / power sets (impredicativity) | needs neither power sets nor countable choice |
-| Universal property | **final** archimedean ordered field (11.2.14) | **initial** Cauchy-complete archimedean ordered field (11.3.50) |
-| Completeness | Cauchy complete *and* Dedekind complete | Cauchy complete by construction |
-| Coincide with the other when | LEM or countable choice holds (11.4.3) | (same) |
-| Best suited for | classical / impredicative settings (sheaf models) | computational / choice-free settings (realizability) |
+There's a genuine design decision buried here that the book flags explicitly (Remark 11.3.1): you *could* instead define $\sim_\epsilon$ by recursion on $\mathbb{R}_c$ (a higher inductive-*recursive* definition), but the authors reject that route for two reasons — it's harder to justify in the homotopical (simplicial-set) semantics, and, more importantly for anyone implementing this, the inductive-inductive route gives you a *strictly stronger induction principle*, one that's actually needed to develop the basic theory. This is a genuinely useful lesson for kernel design: when two encodings of "the same" mutual definition are classically equivalent, they can still differ in what induction principle you're entitled to extract, and that difference can be load-bearing.
+
+**Why this avoids the choice problem entirely.** Because `lim` is a *constructor of the very type $\mathbb{R}_c$*, a Cauchy sequence of *already-constructed reals* just directly produces a new real — there is no quotient step at the end where you'd need to lift representatives. The completion is built by (transfinitely) iterating the "take a limit" operation as part of the free construction, the same way the free group on a set isn't just "products and inverses of generators" but arbitrarily long words built by iterating those operations.
+
+### Comparing Cauchy and Dedekind reals
+
+There's always a canonical embedding $\mathbb{R}_c \hookrightarrow \mathbb{R}_d$ (via Theorem 11.2.14, since $\mathbb{R}_c$ turns out to be an archimedean ordered field admissible for $\Omega$), but **they need not coincide** constructively. **Lemma 11.4.1** pins down exactly what's missing: if for every Dedekind real $x$ you can (untruncated, i.e. *computably*) decide, for any $q<r$, whether $q<x$ or $x<r$, then every Dedekind real is *actually* (not just merely) the limit of a rational Cauchy sequence, obtained by a bisection algorithm shrinking an interval $[q_n, r_n] \ni x$ by a factor of $2/3$ at each step using that decision procedure. **Corollary 11.4.3**: either **excluded middle** or **countable choice** is enough to supply that decision procedure (LEM directly; countable choice by choosing, for each of the countably many pairs $(q,r)\in S \cong \mathbb{N}$, a witness of $q<x \vee x<r$). So the gap between $\mathbb{R}_c$ and $\mathbb{R}_d$ is a genuine, non-trivial piece of information: it's exactly the room left over once you refuse both classical axioms, and it disappears the instant you readmit either one.
+
+## 4. Compactness of $[0,1]$: three notions that classically collapse, constructively don't
+
+Classically, "compact" is one concept with three equivalent faces. Constructively, it fractures, and the fracture pattern is genuinely diagnostic of where classical reasoning was hiding.
+
+**Metric compactness** ("complete + totally bounded") survives constructively without any fuss: **Theorem 11.5.6** shows $[0,1]$ has, for every $\epsilon$, an explicit $\epsilon$-net $\{i/k\}$, and is complete via the retraction $r(x) = \max(0,\min(1,x))$, which is Lipschitz and therefore commutes with limits. Note the book's discipline here — totally-boundedness is defined with an *untruncated* $\Sigma$ (you get an actual net-producing function, a "modulus of total boundedness"), not a truncated $\exists$, precisely because a merely-existential net gives you nothing to compute with. This "prefer $\Sigma$ over truncated $\exists$ when you'll need to compute with the witness" discipline generalizes directly to invariant-generation and Skolemization choices in a verifier: keep the witness untruncated exactly when downstream code needs to extract and use it, truncate only where you only ever need the bare fact.
+
+**Bolzano–Weierstraß compactness** ("every sequence has a convergent subsequence") is constructively *too strong* — **Theorem 11.5.9** shows it implies the **limited principle of omniscience** (LPO): being able to decide, for arbitrary $\alpha : \mathbb{N}\to\mathbf 2$, whether $\alpha$ is eventually always $0$ or hits a $1$ somewhere. LPO is a genuine instance of excluded middle over an infinite search, and it's the kind of thing a computationally faithful theory must reject: no algorithm decides that in general. The proof is a slick reduction — build a sequence that stalls at $0$ until $\alpha$ first hits $1$, then jumps to $1$ and stays; a convergent subsequence effectively answers the omniscience question.
+
+**Heine–Borel compactness** ("every open cover has a finite subcover") is the interesting middle case. Classically it holds outright (**Theorem 11.5.11**, a bisection proof by contradiction — assume no finite subcover exists, nest shrinking intervals that each individually resist finite subcovering, derive a contradiction at the limit point). Constructively, the *naive, pointwise* formulation is simply too weak to work with computationally: even two overlapping intervals visibly covering $[1,4]$ can't be verified to cover it pointwise without effectively deciding a non-constant map $[1,4]\to\mathbf 2$.
+
+The repair borrows from **formal/pointfree topology (locale theory)**: define an **inductive cover** relation $\triangleleft$ (Definition 11.5.13) by *rules*, not by quantifying over points — reflexivity (a member of the family covers itself), transitivity, monotonicity under interval inclusion, localization under intersection, plus two rules specific to the real line (an interval is covered by two overlapping sub-intervals; an interval is covered "from within" by all strictly-smaller sub-intervals). This is a genuinely higher-inductive-type-flavored definition — proof-relevant, closed under a fixed rule set, and — crucially — it *does* satisfy Heine–Borel (**Corollary 11.5.15**) using a real proof by induction on the derivation of $\triangleleft$ (**Lemma 11.5.14**), no excluded middle required. And it's classically conservative: **Theorem 11.5.16** shows inductive covers imply pointwise covers unconditionally, and the converse holds given excluded middle — so nothing is lost for a classical reader, and the constructive reader gets something usable.
+
+If you've worked with **reachability analysis via abstract interpretation** or **Craig interpolation for refinement**, this pattern should feel familiar: you replace "does this predicate hold at every point of an infinite/uncountable domain" (intractable to decide directly) with "is this fact derivable by a fixed, finitary set of *inference rules* over a well-founded structure" (an inductively-defined provability relation, checkable by structural induction on derivations). Formal topology's inductive covers are doing for compactness exactly what a fixed-point/least-solution characterization does for invariant generation: turn a semantic, potentially undecidable property into a syntactic, rule-generated one that admits induction.
+
+## 5. Surreal numbers: the other higher inductive-inductive type
+
+Conway's surreals $\mathbf{No}$ generalize both the (Dedekind) reals and the ordinals, built classically as a pair of sets of surreals $\{L \mid R\}$ with every element of $L$ below every element of $R$. Translating this to type theory hits three separate obstacles, each already familiar from earlier in the chapter:
+
+1. **Simultaneity.** The well-formedness of a cut $\{L\mid R\}$ needs "$<$ between surreals," but that relation is being defined by the very cuts it's used to constrain — inductive-inductive again, chosen (as with $\sim_\epsilon$) over inductive-recursive for the stronger induction principle it yields. The book also separates $<$ and $\le$ into their own mutual definition, rather than Conway's classical move of defining $<$ as the negation of $\ge$ — a negative definition can't legally appear as a hypothesis of a higher-inductive-type constructor (§5.6's positivity restriction).
+2. **Size.** "$L$, $R$ are sets of surreals" cannot mean "arbitrary predicate $\mathbf{No}\to\mathrm{Prop}$" — that's not strictly positive, and moreover it's the wrong translation of Conway's intent (in Conway's set theory, $\mathbf{No}$ is a proper class, while $L,R$ are genuinely small sets). The fix, exactly parallel to the cumulative hierarchy of Chapter 10: index $L,R$ by $\mathcal U$-small types, so the cut constructor has the strictly-positive shape $\prod_{L,R:\mathcal U} (L\to\mathbf{No}) \to (R\to\mathbf{No}) \to (\dots) \to \mathbf{No}$, and $\mathbf{No}$ itself lives one universe up, in $\mathcal U'$.
+3. **Quotienting by $x\le y \wedge y\le x$.** Conway's usual final step — quotient "pre-surreals" by mutual $\le$ — reintroduces exactly the lifting problem that plagued the naive Cauchy reals (a family of surreals can't necessarily be lifted to a family of pre-surreal representatives without choice). The fix is the same fix as §11.3: fold the quotienting into the higher-inductive-inductive definition itself, via a path constructor `eqNo`.
+
+**Definition 11.6.1**, compressed: $\mathbf{No}$'s point constructor takes $L,R:\mathcal U$, functions $L\to\mathbf{No}$ and $R\to \mathbf{No}$ (written $x^L$, $x^R$), a proof $\forall L,R.\ x^L < x^R$, and yields a surreal $x$ — plus a path constructor identifying $x,y$ whenever $x\le y \wedge y\le x$. Then $\le$ and $<$ are defined *mutually* with $\mathbf{No}$: $x\le y$ iff $x^L < y$ for all left options and $x < y^R$ for all right options; $x<y$ iff $x \le y^{L}$ for some left option of $y$, or $x^R \le y$ for some right option of $x$ — each truncated to a mere proposition. You can check directly against Conway's classical clauses ($x\ge y$ iff no $x^R\le y$ and no $y^L \ge x$; $x=y$ iff $x\ge y\wedge y\ge x$) that negating his $\ge$ and canceling double negations recovers exactly this $<$.
+
+This machinery immediately produces familiar objects by simple recursive cuts: $\iota_{\mathbb N}(0):\equiv\{\mid\}$, $\iota_{\mathbb N}(\mathrm{succ}(n)) :\equiv \{\iota_{\mathbb N}(n)\mid\}$; dyadic rationals via halving cuts; $\iota_{\mathbb{R}_d}(x) :\equiv \{q\in\mathbb Q_D : q<x \mid q\in\mathbb Q_D : x<q\}$ (literally a Dedekind cut restricted to dyadics); ordinals via $\iota_{\mathrm{Ord}}(A) :\equiv \{\iota_{\mathrm{Ord}}(A/a) \text{ for all } a:A\mid\}$; and genuinely new objects like $\omega :\equiv \{0,1,2,\dots\mid\}$, $1/\omega :\equiv \{0 \mid 1,\tfrac12,\tfrac14,\dots\}$, and $\omega - 1 :\equiv \{0,1,2,\dots \mid \omega\}$. **Conway's simplicity theorem** (Theorem 11.6.2) gives sufficient conditions for two differently-presented cuts to denote the *same* surreal — the tool that lets you prove, e.g., that $\iota_{\mathbb{R}_d}$ genuinely extends $\iota_{\mathbb Q_D}$.
+
+The mutual **No-induction principle** (stated in full generality for three simultaneously-defined dependent families $A, B, C$ over $\mathbf{No}, \le, <$) is the engineering payoff: it lets you define functions and prove properties of surreals by structural recursion on cuts, exactly mirroring Conway's own informal justification ("we prove $P(x)$ by deducing it from $P(x^L)$ and $P(x^R)$ for all options — 'all numbers are constructed in this way' licenses this"). This is a clean real-world instance of a **strengthened induction principle purchased by choosing inductive-inductive over inductive-recursive** — the same tradeoff flagged for $\sim_\epsilon$, now paying off visibly in Theorem 11.6.4 ($x\le x$ and $x^L < x < x^R$, proved by a single No-induction).
 
 ## Where this leads
 
-This chapter is largely a terminal application chapter within the book's own arc — it draws on the higher inductive type machinery of Chapter 6 ([[Higher-Inductive-Types]]), the inductive-inductive discussion flagged in §5.7, the "sets behave as expected" results of Chapter 10 ([[Sets-in-Univalent-Foundations]]), and the ordinal/cumulative-hierarchy constructions referenced for the surreals — rather than being a prerequisite for later chapters. Its role in the book's overall argument is evidentiary: it demonstrates that univalent foundations can carry out genuine, hard, load-bearing mathematics (not just re-derive toy examples) using nothing but the type-forming machinery already built, and that doing so *without* classical assumptions produces mathematically meaningful distinctions (LPO's failure, $R_c \ne R_d$ in general) rather than just annoying technical friction.
+```mermaid
+flowchart TD
+    Q["ℚ (Ch.11.1): quotient of ℤ×ℕ, decidable order"]
+    Ord["Ordinals & cumulative hierarchy (Ch.10)"]
+    Q --> Rd["Dedekind reals R_d (11.2): cuts in Ω, final archimedean ordered field"]
+    Q --> Rc["Cauchy reals R_c (11.3): HIIT, initial Cauchy-complete archimedean field"]
+    Rc -->|"always embeds"| Rd
+    Rd -->|"embed via cuts on dyadics"| No["Surreal numbers No (11.6): HIIT generalizing R_d and Ord"]
+    Ord -->|"embed via well-founded recursion"| No
+    Rd --> Compact["Compactness of [0,1] (11.5): metric vs BW vs Heine-Borel"]
+    Compact -->|"needs pointfree/inductive covers"| Formal["Formal topology: rule-generated ◁ relation"]
+```
 
-**On this topic's relationship to the standing learning-goals project.** Per the workbench's own learning-goals configuration, HoTT-specific mathematics like this chapter's real-number constructions is explicitly scoped as background/context, not a build target — there is no faithful way to connect Dedekind-cut arithmetic, apartness relations, or Conway's simplicity theorem to a Rust program-verifier or a Miller-pattern-unification elaborator, and forcing one would be dishonest to both this chapter and that project. Being upfront about that: most of this note's mathematical content (§§11.1, 11.2, 11.4, and the algebraic parts of 11.3/11.6) is genuinely inert for those two engineering targets, and is included here for the same reason the book includes it — because a serious foundations text has to show it can do real analysis, not because it teaches elaborator or verifier mechanics.
+This chapter is the book's demonstration case for the thesis that constructive type theory is not a *restriction* of classical mathematics but a *refinement* of it — everywhere a classical proof used LEM or choice, this chapter shows exactly which construction breaks, and repairs it with a strictly more expressive tool: higher inductive-inductive types. Nothing here is needed by later chapters (this is the last chapter of the "mathematical applications" part), but as a case study it's the most complete illustration in the book of *why* higher-inductive-inductive types (beyond the simpler HITs of Chapter 6 and the plain inductive-inductive types glimpsed in §5.7) earn their keep: they let you define a type and its own comparison/closeness relations by simultaneous induction, side-stepping quotient-then-lift arguments that secretly needed choice.
 
-What *does* transfer, cleanly, is one structural idea that recurs three times in this single chapter (once for $\Omega$ as a $\sigma$-frame, once for $R_c$/$\sim$, once for $\mathrm{No}$/$\le$/$<$): **the higher inductive-inductive pattern — simultaneously defining a type and a relation (or family) on it, rather than defining the type first and bolting the relation on afterward.** This is exactly the situation a bidirectional elaborator or a Hoare-triple checker runs into whenever a term-syntax type and its well-formedness/typing judgment are mutually recursive (a term is well-typed relative to a context that itself contains terms) — and this chapter is a sustained, worked demonstration of *why* getting the definition order right matters: the book explicitly rejects the inductive-*recursive* alternative for $\sim$ (Remark 11.3.1) because it yields a strictly weaker induction principle, the same failure mode that shows up if a typechecker's context-validity judgment is defined by recursion over an already-fixed term syntax instead of being threaded through the syntax's own well-formedness from the start. The second transferable thread, more minor: this chapter is the book's most sustained demonstration that **avoiding choice principles is not merely an ideological nicety but changes what you can prove** (§11.4's precise catalogue of exactly how much choice — countable, not full — is needed to re-glue $R_c$ and $R_d$) — a useful case study in how to audit a proof pipeline for hidden non-constructive steps, relevant to anyone who wants their verifier's certificates to mean what they claim to mean.
+**For the elaborator/verifier project**, three threads are directly load-bearing:
+
+- The **positivity discipline** forced on the surreal-number cut constructor (§5) is the same discipline any inductive type checker (including yours) must enforce on constructor argument types — this chapter is a worked example of what happens when a "natural" classical definition (arbitrary predicates as "sets") fails strict positivity and needs to be re-engineered around universe-indexed small types, exactly the situation a dependent kernel hits whenever a user tries to define impredicative-looking inductive data.
+- The **untruncated-$\Sigma$-vs-truncated-$\exists$ discipline** running through §11.5 (moduli of total boundedness, moduli of uniform continuity) is precisely the discipline you need when deciding whether a piece of proof-search output should carry a reusable *witness* (Skolem term, model, interpolant) or can be safely thrown away as a bare existence fact — get this wrong in a CEGAR loop and you either bloat certificates uselessly or lose information you needed for refinement.
+- The **inductive-cover** relation of §11.5 is a small, self-contained example of replacing an intractable semantic quantification (over all points) with a finitary, rule-generated derivability relation admitting structural induction — the same move that underlies Horn-clause / CHC-based invariant generation and least-fixed-point semantics for reachability.

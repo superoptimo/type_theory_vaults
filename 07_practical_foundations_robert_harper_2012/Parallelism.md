@@ -110,7 +110,7 @@ Read this as the honest floor and ceiling on parallel speedup: you can never bea
 
 The proof sketch is a *greedy scheduler*: at every round, run as many ready tasks as you have processors for, up to $p$. If $p$ ready tasks are always available, you finish in $w/p$ rounds; the only way you fall short of that bound is when dependency structure — captured exactly by $d$ — forces you to wait, and that can never cost you more than $d$ extra rounds beyond the work-bound. Harper makes this concrete with a two-level dynamics: **local transitions** model individual processor steps — including the new fork/join local steps (39.10b–c) that spawn or retire named tasks — and **global transitions** (39.11) execute up to $p$ local steps simultaneously, one per active processor.
 
-**Grounding (Lean) — work/depth as an explicit cost witness alongside a value.** Because $\Downarrow_c$ is itself a derivable judgment (an actual proof term, not a side calculation), the natural Lean-side rendering isn't an analogy — it's a literal transcription of the judgment into an inductive relation carrying a cost graph as data:
+**[[Recursive-Types#Grounding|Grounding]] (Lean) — work/depth as an explicit cost witness alongside a value.** Because $\Downarrow_c$ is itself a derivable judgment (an actual proof term, not a side calculation), the natural Lean-side rendering isn't an analogy — it's a literal transcription of the judgment into an inductive relation carrying a cost graph as data:
 
 ```lean
 inductive Cost where
@@ -159,7 +159,7 @@ $$\tau\ \mathtt{spec} \qquad \mathtt{spec}(e):\tau\ \mathtt{spec} \qquad \mathtt
 
 The statics is essentially identical to futures. What differs is the *final-state condition* (Rule 40.11): a speculation-bearing program is done as soon as the *focus* reaches a value — outstanding speculations may simply be abandoned, whether or not they've finished. This is the entire tradeoff in one sentence: **futures guarantee no wasted work but must wait for everything; speculations may finish faster by racing ahead on work that might turn out to be unnecessary — and that work is genuinely wasted if it's never needed.**
 
-**What breaks without this distinction:** conflating the two would either force unnecessary synchronization (treating every speculative guess as a mandatory future, killing the benefit of speculating in the first place) or silently discard work that was actually required (treating a future as abandonable, which would break work-efficiency and potentially drop a needed result). The type-level distinction — `fut` vs `spec` — makes the commitment explicit and checkable rather than an unstated convention about which "background tasks" are safe to cancel.
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]] distinction:** conflating the two would either force unnecessary synchronization (treating every speculative guess as a mandatory future, killing the benefit of speculating in the first place) or silently discard work that was actually required (treating a future as abandonable, which would break work-efficiency and potentially drop a needed result). The type-level distinction — `fut` vs `spec` — makes the commitment explicit and checkable rather than an unstated convention about which "background tasks" are safe to cancel.
 
 ### 40.4 Applications — pipelining, sparks, and futures as an encoding target for fork-join
 

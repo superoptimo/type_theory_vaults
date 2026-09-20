@@ -134,7 +134,7 @@ Once you add exchange (giving **FLe**), fusion becomes commutative and, as noted
 
 This is the section's payoff, and it's a genuinely important proof-theoretic fact: **the structural rules you keep determine whether [[Cut-Elimination|cut elimination]] even holds.**
 
-**Theorem 4.7 (Ono):** Cut elimination holds for FL, FLe, FLw, FLew, and FLec. Consequently they all have the subformula property. For FL/FLe/FLw/FLew, ordinary cut elimination goes through directly (no need for the e-cut trick from Chapter 2, because there's no contraction to create the "deadlock case"); FLec needs e-cut elimination first, exactly as LJ did.
+**Theorem 4.7 (Ono):** Cut elimination holds for FL, FLe, FLw, FLew, and FLec. Consequently they all have the [[Subformula-Property|subformula property]]. For FL/FLe/FLw/FLew, ordinary cut elimination goes through directly (no need for the e-cut trick from Chapter 2, because there's no contraction to create the "deadlock case"); FLec needs e-cut elimination first, exactly as LJ did.
 
 **Theorem 4.8:** FL, FLe, FLw, FLew are decidable — and for a cleaner reason than LJ's decidability proof in Chapter 3. Since none of these systems has contraction, *every* rule application shrinks the sequent (each premise is strictly shorter than the conclusion), so backward proof search terminates trivially — no loop-checking, no "reduced proof" machinery needed at all. This is the single biggest practical payoff of dropping contraction: proof search becomes structurally well-founded for free.
 

@@ -76,7 +76,7 @@ $$\Gamma \vdash \langle p{\cdot}l,\, p{\cdot}r\rangle \equiv p : \varphi_1 \wedg
 and for implication, this is exactly the eta rule:
 $$\Gamma \vdash \lambda(x{:}\varphi_1)\,(p(x)) \equiv p : \varphi_1 \supset \varphi_2$$
 
-If you've seen beta and eta laws presented as arbitrary equational conveniences in a typed lambda calculus course, this is where they actually come from: they are the proof-theoretic statement that introduction and elimination are mutually inverse, restated at the level of program equality. **What breaks without this principle:** without conservation, elimination could "invent" information not present in the original proof — logically unsound, computationally equivalent to a function that returns something not derivable from its argument. Without reversibility, distinct proofs could be indistinguishable by any elimination test yet still be treated as different — a form of extensional incompleteness (exactly the failure eta-expansion prevents in a language without it).
+If you've seen beta and eta laws presented as arbitrary equational conveniences in a typed lambda calculus course, this is where they actually come from: they are the proof-theoretic statement that introduction and elimination are mutually inverse, restated at the level of program equality. **[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]] principle:** without conservation, elimination could "invent" information not present in the original proof — logically unsound, computationally equivalent to a function that returns something not derivable from its argument. Without reversibility, distinct proofs could be indistinguishable by any elimination test yet still be treated as different — a form of extensional incompleteness (exactly the failure eta-expansion prevents in a language without it).
 
 ## The correspondence chart
 
@@ -124,7 +124,7 @@ theorem or_elim {φ ψ γ : Prop} (p : Or φ ψ)
 
 The beta rule from conservation of proof is exactly what `rfl`/definitional unfolding gives you for `(fun x => e) a ≡ e[a/x]` in Lean's kernel; eta for products/functions is likewise built into Lean's definitional equality. When you later build an elaborator that checks `isDefEq`, this is precisely the equational theory it must respect for logical soundness — a proof term that beta/eta-reduces to a different one must still type-check as a proof of the same proposition.
 
-**Grounding — Rust**, for the checker/verifier reading: [[Sum-Types|sum types]], [[Product-Types|product types]], and function types are exactly `enum`, `struct`/tuple, and `fn`/closure, and a hand-rolled proof checker for this fragment is close to a tiny typed interpreter:
+**[[Recursive-Types#Grounding|Grounding]] — Rust**, for the checker/verifier reading: [[Sum-Types|sum types]], [[Product-Types|product types]], and function types are exactly `enum`, `struct`/tuple, and `fn`/closure, and a hand-rolled proof checker for this fragment is close to a tiny typed interpreter:
 
 ```rust
 // Prop ~ Rust types, under the correspondence table above.

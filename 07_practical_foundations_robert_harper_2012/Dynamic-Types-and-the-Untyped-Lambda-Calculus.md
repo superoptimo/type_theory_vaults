@@ -96,7 +96,7 @@ $$
 u_p' \triangleq \lambda(x)\, x(\langle \underline0,\underline0\rangle)(\lambda(y)\,\langle y\cdot r,\ \mathrm{succ}(y\cdot r)\rangle) \qquad\qquad u_p \triangleq \lambda(x)\, u_p'(x)\cdot l
 $$
 
-**What breaks without this trick:** if you tried to compute predecessor by "structural recursion on the numeral," you'd need to pattern-match on whether $n$ is zero or a successor — but a Church numeral *isn't* a data structure you can inspect, it's a function you can only *call*. The shift-register construction is the general technique for extracting "the previous state" out of an iterator that only exposes "apply this many times," and it's the same trick you reach for whenever you need a stateful fold's history rather than just its final accumulator — e.g. implementing a two-pointer / lag window purely via `fold` in Rust:
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]] trick:** if you tried to compute predecessor by "structural recursion on the numeral," you'd need to pattern-match on whether $n$ is zero or a successor — but a Church numeral *isn't* a data structure you can inspect, it's a function you can only *call*. The shift-register construction is the general technique for extracting "the previous state" out of an iterator that only exposes "apply this many times," and it's the same trick you reach for whenever you need a stateful fold's history rather than just its final accumulator — e.g. implementing a two-pointer / lag window purely via `fold` in Rust:
 
 ```rust
 // Same shift-register idea: iterate n times, carrying (prev, cur)

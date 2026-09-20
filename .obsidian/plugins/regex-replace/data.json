@@ -1,0 +1,14 @@
+{
+  "defaultFlags": "g",
+  "historyLimit": 10,
+  "showPreview": true,
+  "recentPatterns": [
+    {
+      "search": "\\[\\[(?:[^|\\]]*\\|)?([^\\]]+)\\]\\]",
+      "replace": "$1",
+      "flags": "g",
+      "timestamp": 1787423180831
+    }
+  ],
+  "ruleSets": []
+}

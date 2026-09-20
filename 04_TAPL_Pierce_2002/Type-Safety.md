@@ -76,7 +76,7 @@ fn typeof_term(ctx: &Context, t: &Term) -> Result<Type, String> {
 
 Note this function *is* the T-Var/T-Abs/T-App rules, read left-to-right as a recursive procedure — that correspondence (rules-as-code) is exactly what Chapter 10 and Chapter 27 of TAPL do explicitly with OCaml.
 
-**Lean grounding.** Because this is genuinely proof-theoretic content, Lean is the more faithful mirror here. A typing judgment as an inductive relation over a de Bruijn-indexed (or intrinsically-typed) term is close to verbatim:
+**Lean [[ML-Implementation-Techniques#Grounding|grounding]].** Because this is genuinely proof-theoretic content, Lean is the more faithful mirror here. A typing judgment as an inductive relation over a de Bruijn-indexed (or intrinsically-typed) term is close to verbatim:
 
 ```lean
 inductive HasType : Ctx → Term → Ty → Prop
@@ -104,7 +104,7 @@ Canonical forms is the load-bearing hinge between "the type says this is a funct
 
 Note also the sharpness of "closed": progress explicitly requires no free variables. `f true` where `f : Bool → Bool` is a perfectly well-typed *open* term that is stuck as a normal form (it's not a value, and no rule fires) — but this isn't a counterexample to safety, because open terms aren't complete programs. This is a detail people skip past and then get confused later when reasoning about safety under a context of assumptions (exactly what you'll need for Hoare-triple-style verification, where your "context" is your set of preconditions/hypotheses, not an empty one).
 
-**What breaks without it:** without progress, preservation alone is vacuous — a type system could have every well-typed term either evaluate correctly or *get permanently stuck*, and preservation would say nothing about it (a stuck term isn't a step, so preservation's hypothesis $t \to t'$ never fires and the theorem is trivially true). Progress is the theorem that actually rules out stuckness.
+**[[Subtyping#What breaks without it|What breaks without it]]:** without progress, preservation alone is vacuous — a type system could have every well-typed term either evaluate correctly or *get permanently stuck*, and preservation would say nothing about it (a stuck term isn't a step, so preservation's hypothesis $t \to t'$ never fires and the theorem is trivially true). Progress is the theorem that actually rules out stuckness.
 
 ## Preservation: "stepping doesn't break your type"
 
@@ -116,7 +116,7 @@ Also proved by induction on the typing derivation, case-splitting on the evaluat
 
 This is proved using two auxiliary structural lemmas that are almost boring on their own but indispensable in combination: **Permutation** (reordering $\Gamma$ doesn't change what's derivable) and **Weakening** (adding an unused binding to $\Gamma$ doesn't change what's derivable). You use them to line the contexts up correctly before invoking the induction hypothesis in the abstraction case of the substitution proof.
 
-**What breaks without it:** if substitution didn't preserve typing, then function application — the one place where "plug this value into that body" actually happens — could silently produce a term whose type no longer matches what was promised at the call site. Progress would still tell you *this step* is fine, but the *next* application of progress would be reasoning about a term whose type is a lie.
+**[[Type-Reconstruction#What breaks without it|What breaks without it]]:** if substitution didn't preserve typing, then function application — the one place where "plug this value into that body" actually happens — could silently produce a term whose type no longer matches what was promised at the call site. Progress would still tell you *this step* is fine, but the *next* application of progress would be reasoning about a term whose type is a lie.
 
 **Rust grounding.** This is the theorem licensing something Rust programmers take completely for granted: that calling a well-typed function with a well-typed argument produces a well-typed (and hence "not about to blow up in a way `unsafe` wasn't invoked for") result, at every call site, transitively, for the whole call graph. Every time you write a generic function and instantiate it, you're relying on a substitution lemma for Rust's (much richer, trait-bounded) type system.
 

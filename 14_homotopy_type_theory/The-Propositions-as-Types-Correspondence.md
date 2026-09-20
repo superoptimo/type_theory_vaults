@@ -1,29 +1,23 @@
 ---
 title: The Propositions as Types Correspondence
-source: "Homotopy Type Theory: Univalent Foundations of Mathematics"
-chapters: "Chapter 1 §1.11 (pp. 41–46); Chapter 3 §§3.2–3.10 (pp. 109–123)"
-tags: [type-theory, hott, propositions-as-types, curry-howard, sigma-types, pi-types, mere-propositions, propositional-truncation]
+book: Homotopy Type Theory - Univalent Foundations of Mathematics
+chapters: "Chapter 1, §1.11 (pp. 41–47); Chapter 3, §§3.1–3.11 (pp. 107–124)"
+tags: [type-theory, curry-howard, propositions-as-types, sigma-types, pi-types, mere-propositions, hott]
 ---
-
-# The Propositions as Types Correspondence
 
 [[book-guidelines|↩ Back to guidelines]]
 
 ## What problem does this solve?
 
-Suppose you're building a type checker, and someone asks you: "does this checker also do logic?" In set-theoretic mathematics the answer is architecturally awkward — sets and propositions are two different kinds of thing. A set is a bag of elements; a proposition is a statement that's either true or false, and its "proof" is a certificate that lives outside the mathematical universe of sets, in the metatheory. You can't put a proof *inside* a set the way you put a number inside it.
+Suppose you're writing a compiler that needs to check a `requires`/`ensures` contract on a function — say, `sqrt(x: Nat) -> Nat requires x >= 0 ensures result * result <= x`. Somewhere in your toolchain you need to represent the *statement* `x >= 0` as data, generate a *proof obligation* for it, and eventually *check* that a candidate proof actually discharges that obligation. Classically you'd reach for two separate universes of objects: propositions (truth-valued formulas manipulated by a separate proof system) and terms (the actual program values, checked by the type system). That split is exactly why most verification toolchains need *two* trust boundaries — an SMT solver that reasons about propositions, glued via a fragile FFI to a type checker that reasons about terms.
 
-Type theory refuses that split. It has exactly one basic notion — the type — and the central move of this topic is to notice that "proposition" and "type" can be made to *coincide*. To prove a proposition is to construct an element of the type that represents it. This isn't an analogy or a trick encoding; it's the same judgment form (`a : A`) doing double duty as "$a$ is a value of type $A$" and "$a$ is a proof of proposition $A$." The book calls this **propositions as types**, and it's the reason a dependently-typed language can be, simultaneously, a programming language and a proof assistant — which is exactly the architectural fact your Rust verifier and Lean-style elaborator both lean on. When you write `isDefEq` or a typing judgment `Γ ⊢ e : A`, you are, whether you intend to or not, already doing logic — this correspondence is *why* that's true rather than a coincidence.
+Martin-Löf's insight, formalized here as propositions-as-types (also called the Curry-Howard correspondence), is that you don't need two universes. A proposition *is* a type. A proof of the proposition *is* a term (an element) of that type. Checking whether a proof is valid is the same act as type-checking a term. There is exactly one trust boundary: the type checker's kernel.
 
-But (and this is the twist the book spends all of Chapter 3 on) the naive version of this idea has a serious defect once you add the [[Formal-Metatheory#Univalence|univalence]] axiom: it makes classical logic inconsistent. Understanding *why*, and how the book repairs it with mere propositions and truncation, is the second half of this topic and arguably the more load-bearing half for anything you build as a checker.
+This is not a philosophical flourish — it is the architectural decision that makes Lean's kernel able to double as both a compiler's type checker and a proof assistant's proof checker. If you want to build the dependent/refinement-type compiler with an embedded prover described in your learning goals, §1.11 and Chapter 3 of this book are literally the specification of your term representation for logical formulas, and the mechanism by which "prove `P`" and "construct a term of type `P`" become the same operation.
 
----
+## The core correspondence: connectives as type formers
 
-## Part 1: Connectives as type constructors (§1.11)
-
-### The dictionary
-
-The book's core observation: the *rules* for building and using an element of a type mirror the *rules* for proving and using a proposition, connective by connective.
+The book builds this compositionally, reusing type formers already introduced in Chapter 1 (§§1.2–1.9): function types, products, coproducts, the empty and unit types. Nothing new is introduced at the type-theoretic level in §1.11 — what's new is the *reading*.
 
 | English | Type theory |
 |---|---|
@@ -32,224 +26,172 @@ The book's core observation: the *rules* for building and using an element of a 
 | $A$ and $B$ | $A \times B$ |
 | $A$ or $B$ | $A + B$ |
 | If $A$ then $B$ | $A \to B$ |
-| $A$ iff $B$ | $(A \to B) \times (B \to A)$ |
+| $A$ if and only if $B$ | $(A \to B) \times (B \to A)$ |
 | Not $A$ | $A \to \mathbf{0}$, written $\neg A$ |
 
-This isn't a table you memorize; it falls out of matching introduction/elimination rules. "The basic way to prove $A \text{ and } B$ is to prove $A$ and prove $B$" is *literally* the pairing constructor of $A \times B$: you supply an $a : A$ and a $b : B$ and get $(a,b) : A \times B$. "The basic way to prove $A \to B$" — assume $A$, derive $B$ — is a $\lambda$-abstraction: an expression for an element of $B$ that may mention an unspecified variable of type $A$. Modus ponens is function application.
+Why do these lines up? Because the *rules for using and constructing elements* of the type on the right match the *rules for reasoning about* the proposition on the left, one for one:
 
-**What breaks without this reading of $\neg$:** negation is defined as $\neg A :\equiv A \to \mathbf{0}$ — a function from $A$ to the empty type. A witness of $\neg A$ is therefore literally a *procedure* that, given a supposed proof of $A$, manufactures an absurdity. This licenses ordinary proof by contradiction *for proving negations* (assume $A$, derive $\bot$, conclude $\neg A$ — this is just how you construct a function into $\mathbf{0}$), but it does **not** license classical proof by contradiction for proving positive statements (assume $\neg A$, derive $\bot$, conclude $A$). That second move needs $\neg\neg A \to A$, and nothing in the constructors above gives you that — you only ever get $\neg\neg\neg A \to \neg A$ for free (negations always "cancel in threes," never in twos). This asymmetry is where constructive logic actually bites, and it's worth sitting with, because it's the exact asymmetry a bidirectional proof search needs to respect: refutation-by-construction is cheap, existence-by-double-negation is not.
+- To prove "$A$ and $B$" you prove $A$ and separately prove $B$. To build an element of $A \times B$ you supply a pair $(a, b)$ where $a : A$ and $b : B$. Same shape.
+- To prove "if $A$ then $B$" you assume $A$ and derive $B$. To build an element of $A \to B$ you write an expression of type $B$ that may mention a free variable of type $A$. Same shape.
+- Negation $\neg A :\equiv A \to \mathbf{0}$ makes "proof by contradiction of $\neg A$" — assume $A$, derive absurdity — a perfectly ordinary, *constructive* function $A \to \mathbf{0}$. What's disallowed constructively is the other direction: assuming $\neg A$ and deriving a contradiction to conclude $A$. That would require excluded middle, which is not a theorem of the base theory.
 
-**A worked translation.** The book walks through translating the English proof of a De Morgan law, "if not $A$ and not $B$, then not ($A$ or $B$)," into an inhabitant of
-$$(A \to \mathbf{0}) \times (B \to \mathbf{0}) \to (A + B \to \mathbf{0})$$
-step by step: "suppose not $A$ and not $B$" introduces variables $x : A \to \mathbf 0$, $y : B \to \mathbf 0$ via the product's recursor; "suppose $A$ or $B$" introduces $z : A + B$; "there are two cases" is a case split (the recursor for $+$); each case closes by applying the corresponding hypothesis. The point of walking through this mechanically is that it's exactly what a proof-term elaborator does when it turns tactic-style or prose-style reasoning into a checkable term — every "suppose," "there are two cases," and "therefore" corresponds one-to-one to an elimination or introduction rule.
+**[[Sets-in-Univalent-Foundations#What breaks without this|What breaks without this]] correspondence being exact:** if you tried to make "or" correspond to, say, a truncated/quotient type by default, you would lose the ability to do case analysis on a proof of "$A$ or $B$" and recover *which* disjunct held — see the coproduct type former's induction principle (`ind_{A+B}`, Chapter 1 §1.7): it eliminates into any family $C$, including one that depends on which injection was used. That case-splitting capability is precisely proof-relevance (more below), and it's why $A+B$, not some quotient of it, is the default "or."
 
-The converse-shaped classical law, "if not $(A \text{ and } B)$ then not $A$ or not $B$," is **not** provable — you cannot build an element of $((A \times B) \to \mathbf 0) \to (A \to \mathbf 0) + (B \to \mathbf 0)$ in general. Deciding which disjunct holds requires information the hypothesis doesn't give you a constructive way to extract.
+### Worked example: a de Morgan law, term by term
 
-### Grounding: connectives as types you already have
+The book gives a detailed derivation of "if not $A$ and not $B$, then not ($A$ or $B$)" — de Morgan's law — translating an English proof into a term, step by step (§1.11, eq. 1.11.1–1.11.2). The target type is
+$$(A \to \mathbf{0}) \times (B \to \mathbf{0}) \to (A + B \to \mathbf{0}).$$
+Walking the English proof "suppose not $A$ and not $B$; suppose $A$ or $B$; derive a contradiction; there are two cases..." mechanically produces:
+$$f((x,y))(\mathrm{inl}(a)) :\equiv x(a) \qquad f((x,y))(\mathrm{inr}(b)) :\equiv y(b).$$
+Notice what happened: "suppose ... and ..." became a pair-destructuring lambda; "there are two cases" became a case-split on the coproduct (equivalently, a call to $\mathrm{rec}_{A+B}$); "derive a contradiction" became literally applying a hypothesis-as-function to a witness. This is the general recipe: **an informal proof and a term-mode program are the same artifact**, described at different levels of verbosity. This is precisely the correspondence a bidirectional elaborator exploits — natural-language proof steps map onto elaboration actions (introduce a pair, introduce a lambda, eliminate a coproduct) exactly the way a `check`/`infer` pass maps surface syntax onto core terms.
 
-**Rust.** Every connective above is a familiar Rust type — this is not a loose analogy, it's the same algebra of types that underlies `enum`/`struct` in any ML-family type system:
+The book also gives the crucial *negative* result, worth flagging because it foreshadows Chapter 3 entirely: "if not ($A$ and $B$), then (not $A$) or (not $B$)" — a classical de Morgan variant — is **not** provable, because it needs excluded middle. Constructive logic is a genuine restriction, not a notational variant of classical logic.
+
+### Rust and Lean grounding
+
+In Rust, the correspondence is almost literally how `enum`/`struct`/function types already behave — modulo Rust having no dependent types (yet), this is the "logic connectives are ADTs" idea familiar from functional programming, made precise:
 
 ```rust
-// A ∧ B  — a proof is a pair of proofs
+// "True" -- the terminal proposition
+struct True;
+
+// "False" -- the uninhabited proposition; no constructors
+enum False {}
+
+// A and B
 struct And<A, B>(A, B);
 
-// A ∨ B  — a proof remembers *which* disjunct, and its proof
-enum Or<A, B> { Left(A), Right(B) }
+// A or B -- proof-relevant: you know which side holds
+enum Or<A, B> { Inl(A), Inr(B) }
 
-// A → B  — a proof is a procedure turning proofs of A into proofs of B
-type Implies<A, B> = fn(A) -> B; // morally; real HOAS needs closures/traits
-
-// ¬A ≡ A → 0 — a proof of not-A is a function into the uninhabited type
-enum False {}                    // no constructors: an uninhabited type
+// not A -- a function from a witness of A to absurdity
 type Not<A> = fn(A) -> False;
+
+// If A then B
+type Implies<A, B> = fn(A) -> B;
+
+// case analysis on Or *recovers* which disjunct was proved --
+// this is exactly the induction principle ind_{A+B}
+fn demorgan<A, B>(not_a: Not<A>, not_b: Not<B>) -> Not<Or<A, B>> {
+    move |ab: Or<A, B>| -> False {
+        match ab {
+            Or::Inl(a) => not_a(a),
+            Or::Inr(b) => not_b(b),
+        }
+    }
+}
 ```
 
-`False` having zero variants is exactly $\mathbf{0}$ having no constructors — the type system, not a runtime check, is what makes it impossible to produce a value of it, mirroring "there is no basic way to prove a contradiction" in the book (footnote 9). A `fn(A) -> False` is, structurally, a refutation: feed it any purported evidence of `A` and it can't return, because there's nowhere for it to return *to*. This is the same shape as a Rust `Result<T, !>` collapsing to just `T`, and it's the shape you want if your verifier represents "this Hoare precondition is unsatisfiable" as an uninhabited witness type rather than a boolean flag — an uninhabited type composes through the rest of the type checker for free, a boolean doesn't.
+This is a faithful (if non-dependent) shadow of the theory: `False` having zero variants *is* $\mathbf{0}$'s having no constructors; a `match` arm *is* an instance of the recursor `rec_{A+B}`. What Rust's `enum`/`fn` types cannot express is the *dependent* generalization — a family of types indexed by a term, which is exactly what $\Sigma$ and $\Pi$ add (next section).
 
-**Lean.** Lean's `Prop`-and-`Type` design *is* this correspondence made literal in a real kernel:
-
+In Lean, the correspondence is not an analogy — it *is* the mechanism. `Prop` in Lean's kernel is literally a universe whose types are propositions and whose terms are proofs; `And`, `Or`, `Not`, `Exists` are inductive types defined by ordinary `inductive` declarations, and Lean's kernel type-checks a proof term of `P` by the same `isDefEq`/whnf-reduction machinery it uses for any other term. The de Morgan proof above is, verbatim,
 ```lean
--- these are definitions, not new machinery — logic is data
-def And' (A B : Prop) : Prop := A ∧ B  -- built from a one-constructor structure
-def Or'  (A B : Prop) : Prop := A ∨ B  -- built from a two-constructor inductive
-def Not' (A : Prop) : Prop := A → False
-
-theorem demorgan (A B : Prop) : ¬A → ¬B → ¬(A ∨ B) :=
-  fun na nb ab => Or.elim ab na nb
+theorem demorgan {A B : Prop} (na : ¬A) (nb : ¬B) : ¬(A ∨ B) :=
+  fun ab => match ab with
+    | Or.inl a => na a
+    | Or.inr b => nb b
 ```
+Note this is *not* a special "tactic proof" — it's a plain term, checked by the same kernel machinery as any function definition. This is the load-bearing fact for a trusted-kernel architecture: your compiler's core type checker and your prover's proof checker can be the literal same code path, provided propositions are represented as types from the start.
 
-`Or.elim` here is precisely the case-split the book performs by hand with the coproduct recursor. When you later build pattern unification or bidirectional checking, this is the register you're already in: `Prop` in Lean is a genuine type universe, and proof terms are genuine terms subject to the same `isDefEq`/reduction machinery as any other term — there's no separate "proof language."
+## Quantifiers: $\Pi$ and $\Sigma$ as "for all" and "there exists"
 
----
-
-## Part 2: Quantifiers as dependent types (§1.11)
-
-Once you allow types to depend on values — a predicate $P : A \to \mathcal U$ assigning to each $a : A$ a type $P(a)$ standing for "the proposition that $P$ holds of $a$" — the connective table extends to quantifiers:
+The correspondence extends to predicate logic once we have *dependent* types (Chapter 1, §§1.4 and 1.6). A predicate on $A$ is represented as a type family $P : A \to \mathcal{U}$ — a function assigning to each $a : A$ the type of *evidence that $P$ holds of $a$*.
 
 | English | Type theory |
 |---|---|
 | For all $x:A$, $P(x)$ holds | $\prod_{(x:A)} P(x)$ |
 | There exists $x:A$ such that $P(x)$ | $\sum_{(x:A)} P(x)$ |
 
-### Universal quantification as $\Pi$-types
+**Universal quantification as $\Pi$-types.** A dependent function $f : \prod_{(x:A)} P(x)$ takes an *arbitrary* $x : A$ and produces a witness of $P(x)$ — exactly the shape of a universally quantified proof: "for all $x$, here's how to prove $P(x)$, uniformly, without knowing which $x$ you'll get." Ordinary non-dependent function types $A \to B$ are the special case where the codomain doesn't vary — the "if...then" reading is really the constant-family case of "for all."
 
-A $\Pi$-type $\prod_{(x:A)} P(x)$ is the dependent function type: a function that, given any $x:A$, returns a proof of $P(x)$ specifically (not some fixed type — the *return type itself depends on the input*). That dependency is exactly what "for all" needs: to prove $\forall x, P(x)$ you must produce, uniformly, a proof that works for an *arbitrary* $x$, which is precisely what a function with domain $A$ gives you. When $P$ is a constant family, $\prod_{(x:A)} P(x)$ degenerates to the ordinary non-dependent $A \to P$, which is why the book already introduced $\Pi$-types in §1.4 as the generalization of function types before this section names them as universal quantification.
+**Existential quantification as $\Sigma$-types.** A pair $(a, p) : \sum_{(x:A)} P(x)$ *is* a witness $a$ together with a proof $p : P(a)$ that the witness works. This is stronger than the classical existential — you don't just know a witness exists, you are handed one, explicitly, by the pair's first projection $\mathrm{pr}_1$. The book calls this **proof relevance**: a $\Sigma$-type proof of "there exists" *remembers* the specific witness, the same way a coproduct proof of "or" remembers which disjunct held.
 
-The book proves a small tautology this way — "if $\forall x, P(x) \land Q(x)$ then $(\forall x, P(x)) \land (\forall x, Q(x))$" — by literally constructing the term step by step from the English proof:
-$$f(p) :\equiv \Big(\lambda x.\, \mathsf{pr}_1(p(x)),\ \lambda x.\, \mathsf{pr}_2(p(x))\Big)$$
-Note how "we suppose given $x$" becomes a $\lambda$, and "hence we have $P(x)$" (from "$P(x)$ and $Q(x)$") becomes a projection — the English proof and the term are in lockstep, which is the whole point of propositions-as-types: informal mathematical prose is *already* an untyped sketch of a proof term, and elaboration is the process of filling in the sketch.
+**What breaks without dependency:** without type families $B : A \to \mathcal{U}$, you can only quantify over *fixed* propositions, i.e. you're stuck in propositional logic. The moment your refinement-type compiler needs to state "for all inputs $x$, if $x \geq 0$ then $\mathrm{sqrt}(x)^2 \leq x$" — a genuinely dependent statement, where the codomain proposition varies with $x$ — you need $\Pi$, full stop. This is the exact mechanism by which Hoare-style pre/postconditions get represented as types: a Hoare triple $\{P\}\ c\ \{Q\}$ for a *pure*, terminating `c` can be phrased as an inhabitant of $\prod_{(x : \mathrm{dom})} P(x) \to Q(x, c(x))$ — a dependent function from an input satisfying the precondition to a proof the output satisfies the postcondition.
 
-### Existential quantification as $\Sigma$-types
+### A concrete inequality, built from $\Sigma$
 
-A $\Sigma$-type $\sum_{(x:A)} P(x)$ is the dependent pair type: a pair $(x, p)$ where $x : A$ and $p : P(x)$. This matches "there exists" precisely because to prove existence you must actually *exhibit* a witness $x$ together with evidence $P(x)$ — you cannot construct an inhabitant of $\sum_{(x:A)}P(x)$ without picking a specific $x$. This is **proof-relevant** existence: the proof doesn't just certify that some $x$ works, it *contains* which $x$ works, retrievable via $\mathsf{pr}_1$.
-
-The book gives a genuinely useful worked example: numeric inequality is defined existentially,
-$$(n \leq m) :\equiv \sum_{k:\mathbb N} (n + k = m),$$
-i.e., $n \le m$ *is*, as a type, the type of witnesses $k$ together with a proof that $n+k=m$. This single definition later supports two different readings of $\Sigma$ that the book flags as recurring: as "there exists," and (§3.5, revisited below) as a **subtype** — $\sum_{(x:A)} P(x)$ can equally be read as "the type of all $x:A$ such that $P(x)$," i.e. $\{x : A \mid P(x)\}$. This dual reading is also how the book defines algebraic structure as data: a semigroup is
-$$\mathsf{Semigroup} :\equiv \sum_{A:\mathcal U} \sum_{m : A \to A \to A} \prod_{x,y,z:A} m(x,m(y,z)) = m(m(x,y),z),$$
-nesting $\Sigma$ (carrier, then operation) around a $\Pi$ (the associativity axiom, universally quantified) — "existence of structure satisfying a law" is exactly $\Sigma$-then-$\Pi$, all the way down. This is the shape every dependent-record / refinement-type encoding of a Hoare-style contract takes: a $\Sigma$ packaging the data together with a $\Pi$-quantified proof obligation over it.
-
-### Grounding: quantifiers as generics and refinements
-
-**Rust — the closest fit, and where it strains.** $\Pi$-types over a *type-level* domain are what Rust generics/traits already give you (a `fn<T: Trait>(x: T) -> P<T>` is morally $\prod_{(T:\mathcal U)} P(T)$), but $\Sigma$-types resist a clean encoding because Rust has no first-class dependent pairing where the *type* of the second component depends on the *value* of the first:
+The book defines natural-number $\leq$ directly from these primitives (§1.11):
+$$(n \leq m) :\equiv \sum_{(k:\mathbb{N})} (n + k = m).$$
+A proof that $n \leq m$ is *not* an opaque bit — it's a pair of a witness $k$ and a proof that $n + k \equiv m$. This is the seed of the entire refinement-type idea in your learning goals: a refinement type $\{x : \mathbb{N} \mid P(x)\}$ is nothing but the type $\sum_{(x:\mathbb{N})} P(x)$, restricted (once we get to Chapter 3) to have $P$ be a mere proposition so that the pair doesn't carry spurious extra data beyond "$x$ satisfies $P$."
 
 ```rust
-// Π-type: a proof-producing function, uniform in x — an ordinary generic fn
-fn all_nonneg<T: Ord + Zero>(x: T) -> ProofNonNeg<T> { /* ... */ }
-
-// Σ-type, encoded as a trait-object-style existential — you get "there exists
-// some witness," but the connection between the witness's *value* and the
-// proof's *type* has to be smuggled through a phantom or an associated const;
-// Rust's type system stops depending on runtime values here.
-struct LessEq<const N: usize, const M: usize> {
-    k: usize,          // witness: morally the Σ's first projection
-    _proof: PhantomData<()>, // stands in for "N + k = M", unchecked by rustc
+// "n <= m" as data: a witness k and a proof obligation n + k = m.
+// In real Rust you can't state `n + k == m` as a *type*-level proof
+// without something like typenum/const-generics tricks, but the
+// shape is exactly a dependent pair (witness, evidence).
+struct LeProof<const N: usize, const M: usize> {
+    k: usize,
+    // proof obligation: N + k == M (checked externally, e.g. by
+    // your compiler's constraint solver -- this is where SMT/CHC
+    // solving plugs into the elaborator)
 }
 ```
-This gap — Rust generics model $\Pi$ over *types* cleanly but can't model $\Sigma$ over *values* with a value-dependent proof obligation — is precisely the gap a Hoare-triple verifier has to close by hand (typically by carrying proof obligations as a side condition discharged by an SMT solver rather than as a genuinely dependent pair in the host type system).
-
-**Lean — the honest encoding.** Lean has real $\Pi$- and $\Sigma$-types (the latter as the inductive type `Sigma`, or `Exists` for the `Prop`-valued mere-existence version — a distinction that matters, see Part 3):
 
 ```lean
--- Π-type: ∀ x : A, P x  — literally Lean's dependent function type
-theorem all_holds (A : Type) (P : A → Prop) (f : ∀ x, P x) : ∀ x, P x := f
+-- Lean: literally a Σ-type (Exists / Subtype), checked by the kernel.
+def LE' (n m : Nat) : Prop := ∃ k, n + k = m
 
--- Σ-type, proof-relevant existence, witness retrievable:
-def LessEq (n m : Nat) : Type := Σ k : Nat, n + k = m
-
--- Exists — the Prop-valued, truncated cousin (Part 3): you get *that* a
--- witness exists, but Prop's proof-irrelevance means you can't project it out.
-def LessEq' (n m : Nat) : Prop := ∃ k : Nat, n + k = m
+example : LE' 2 5 := ⟨3, rfl⟩   -- the witness 3, plus a proof by computation
 ```
-`Sigma` vs `Exists` in Lean *is* the untruncated-vs-truncated $\exists$ distinction the book spends §3.10 on, made into two different, both-real Lean types rather than a philosophical aside — seeing them side by side here previews exactly the machinery of Part 3.
 
----
+The Lean example is worth lingering on: `⟨3, rfl⟩` is a genuine anonymous-constructor pair, and `rfl` type-checks because `2 + 3` and `5` are *definitionally* equal — judgmental equality doing the proof work for free, with zero search. This is the cheapest possible proof-obligation discharge, and it's exactly the case your constraint solver wants to special-case before falling back to SMT.
 
-## Part 3: The crack — why untruncated propositions-as-types breaks under univalence (§3.2)
+### Higher-order logic, briefly
 
-Here's where the "one basic notion" idea runs into trouble. If propositions are just types, and univalence identifies equal types with equivalent ones, then a type like $\mathbf 2$ (booleans) is a perfectly good "proposition" under the naive reading — and $\mathbf 2$ has a nontrivial automorphism ($e$ swapping $0_{\mathbf 2}$ and $1_{\mathbf 2}$). The book proves (Theorem 3.2.2) that assuming univalence, it is **not** the case that $\neg\neg A \to A$ holds for *all* types $A$ — and hence, by extension (Corollary 3.2.7), the untruncated law of excluded middle $\mathrm{LEM}_\infty :\equiv \prod_{A:\mathcal U}(A + \neg A)$ also fails.
+Because propositions are types living in some universe $\mathcal{U}_i$, you can quantify over *all* predicates on $A$ by forming $\prod_{P : A \to \mathcal{U}_i} P(a) \to P(b)$ — literally quantifying over propositions. The book flags one subtlety worth keeping in mind for an elaborator: this statement lives one universe level higher than the $P$'s being quantified over ($\mathcal{U}_{i+1}$, not $\mathcal{U}_i$), because $\prod_{P:A \to \mathcal{U}_i}$ ranges over a type built from $\mathcal{U}_i$. Universe polymorphism/cumulativity (Chapter 1, §1.3) exists precisely to keep this bookkeeping from becoming unbearable — the same bookkeeping your elaborator's metavariables will need to track for universe metavariables during unification.
 
-**The proof idea, compressed:** if $f : \prod_{A}(\neg\neg A \to A)$ existed, univalence would force $f$ to be *natural* with respect to type equivalences (functions in type theory are automatically "continuous"/functorial in this sense). Applying $f$ at $A = \mathbf 2$ and transporting along the path $p := \mathsf{ua}(e)$ induced by the swap equivalence $e$ forces $e(f(\mathbf 2)(u)) = f(\mathbf 2)(u)$ for the relevant $u$ — i.e., $f(\mathbf 2)(u)$ would have to be a *fixed point* of $e$. But $e$ swaps the two elements of $\mathbf 2$ and has none. Contradiction.
+## The crack: why proof-relevance breaks classical reasoning
 
-**What breaks:** naturality under univalence is incompatible with any operation that would need to secretly "look inside" a type and pick out a specific element based on more than its equivalence class — a Hilbert-style global choice operator, essentially. LEM as literally "$A$ or not-$A$, for every type $A$" asks for exactly that kind of operator, so it has to go. This is not a defect to route around quietly — it's the book's proof that naive Curry–Howard and univalence are jointly inconsistent, and the fix (mere propositions) is designed specifically to route around it without discarding either.
+Chapter 3 opens by showing the propositions-as-types story, exactly as told so far, is *inconsistent with univalence* if you also want classical excluded middle in its naive form. This is the central plot point of the whole book, and it's why "propositions as types" needed an appendix in Chapter 1 titled "Propositions as types?" in Chapter 3.
 
-## Part 4: The fix — mere propositions and truncation (§§3.3–3.10)
+Theorem 3.2.2 (Hedberg-style diagonal argument): it is **not** the case that $\prod_{(A:\mathcal{U})} (\neg\neg A \to A)$ — the naive double-negation-elimination law, quantified over *all* types $A$, not just propositions. The proof exploits univalence directly: any function $f$ polymorphic in $A : \mathcal{U}$ must be *natural with respect to equivalences* (because univalence turns equivalences into paths, and every function respects paths — `ap`/transport). Applying this naturality to the non-trivial automorphism of the booleans $e : \mathbf{2} \simeq \mathbf{2}$ (swap true/false) forces $e(f(\mathbf{2})(u)) = f(\mathbf{2})(u)$ for any $u$ — i.e. $f$'s output would have to be a fixed point of the swap, but the swap has none. Contradiction. A direct corollary: $\prod_{(A:\mathcal{U})} (A + \neg A)$ — "untruncated LEM" — is equally inconsistent, and there is provably **no Hilbert-style global choice operator** picking an element out of every inhabited type, because such an operator could not be natural under univalence either.
 
-### Mere propositions: types with no extra information
+**What this means for your elaborator/verifier:** if you're planning to add classical reasoning (e.g. LEM for decidability checks in your CHC solver) to a univalent kernel, you cannot bolt it onto arbitrary types — you must restrict it to a subclass of types for which the naturality obstruction vanishes. That subclass is exactly what Chapter 3 builds next.
 
-**Definition 3.3.1.** A type $P$ is a **mere proposition** if $\mathrm{isProp}(P) :\equiv \prod_{x,y:P}(x=y)$ — any two elements are equal. Concretely: knowing $P$ is inhabited is *all* the information a witness of $P$ carries; there's no "which witness" question left to ask, because all witnesses coincide. $\mathbf 1$ is a mere proposition (any two elements are trivially equal); $\mathbf 2$ is not (its two elements are visibly distinct, and that distinctness is exactly the extra bit of information that made the $\Pi$/naturality argument above go through).
+## Mere propositions: the $(-1)$-truncated fix
 
-Key consequences the book establishes:
-- **Lemma 3.3.2/3.3.3**: mere propositions that are logically equivalent ($P \to Q$ and $Q \to P$) are *equivalent as types* — for mere propositions, "iff" really does collapse onto "$=$," matching classical intuition, in a way it provocatively does *not* for general types.
-- **Lemma 3.3.4**: every mere proposition is a set (i.e., a $0$-type — no nontrivial higher paths either). Mere propositions sit at the very bottom of the $n$-type hierarchy the book calls out in §3.1: $(-1)$-types.
-- **Lemma 3.3.5**: $\mathrm{isProp}(A)$ and $\mathrm{isSet}(A)$ are themselves always mere propositions — "being a proposition" is *itself* proposition-like, so there's no infinite regress of needing to prove uniqueness-of-uniqueness-proofs.
+**Definition 3.3.1.** A type $P$ is a **mere proposition** if
+$$\mathrm{isProp}(P) :\equiv \prod_{(x,y:P)} (x = y).$$
+In words: any two elements of $P$ are equal — inhabiting $P$ carries no information beyond the bare fact that it's inhabited. Compare $\mathbf{2}$ (two elements, genuinely different — a proof-relevant "or" needs this) against $\mathbf{1}$ (one element up to equality — a truth value needs only this). A mere proposition that's inhabited is equivalent to $\mathbf{1}$ (Lemma 3.3.2); the uninhabited case is (vacuously) also a mere proposition, corresponding to $\mathbf{0}$. Two logically equivalent mere propositions ($P \to Q$ and $Q \to P$) are automatically *equivalent as types* (Lemma 3.3.3) — this is the promise made back in §1.11 finally cashed in: for mere propositions, and only for mere propositions, "if and only if" and "equivalent" coincide.
 
-### The repaired LEM
+Restated in the book's later terminology (Chapter 7): mere propositions are the $(-1)$-types, sets are the $0$-types (any two *paths* between the same two points are equal — Definition 3.1.1), and contractible types are the $(-2)$-types. This gives the bottom of the truncation-level ladder:
 
-With mere propositions in hand, the book restates excluded middle so it only quantifies over things that behave like classical truth values:
-$$\mathrm{LEM} :\equiv \prod_{A:\mathcal U} \big(\mathrm{isProp}(A) \to (A + \neg A)\big)$$
-This sidesteps Theorem 3.2.2 because $\mathbf 2$ — the counterexample — is not a mere proposition, so it's simply not in LEM's domain of quantification anymore. $\mathrm{LEM}$ (unlike $\mathrm{LEM}_\infty$) is consistent to assume as an axiom, though not provable from the base theory. Types satisfying $A + \neg A$ are called **decidable** (Definition 3.4.3) — and "$A$ has decidable equality" ($\forall a,b, (a=b)+\neg(a=b)$) is the formal name for exactly the property a type checker's equality test needs to hold judgmental/definitional equality decidable in practice.
-
-### Propositional truncation: forcing proof-irrelevance where you want it
-
-Not every type is naturally a mere proposition, but you often *want* the "or"/"exists" you're using to behave like one (e.g., to state LEM or AC, or simply because you don't care which witness was found). The book introduces **propositional truncation** $\|A\|$ — also called $(-1)$-truncation, the bracket type, or squash type — as a new type former with two constructors:
-- $|a| : \|A\|$ for any $a : A$ (inhabited-ness transfers in),
-- for any $x, y : \|A\|$, a path $x = y$ (forced to be a mere proposition by fiat).
-
-Its recursion principle: to map $\|A\| \to B$ you need $B$ to be a mere proposition and a plain function $A \to B$; the truncation then "doesn't remember" *which* $a$ you used. This gives truncated logical notation, restated in Definition 3.7.1 using the untruncated connectives from Parts 1–2 as raw material:
-$$P \lor Q :\equiv \|P + Q\|, \qquad \exists(x:A).\,P(x) :\equiv \Big\|\sum_{x:A} P(x)\Big\|$$
-— truncated "or" and truncated "exists" are just the untruncated $+$ and $\Sigma$ with the witness deliberately erased.
-
-**Why you'd ever want to throw information away:** the book's own framing (§3.10) is refreshingly non-dogmatic — untruncated logic is often *closer* to how mathematicians actually reason informally ("the $x$ constructed in Theorem Y," referred back to later by its specific construction), so the book adopts **untruncated logic as the default** and uses the adverb *merely* to mark truncation explicitly ("there merely exists an $x$..."). Truncation becomes essential specifically when you need a genuine truth-valued statement — LEM, or the Axiom of Choice, whose formulation (§3.8) truncates in *both* the hypothesis (witnesses per $x$ aren't specified) and the conclusion (the choice function itself isn't determined):
-$$\mathrm{AC} :\equiv \forall(x:X).\ \exists(a:A(x)).\, P(x,a)\ \Rightarrow\ \exists\Big(g:\prod_{x:X}A(x)\Big).\ \forall(x:X).\, P(x,g(x))$$
-Contrast this with the *untruncated* reading, which the book showed back in §1.11/§2.15 is *trivially true* by projections — "axiom of choice" isn't an axiom at all under untruncated propositions-as-types, it's a tautology, because $\Sigma$ already packages the choice function. AC only becomes a genuine, non-trivial, sometimes-unprovable axiom once you truncate — which is a sharp illustration of how much logical content the choice between truncated and untruncated readings actually carries.
-
-**The principle of unique choice** (Corollary 3.9.2) is the load-bearing bridge back the other way: if $P(x)$ is a mere proposition for every $x$ and $\|P(x)\|$ holds for every $x$, then $\prod_{(x:A)} P(x)$ holds outright — you can "un-truncate" for free whenever the target was already proof-irrelevant. This is exactly the principle that lets a checker say "I only know a solution *merely* exists (e.g. from an SMT solver's SAT answer), but since 'is this the right typing derivation' is itself proof-irrelevant, I can treat it as if I'd found the derivation directly."
-
-### Grounding: proof-irrelevance as a language feature you already half-have
-
-**Lean — the closest real-world analogue.** `Prop` in Lean *is* the mere-propositions universe: Lean enforces **proof irrelevance** for `Prop` by definitional equality — any two proofs of the same `Prop` are treated as definitionally equal by the kernel, exactly mirroring $\mathrm{isProp}$:
-
-```lean
--- Prop-valued: proof irrelevant by the kernel's own rules — you cannot
--- pattern-match on *which* proof of h1 vs h2 you were handed to get
--- different data out, only Type-valued matches can branch on content.
-example (P : Prop) (h1 h2 : P) : h1 = h2 := rfl   -- proof irrelevance, for free
-
--- Exists (∃) is Prop-valued and truncated: you can prove Exists but
--- Exists.elim only lets you extract a witness to build another Prop,
--- never to build ordinary Type-valued data — this IS the recursion
--- principle of ‖A‖ restricted to mere-proposition codomains.
-theorem exists_pair : ∃ n : Nat, n + 1 = 2 := ⟨1, rfl⟩
--- versus Sigma, which is Type-valued and untruncated: you CAN project
--- the witness back out to build further data.
-def sigma_pair : Σ n : Nat, n + 1 = 2 := ⟨1, rfl⟩
-#eval sigma_pair.1   -- 1 — the witness survives; try that with Exists.elim
-                      -- into a Type-valued result and Lean will refuse.
+```mermaid
+graph TD
+    A["(-2)-types: contractible<br/>(a single point, uniquely)"] --> B["(-1)-types: mere propositions<br/>(isProp: any two elements equal)"]
+    B --> C["0-types: sets<br/>(isSet: any two parallel paths equal)"]
+    C --> D["1-types, 2-types, ...<br/>(genuine higher homotopy)"]
 ```
-This `Exists`/`Sigma` split, and the kernel-level proof irrelevance of `Prop`, is Lean *implementing* exactly the §3.7–3.9 distinction the book develops abstractly. If you're modeling your elaborator's unifier on Lean's, this is precisely the invariant `isDefEq` gets to lean on for free when comparing two proof terms of the same `Prop`: it doesn't need to check they're syntactically equal, or even reduce them to normal form and compare — proof-irrelevance means *any* two proofs of the same proposition are automatically interchangeable, which is a real performance and simplicity win a proof-relevant unifier doesn't get.
 
-**Rust.** Rust has no built-in proof-irrelevance, but the *pattern* shows up as "erase-the-witness" APIs — `bool` is the truncated cousin of an enum that remembers *why*:
+**Why the type formers matter here:** not every connective preserves mere-proposition-ness. $\Pi$, $\to$, and $\neg$ *do* preserve it (Example 3.6.2: if each $B(x)$ is a mere proposition, so is $\prod_{(x:A)} B(x)$, by function extensionality) — "for all," "implies," and "not" behave classically for free. But $+$ and unrestricted $\Sigma$ do **not**: even if $A$ and $B$ are mere propositions, $A + B$ generally isn't ($\mathbf{1} + \mathbf{1} = \mathbf{2}$ is the standard counterexample) — because a witness of $A + B$ still remembers *which side* held, which is exactly the extra bit "or" is supposed to discard when read classically.
 
-```rust
-// Untruncated: an enum that remembers *which* branch and *why* — Σ-flavored
-enum Justified<E> { Yes(E), No(E) }
+### Propositional truncation: forcibly discarding the witness
 
-// Truncated: information deliberately thrown away — this IS ∥Justified<E>∥
-// projected down to a bare bool, the same move as P ∨ Q :≡ ‖P + Q‖
-fn erase<E>(j: Justified<E>) -> bool {
-    matches!(j, Justified::Yes(_))
-}
-```
-A verifier deciding whether to keep proof terms around (untruncated — useful for producing certificates/explanations) or discard them once a check passes (truncated — smaller, faster, but no longer explains *why*) is making exactly this book's §3.10 default-convention choice, just at the systems-design level instead of the type-theoretic one.
+To get a classical "or" and "there exists" back, the book introduces **propositional truncation** $\|A\|$ (§3.7) — a higher-inductive-flavored type former with two constructors:
+- $|a| : \|A\|$ for any $a : A$ (inhabited $A$ gives inhabited $\|A\|$), and
+- for any $x, y : \|A\|$, a path $x = y$ (this *forces* $\|A\|$ to be a mere proposition by fiat).
 
----
+Its recursion principle: any map $A \to B$ into a mere proposition $B$ factors uniquely through $\|A\|$. This is a genuine universal property — $\|-\|$ is the free mere-proposition-reflection of $A$, i.e. exactly a *left adjoint into the subcategory of $(-1)$-types* (foreshadowing the "modalities" and "reflective subuniverses" of Chapter 7). With truncation in hand, the book redefines the classical connectives (Definition 3.7.1):
+$$P \vee Q :\equiv \|P + Q\|, \qquad \exists (x:A).\, P(x) :\equiv \Big\| \sum_{(x:A)} P(x) \Big\|.$$
+Now $\mathrm{LEM}$ can be stated *correctly*, quantifying only over mere propositions, escaping Theorem 3.2.2's obstruction entirely:
+$$\mathrm{LEM} :\equiv \prod_{(A:\mathcal{U})} \big(\mathrm{isProp}(A) \to (A + \neg A)\big).$$
+This is now *consistent* to assume as an axiom (unlike the untruncated $\mathrm{LEM}_\infty$), because the naturality argument that killed Theorem 3.2.2 specifically exploited a non-proposition ($\mathbf{2}$) as a counterexample — mere propositions have no non-trivial automorphisms to violate naturality with.
+
+### The principle of unique choice — the piece your elaborator actually needs
+
+This is arguably the single most practically important lemma in the chapter for a metaprogramming elaborator. **Corollary 3.9.2:** if $P : A \to \mathcal{U}$ is a family of mere propositions and you know $\|P(x)\|$ (merely, i.e. non-constructively) for every $x$, then you actually have $\prod_{(x:A)} P(x)$ — the truncation is *free to remove* precisely because $P(x)$ being a mere proposition means there's nothing left to lose by forgetting how you proved it. This is the formal justification for a very common elaborator move: *"I know a solution to this unification/constraint problem exists (e.g. because the algorithm terminated and said SAT); since the specification I'm satisfying is subsingleton-valued (there's at most one metavariable assignment satisfying these rigid constraints — this is exactly the Miller pattern-unification tractability guarantee), I can just take the found solution without further justification."* Concretely: pattern unification's uniqueness theorem is a special case of "unique choice" — the type of most-general unifiers for a Miller pattern equation is a mere proposition (subsingleton), so *finding* an answer and *proving* an answer are the same act, with no bookkeeping loss.
+
+### The axiom of choice, both ways
+
+The book gives two versions worth contrasting sharply (this is exactly the "book's own formalism doing unification's/choice's job without naming it" thread from the learning goals):
+
+- **Untruncated ("type-theoretic") axiom of choice**, §1.6 eq. (1.6's `ac`): $\prod_{(x:A)}\sum_{(y:B)} R(x,y) \to \sum_{(f:A\to B)}\prod_{(x:A)} R(x,f(x))$ is a *theorem*, provable with zero axioms, by literally projecting the two components out of the hypothesis pointwise. "No choice is actually involved... all we have to do is take it apart."
+- **Truncated (classical-shaped) axiom of choice**, §3.8: $\prod_{(x:X)}\big\|\sum_{(a:A(x))} P(x,a)\big\| \to \big\|\sum_{(g:\prod_{x} A(x))}\prod_{(x:X)} P(x,g(x))\big\|$ requires $X$ and each $A(x)$ to be *sets*, and is **not** a theorem — it must be assumed as an axiom, exactly matching the classical status of AC.
+
+The gap between these two is precisely the gap that propositional truncation measures: once you discard the witnesses (by truncating the hypothesis), reconstructing a single global choice function is no longer free — it's an extra axiomatic commitment, and Diaconescu's theorem (referenced forward to Chapter 10) shows this truncated AC actually implies LEM. If your compiler's elaborator ever needs "some solution to this constraint system exists" to imply "here is a specific solution," check whether you're implicitly invoking a truncated-choice-shaped axiom — that's exactly the kind of non-constructive step a trusted kernel should either avoid or flag as an explicit assumption.
 
 ## Where this leads
 
-```mermaid
-flowchart TD
-    A["§1.11 Propositions as types
-    (connectives ↔ type formers)"] --> B["Π-types: ∀
-    Σ-types: ∃ (proof-relevant)"]
-    B --> C["§3.2 Naive PAT + univalence
-    ⇒ LEM∞ is FALSE"]
-    C --> D["§3.3 Mere propositions
-    isProp(P): all witnesses equal"]
-    D --> E["§3.4 Repaired LEM
-    (quantifies only over isProp)"]
-    D --> F["§3.7 Propositional truncation ‖A‖
-    ∨ , ∃ redefined via ‖·‖"]
-    F --> G["§3.8 Axiom of Choice
-    (nontrivial only once truncated)"]
-    F --> H["§3.9 Unique choice
-    ‖P(x)‖ + isProp(P) ⇒ P(x)"]
-    D --> I["Ch.7: (-1)-types,
-    n-type hierarchy"]
-    D --> J["Ch.10–11: Set-level math
-    built on mere propositions"]
-```
+Structurally, this topic is the hinge between Chapter 1's syntax (types, $\Pi$, $\Sigma$, coproducts — pure term formers with no logical content assumed) and Chapter 2's homotopy interpretation (identity types as paths). Chapter 3 revisits propositions-as-types specifically *because* Chapter 2's univalence axiom breaks the naive version — you cannot understand why HoTT needs "mere propositions" at all without first seeing exactly what propositions-as-types promised and exactly where that promise overreaches. Downstream, the $(-1)$-truncation introduced here is the base case of the full $n$-truncation hierarchy in Chapter 7 (recursively: $(n+1)$-types are types whose identity types are $n$-types), which in turn is the load-bearing machinery for the orthogonal factorization systems, connectedness, and modalities used throughout the [[Synthetic-Homotopy-Theory|synthetic homotopy theory]] of Chapter 8 and the set-theoretic and category-theoretic reconstructions of Chapters 9–10.
 
-Within the book, this topic is the hinge between Chapter 1's syntax and Chapter 3's logic: everything in Chapter 1 (connectives, $\Pi$, $\Sigma$) is *reused verbatim* as the raw material Chapter 3 refines — mere propositions and truncation don't introduce new connectives, they add a discipline on top of the ones you already have. Downstream, the $(-1)$-type ($=$ mere proposition) becomes the base case of the full $n$-type hierarchy in Chapter 7, and virtually all of the "ordinary mathematics" chapters (10: Set Theory, 11: Real Numbers) are built on sets and mere propositions specifically because that's where classical-feeling reasoning (LEM, decidability, subtypes via $\{x \mid P(x)\}$) is safe to use without contradicting univalence.
-
-For your own projects, this is close to as load-bearing as a topic gets. The $\Pi$/$\Sigma$-as-quantifiers reading *is* the judgment-form vocabulary your Rust checker's typing rules and Hoare-triple contracts will be built from — $\Sigma$-then-$\Pi$ nesting (data, then a proof obligation about it) is the literal shape of a refinement type. And the mere-propositions/truncation machinery is the theoretical justification for Lean's `Prop` and its proof irrelevance, which is precisely the shortcut your elaborator's `isDefEq` will want to take whenever it's comparing two proof terms rather than two pieces of data: don't unify them structurally, just check they inhabit the same `Prop` and move on. Getting this distinction right early — which of your obligations are genuinely proof-relevant (need their witness kept) versus merely need to be discharged once (safe to truncate) — will shape a lot of downstream design decisions about what your IR even needs to carry around at runtime.
+For the compiler/elaborator project specifically: this chapter is the formal contract for representing logical formulas as types, proof search as term construction, and the crucial fact that *not every logically-shaped statement should carry data* — refinement-type predicates, verification conditions, and Hoare-style contracts should almost always be built from mere propositions (or their truncations), while the *witnesses* your constraint solver produces (unifiers, invariants, interpolants) live in the proof-relevant, untruncated $\Sigma$-world where you actually want to keep the data around. Knowing which regime a given piece of your type checker's output belongs to — proof-relevant term or subsingleton proposition — is exactly [[Type-Theory-as-a-Foundational-System-Qwen#The distinction|the distinction]] this topic exists to make precise.

@@ -134,7 +134,7 @@ This is where the eager/lazy distinction earns its keep. A stream of naturals ne
 
 Both encode the same idea; the second is how you fake laziness in a call-by-value language using the one construct ($\lambda$) that's already lazy under the hood — its body doesn't run until applied. This mirrors how OCaml's or Rust's "lazy" libraries work: wrap in a closure to defer evaluation, force by calling it.
 
-**What breaks without this:** if you insist on eager fold *and* skip the thunk, `fold` would try to evaluate an infinite pair immediately and diverge before you ever get the head element. The thunk isn't cosmetic — it's the mechanism that makes "infinite data" coexist with "evaluate eagerly."
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]]:** if you insist on eager fold *and* skip the thunk, `fold` would try to evaluate an infinite pair immediately and diverge before you ever get the head element. The thunk isn't cosmetic — it's the mechanism that makes "infinite data" coexist with "evaluate eagerly."
 
 ```rust
 // Eager-language encoding of a stream: thunk the tail
@@ -220,7 +220,7 @@ fn fact_step(this: &SelfRef, n: u64) -> u64 {
 }
 ```
 
-(Rust's ordinary named recursive functions don't need this — the point of the example is that *if* your language lacked named recursion, `self`-as-a-value is exactly how you'd rebuild it, which is precisely Harper's derivation.) In Lean, `fix`-style well-founded or structural recursion is handled by the elaborator generating the appropriate recursor calls automatically — but the untyped/general-recursion case (`partial def`) is the closest analogue to Harper's `fix[τ](x.e)`, and it is exactly this self-application trick, safety-fenced by termination checking elsewhere in the kernel.
+(Rust's ordinary named recursive functions don't need this — the point of the example is that *if* your language lacked named recursion, `self`-as-a-value is exactly how you'd rebuild it, which is precisely Harper's derivation.) In Lean, `fix`-style well-founded or structural recursion is handled by the elaborator generating the appropriate recursor calls automatically — but the untyped/general-recursion case (`partial def`) is the closest analogue to Harper's `fix[τ](x.e)`, and it is exactly this self-application trick, [[State-and-Assignables#Safety|safety]]-fenced by termination checking elsewhere in the kernel.
 
 ## The origin of state: feedback as self-reference
 

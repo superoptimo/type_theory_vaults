@@ -1,388 +1,143 @@
 ---
 title: Formal Metatheory
-book: Homotopy Type Theory - Univalent Foundations of Mathematics
-chapters: Appendix A.3-A.4 (pp. 438-441)
-tags: [type-theory, hott, metatheory, normalization, canonicity, consistency, decidability, kan-simplicial-sets]
+source: Homotopy Type Theory — Univalent Foundations of Mathematics (The Univalent Foundations Program, Institute for Advanced Study)
+chapter: Appendix A — Formal Type Theory (pp. 425–441)
+tags: [type-theory, metatheory, judgments, inference-rules, canonicity, consistency, kernel-design, hott]
 ---
-# Formal Metatheory
 
 [[book-guidelines|↩ Back to guidelines]]
 
-## Why an informal book ends with a formal appendix
+# Formal Metatheory
 
-The HoTT book spends four hundred pages doing mathematics informally, then closes with an appendix of grammars and inference rules. That is not an afterthought. It is the book checking its own contract.
+## Why the informal book needs a formal appendix at all
 
-The contract is this: every informal proof in the book is claimed to be *in principle* expandable into a formal derivation in a precisely specified system. Informal mathematics always rides on such a contract — a classical proof is "rigorous" when it could, given enough patience, be formalized in ZFC. Homotopy type theory makes the same claim about a different formal system. The metatheory in Appendix A answers three questions about that system:
+Everything in the main text of *Homotopy Type Theory* is written the way a mathematician writes real analysis: informally, trusting the reader's judgment about what would, in principle, cash out as a fully formal derivation. That's fine for exposition, but it's exactly the gap between "informal proof" and "machine-checkable proof" that a real type checker's trusted kernel has to close with no hand-waving left. Appendix A exists to answer three questions precisely enough to build on:
 
-1. **Can proofs be checked mechanically?** Is type-checking decidable?
-2. **Is the system consistent?** Can we prove there is no term of the empty type $\mathbf{0}$?
-3. **Does computation behave?** Does every closed natural number actually evaluate to a numeral?
+1. What, syntactically, *is* a term, a type, a judgment?
+2. What are the actual inference rules that let you derive one judgment from others?
+3. What can you *prove about* the resulting system — is it consistent, does type checking terminate, can you always recognize a valid proof mechanically?
 
-For the base type theory, the appendix proves all three. Then it delivers the bad news: adding the two innovations the rest of the book is *about* — univalence and higher inductive types — breaks the proof technique, converts theorems into open problems, and forces consistency to be established by models instead of syntax.
+These three questions map almost one-to-one onto what a trusted kernel *is*: (1) is your term representation (AST/de Bruijn indices/whatever), (2) is your typing-rule implementation, and (3) is the soundness argument you'd want to make about that implementation before trusting it to certify proofs. This topic is, in a very literal sense, the specification document for the thing you'd eventually write in Rust.
 
-That arc — clean core, expressive extension, metatheoretic debt — is the single most important engineering lesson in the book for anyone building a proof checker or an elaborator. You will make exactly this tradeoff, in miniature, the first time you add a postulate to your own system.
+## Two presentations, one underlying theory
 
-**What breaks without this.** Without a formal specification, "this proof is correct" is an appeal to vibes. Without metatheory, you do not even know whether your checker *terminates* — a type-checker that loops forever on well-formed input is not a checker, it is a suggestion box.
+The appendix gives **two formulations** of the same type theory, and the choice between them is itself an implementation decision worth internalizing.
 
-## Object language versus metalanguage: the three judgments
+**A.1 — untyped syntax + convertibility.** Terms are given by a bare grammar extending the untyped λ-calculus:
 
-The first thing the formal presentation fixes is what kind of thing we are even talking about. There are two layers:
+$$t ::= x \mid \lambda x.\, t \mid t(t') \mid c \mid f$$
 
-- The **object language**: the type theory itself — terms, types, the expressions you would write in a proof assistant.
-- The **metalanguage**: the ordinary mathematics (and, in practice, the Rust or OCaml code) we use to *talk about* the object language — its grammar, its rules, its properties.
+— variables, abstractions, applications, *primitive constants* $c$ (one per type former: $c_\Pi, c_\Sigma, c_+, c_W, \dots$), and *defined constants* $f$ (things introduced by a defining equation, like $f(x) :\equiv x^2$, or by structural/primitive recursion over a primitively-generated type). Typing and judgmental equality are then bolted on *afterward*: a rewriting relation called **convertibility**, $t \downarrow t'$, is generated by the defining equations plus the one computation rule
 
-The bridge between the two layers is the notion of a **judgment**. As §1.1 of the book emphasizes, type theory has two basic judgments, and the formal appendix works with three:
+$$(\lambda x.\, t)(u) :\equiv t[u/x]$$
 
-$$
-\Gamma~\mathrm{ctx} \qquad \Gamma \vdash a : A \qquad \Gamma \vdash a \equiv b : A
-$$
+closed under congruence (if $t \downarrow t'$ then $t(s) \downarrow t'(s')$, etc.), and judgmental equality is recovered as a single derived rule: *if $t : A$, $u : A$, and $t \downarrow u$, then $t \equiv u : A$*. This presentation deliberately keeps typing and reduction as separate concerns — you can talk about "this term reduces to that term" without ever mentioning a type.
 
-Reading the symbols aloud: $\Gamma$ (capital gamma) is a **context**, an ordered list of assumptions; $\mathrm{ctx}$ asserts that this list is well-formed; $\vdash$ (the "turnstile") separates assumptions from conclusion; $:$ reads "has type"; $\equiv$ (the triple bar) reads "is judgmentally equal to". So the three judgments say:
+**A.2 — natural-deduction, context-first.** This is the presentation used implicitly throughout the rest of the book, made explicit. There are exactly **three judgment forms**:
 
-1. "$\Gamma$ is a well-formed context."
-2. "Under assumptions $\Gamma$, the term $a$ has type $A$."
-3. "Under assumptions $\Gamma$, the terms $a$ and $b$ are definitionally equal at type $A$."
+$$\Gamma \; \mathrm{ctx} \qquad \Gamma \vdash a : A \qquad \Gamma \vdash a \equiv a' : A$$
 
-The crucial design decision, inherited from §1.1: **judgments are external, propositions are internal.** You cannot negate a judgment. You cannot assume a judgment as a hypothesis inside the theory. "$a : A$" is something the *checker* establishes about the system, not something the system can reason about. This is the exact boundary your Rust verifier will live on: judgments are what your program returns derivations *of*; propositions are data *inside* the terms.
+and each type former gets a *systematic* block of rules — formation, introduction, elimination, computation, and (optionally) a uniqueness principle — stated relative to an explicit context $\Gamma$, rather than left implicit as in the main text. This is the shape every type-theory textbook rule-set you've seen elsewhere follows, and it's the shape you want as an implementer, because "formation / introduction / elimination / computation" maps directly onto "how do I check this type is well-formed / how do I check this constructor / how do I check this eliminator / what does the eliminator reduce to."
 
-This is also why the judgment form is the shared ancestor of "type checker" and "proof checker." Since propositions are types, checking a derivation of $\Gamma \vdash a : A$ *is* proof-checking when $A$ is a proposition, and type-checking when $A$ is a data type. One mechanism, two readings. Everything else in the metatheory hangs off this.
+**Rust framing — why the choice matters operationally.** A.1's approach (untyped syntax, typing as an afterthought via convertibility) is closer to how a bidirectional elaborator's *reduction engine* actually behaves at runtime: you have an untyped-looking normalizer (WHNF reduction, unfolding of `let`s and delta-reduction of definitions) that doesn't consult types at all, and typing is checked by *comparing* reduced terms. A.2's approach (typing rules parametrized by an explicit, ordered context) is closer to how you'd *specify* the type checker as a recursive function `infer(Γ, term) -> Result<Type, TypeError>` / `check(Γ, term, expected) -> Result<(), TypeError>` — each rule becomes one match arm. Real systems (Lean included) do both: an untyped-ish evaluator for whnf/normalization, and a context-indexed typing judgment for the actual checker.
 
-## Two presentations of one system
+## Contexts made fully explicit
 
-Appendix A gives two formulations of the same core theory, and they correspond to the two halves of any real implementation.
-
-### A.1: the evaluator's view (syntax plus conversion)
-
-The first presentation defines the raw syntax as an extension of the untyped $\lambda$-calculus:
+A.2 formalizes exactly what the main text left implicit: a context is an **ordered list** $x_1{:}A_1, \dots, x_n{:}A_n$ of *distinct* variables, and well-formedness ($\Gamma\;\mathrm{ctx}$) is itself an inductively derived judgment:
 
 $$
-t ::= x \mid \lambda x.\, t \mid t(t') \mid c \mid f
-$$
-
-A term is a variable $x$, or a $\lambda$-abstraction $\lambda x.\, t$ ("the function that maps $x$ to $t$"), or an application $t(t')$, or a **primitive constant** $c$ (the built-in type formers), or a **defined constant** $f$ (a named function with defining equations). Defined constants come in two flavors: *explicit* ones with a single equation $f(x_1, \ldots, x_n) :\equiv t$, and *recursive* ones defined by one equation per constructor of an inductive type (primitive recursion on $\mathbb{N}$ being the paradigm).
-
-Then there is exactly one semantic relation: **convertibility**, written $t \downarrow t'$. It is the equivalence relation generated by:
-
-- the defining equations of constants,
-- the $\beta$-rule $(\lambda x.\, t)(u) :\equiv t[u/x]$ ("apply a lambda by substituting the argument"),
-- congruence under application and $\lambda$ ("equal parts make equal wholes").
-
-Judgmental equality is then *derived from* typing plus conversion: from $t : A$, $u : A$, and $t \downarrow u$, conclude $t \equiv u : A$.
-
-This presentation is an **evaluator specification**: terms rewrite to terms, and equality means "reduce to the same thing." Here it is as Rust:
-
-```rust
-/// Object-language syntax, a tiny fragment. de Bruijn indices make
-/// capture-avoiding substitution structural instead of delicate.
-enum Term {
-    Var(usize),                  // bound variable, by nesting depth
-    Lam(Box<Term>),              // λx. t
-    App(Box<Term>, Box<Term>),   // t(u)
-    Const(&'static str),         // primitive constants: Nat, Zero, Succ, ...
-}
-
-/// One-step reduction: β (application), δ (unfolding definitions),
-/// ι (recursor computation), η (function extensionality, judgmental).
-fn reduce_one_step(t: &Term) -> Option<Term> { /* ... */ }
-
-/// Normalize by repeated reduction.
-///
-/// NOTE: termination of this loop is NOT a local fact about the loop.
-/// It is Strong Normalization (Thm A.4.2) doing the work: every
-/// well-typed term has no infinite reduction sequence.
-fn normalize(t: Term) -> Term {
-    let mut cur = t;
-    while let Some(next) = reduce_one_step(&cur) {
-        cur = next;
-    }
-    cur
-}
-
-/// Judgmental equality = same normal form.
-/// Decidable because normalization terminates (Thm A.4.2) and normal
-/// forms have a simple, syntax-comparable shape (Lemma A.4.3).
-fn is_def_eq(a: Term, b: Term) -> bool {
-    normalize(a) == normalize(b)
-}
-```
-
-One honest footnote, which the book itself flags: this presentation **omits the η-rule** $f \equiv \lambda x.\, f(x)$ ("a function equals its pointwise re-abstraction"). Convertibility here is type-independent — the rewriter never knows whether a term is a function — and η only makes sense for terms known to have function type. The second presentation fixes this.
-
-### A.2: the checker's view (natural deduction with contexts)
-
-The second presentation is the one your verifier will actually implement. Judgments are derived by **inference rules** of the form
-
-$$
-\frac{J_1 \quad \cdots \quad J_k}{J}\;\text{RuleName}
-$$
-
-read: "from premises $J_1$ through $J_k$, conclude $J$," sometimes with side conditions. A **derivation** is a tree built out of these rules; the judgment being derived sits at the root.
-
-Here is the book's own example: a full derivation that the identity function on the unit type has type $1 \to 1$ (where $\cdot$ denotes the empty context).
-
-<svg viewBox="0 0 760 330" width="760" height="330" xmlns="http://www.w3.org/2000/svg" role="img">
-  <title>Derivation tree for the judgment: empty context proves lambda x. x has type 1 to 1</title>
-  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
-    <rect x="120" y="18" width="150" height="34" rx="6" fill="#e8e6e1" stroke="#8a8f98" stroke-width="1.4"/>
-    <text x="195" y="40" text-anchor="middle" font-size="14" fill="#26292e">· ctx</text>
-    <rect x="490" y="18" width="150" height="34" rx="6" fill="#e8e6e1" stroke="#8a8f98" stroke-width="1.4"/>
-    <text x="565" y="40" text-anchor="middle" font-size="14" fill="#26292e">x : 1 ctx</text>
-    <rect x="95" y="118" width="200" height="34" rx="6" fill="#e8e6e1" stroke="#8a8f98" stroke-width="1.4"/>
-    <text x="195" y="140" text-anchor="middle" font-size="14" fill="#26292e">· ⊢ 1 : 𝕌₀</text>
-    <rect x="465" y="118" width="200" height="34" rx="6" fill="#e8e6e1" stroke="#8a8f98" stroke-width="1.4"/>
-    <text x="565" y="140" text-anchor="middle" font-size="14" fill="#26292e">x : 1 ⊢ x : 1</text>
-    <rect x="190" y="238" width="380" height="34" rx="6" fill="#dfe6e0" stroke="#8a8f98" stroke-width="1.8"/>
-    <text x="380" y="260" text-anchor="middle" font-size="14" fill="#26292e">· ⊢ λx. x : 1 → 1</text>
-    <line x1="195" y1="52" x2="195" y2="118" stroke="#8a8f98" stroke-width="1.4"/>
-    <line x1="565" y1="52" x2="565" y2="118" stroke="#8a8f98" stroke-width="1.4"/>
-    <line x1="230" y1="152" x2="330" y2="238" stroke="#8a8f98" stroke-width="1.4"/>
-    <line x1="530" y1="152" x2="430" y2="238" stroke="#8a8f98" stroke-width="1.4"/>
-    <text x="205" y="92" font-size="12" font-style="italic" fill="#b07d3a">ctx-EMP</text>
-    <text x="575" y="92" font-size="12" font-style="italic" fill="#b07d3a">ctx-EXT</text>
-    <text x="252" y="196" text-anchor="end" font-size="12" font-style="italic" fill="#b07d3a">1-FORM</text>
-    <text x="508" y="196" font-size="12" font-style="italic" fill="#b07d3a">Vble</text>
-    <text x="380" y="298" text-anchor="middle" font-size="12" font-style="italic" fill="#b07d3a">Π-INTRO</text>
-  </g>
-</svg>
-
-Two things are worth noticing. First, the derivation is genuinely a tree: the right branch's `ctx-EXT` step (extending the empty context with $x : 1$) reuses the fact $\cdot \vdash 1 : \mathcal{U}_0$ established on the left — the book draws it as a leaf, but its premise is shared. Second, every node is *mechanically checkable*: given a candidate tree, you verify each node against its rule. That is the whole job of a proof checker. In Rust, derivations are literally a recursive enum:
-
-```rust
-/// A derivation is a tree whose variants are the rule names of A.2.
-/// Checking a proof = walking this tree, validating each node.
-enum Derivation {
-    CtxEmp,                                          // · ctx
-    CtxExt { premise: Box<Derivation> },             // Γ ⊢ A : 𝕌ᵢ  ⇒  Γ, x:A ctx
-    Var { index: usize },                            // Vble
-    OneForm,                                         // 1-FORM
-    PiIntro { body: Box<Derivation> },               // Π-INTRO
-    PiElim { func: Box<Derivation>, arg: Box<Derivation> },
-    Conv { term: Box<Derivation>, ty_eq: Box<Derivation> }, // A ≡ B ⇒ a : B
-    // ... one variant per rule in the system ...
-}
-
-/// The checker. Returns the judgment derived at the root, or the first
-/// rule violation found. Note the flavor: every constructor is checked
-/// against a *given* type — these are checking rules, not synthesis rules.
-fn check(d: &Derivation) -> Result<Judgment, CheckError> { /* ... */ }
-```
-
-(Implementation note, beyond the book: rules like Π-INTRO as stated are *checking* rules — the conclusion asserts a given type. A real implementation usually splits each into a synthesis mode and a checking mode, bidirectional style, so that type information flows in the right direction. The book's presentation supports reading it this way, and it is the standard first move when turning A.2 into code.)
-
-The context rules deserve a moment on their own, because they encode the plumbing that everything else relies on:
-
-$$
-\frac{}{\cdot~\mathrm{ctx}}\;\text{ctx-EMP}
+\dfrac{}{\cdot\;\mathrm{ctx}}\ \textsc{ctx-emp}
 \qquad
-\frac{x_1 : A_1, \ldots, x_{n-1} : A_{n-1} \vdash A_n : \mathcal{U}_i}{(x_1 : A_1, \ldots, x_n : A_n)~\mathrm{ctx}}\;\text{ctx-EXT}
+\dfrac{x_1{:}A_1,\dots,x_{n-1}{:}A_{n-1} \vdash A_n : U_i}{(x_1{:}A_1,\dots,x_n{:}A_n)\;\mathrm{ctx}}\ \textsc{ctx-ext}
 $$
 
-with the side condition that $x_n$ is distinct from the earlier variables. Contexts are *ordered*, because later assumptions may depend on earlier ones — you can only assume $x : A$ after the variables appearing in $A$ are in scope. The appendix also establishes, by induction over derivations, that **substitution** and **weakening** are *admissible*: they are not rules you add, they are theorems you prove about the rules you have. Substitution admissibility is the formal version of "plugging a term into a context never breaks typing" — which, in practice, means substitution must be capture-avoiding.
+Two structural facts fall out as **admissible** rules — provable by induction over derivations, not separately postulated:
 
-**What breaks without this.** Get variable binding wrong and you get capture: substituting into $\lambda y.\, x + y$ naively with $y$ turns a free variable into a bound one and silently changes the meaning of the term (§1.2 gives exactly this example). In a verifier, that is not a bug — it is unsoundness with a compiler warning nobody reads. de Bruijn indices, named weak references, or explicit substitutions are the standard engineering answers; the metatheorem you need *afterwards*, either way, is substitution admissibility.
+- **Substitution.** If $\Gamma \vdash a : A$ and $\Gamma, x{:}A, \Delta \vdash b : B$, then $\Gamma, \Delta[a/x] \vdash b[a/x] : B[a/x]$.
+- **Weakening.** If $\Gamma \vdash A : U_i$ and $\Gamma, \Delta \vdash b : B$, then $\Gamma, x{:}A, \Delta \vdash b : B$.
 
-## The rule kit: formation, introduction, elimination, computation, uniqueness
+with matching versions for the judgmental-equality judgment. The appendix is careful to note these are *provable*, not assumed — a meta-theoretic theorem about the rule set, established by induction on derivation trees.
 
-Every type former in A.2 comes with the same five-part kit (the pattern named in Remark 1.5.1 of the book):
+**This is the substitution lemma your soundness proof needs, named exactly.** Whether you're proving type preservation for a compiler IR or proving Hoare-triple soundness for a verification-condition generator, the load-bearing step is always "substituting a well-typed term for a variable preserves well-typedness of everything downstream" — and that's precisely `Subst1`/`Subst2`/`Subst3` here. If you ever hand-wave a substitution step in your own proofs, this is the rule you're implicitly invoking, and it's worth checking your context representation actually supports the ordered-list, dependency-respecting structure the proof needs (get variable capture wrong here and the "admissible" status of substitution silently fails).
 
-- **Formation**: when the type itself is well-formed.
-- **Introduction**: how to build inhabitants.
-- **Elimination**: how to consume inhabitants (the induction principle in dependent form).
-- **Computation**: what happens when elimination meets introduction — always a *judgmental* equality.
-- **Uniqueness** (optional): every inhabitant is determined by how it is consumed.
+## Judgmental equality as congruence, and the inference-rule discipline
 
-For dependent function types, the full kit, with the symbols named as you meet them: $\prod_{(x:A)} B$ ("product over $x$ in $A$ of $B$", the type of dependent functions), $\lambda(x:A).\, b$ ("lambda abstraction"), and $f(a)$ (application):
+Beyond substitution/weakening, A.2 states that judgmental equality is an **equivalence relation** (reflexive, symmetric, transitive) that is also a **congruence** — respected by every type- and term-former in every argument position — plus type-conversion closure ($\Gamma \vdash a : A$, $\Gamma \vdash A \equiv B : U_i$ implies $\Gamma \vdash a : B$). Concretely, alongside every introduction rule the appendix pairs an "-EQ" congruence rule, e.g.
 
 $$
-\frac{\Gamma \vdash A : \mathcal{U}_i \qquad \Gamma, x : A \vdash B : \mathcal{U}_i}{\Gamma \vdash \prod_{(x:A)} B : \mathcal{U}_i}\;\Pi\text{-FORM}
+\dfrac{\Gamma \vdash A : U_i \quad \Gamma, x{:}A \vdash B : U_i \quad \Gamma, x{:}A \vdash b \equiv b' : B}{\Gamma \vdash \lambda x.\, b \equiv \lambda x.\, b' : \textstyle\prod_{(x:A)} B}\ \textsc{$\Pi$-intro-eq}
+$$
+
+**Why this is the whole game for a kernel's `isDefEq`.** An elaborator's definitional-equality check *is* a decision procedure for exactly this congruence-closed equivalence relation — computed not by chasing the inference rules directly (too slow, too syntactic) but by normalizing both sides to weak-head normal form and comparing head symbols, recursing structurally into subterms (which is precisely what the congruence rules license you to do). Every one of these "-EQ" rules corresponds to one case in the structural-equality recursion your `isDefEq` function has to handle: applications compare function and argument recursively, lambdas compare bodies under an extended context, and so on. The theorem the appendix leaves as an admissible fact — that the local, per-type-former congruence rules imply the global `Subst2`/`Subst3` principles — is the theoretical justification for why a purely structural, syntax-directed `isDefEq` implementation is *complete* with respect to the full inference-rule-generated relation, instead of needing to explicitly chase arbitrary derivation chains.
+
+## The rule-shape discipline: formation / introduction / elimination / computation
+
+A.2 makes explicit a discipline that's only implicit earlier in the book: **every type former is introduced independently**, via exactly this rule shape:
+
+- **Formation** — when the type can be formed (e.g. $\Pi$-FORM: $\Gamma \vdash A:U_i$, $\Gamma,x{:}A \vdash B:U_i$ gives $\Gamma \vdash \prod_{(x:A)} B : U_i$).
+- **Introduction** — how to construct an element (e.g. $\Pi$-INTRO: $\lambda(x{:}A).\,b$).
+- **Elimination** (or *induction*, for positive types like $\Sigma$) — how to consume an element (e.g. $\Pi$-ELIM: application; $\Sigma$-ELIM: the recursor $\mathrm{ind}_{\sum B}$).
+- **Computation** — the judgmental equality relating elimination applied to introduction back to the "obvious" answer (e.g. $\Pi$-COMP: $(\lambda(x{:}A).\,b)(a) \equiv b[a/x]$; $\Sigma$-COMP for the recursor).
+- **(Optional) Uniqueness** — a judgmental $\eta$-law (e.g. $\Pi$-UNIQ: $f \equiv \lambda x.\,f(x)$) — explicitly flagged as *not* postulated for $\Sigma$ or the unit type in this presentation, even though the corresponding *propositional* uniqueness is provable (Corollary 2.7.3 for $\Sigma$).
+
+This four-(or five-)part template is, essentially, **the specification for a typing-rule table you'd hand-write in Rust as an enum match**: one arm per formation rule (type well-formedness), one per introduction (constructor typing), one per elimination (recursor/eliminator typing and its associated motive), and — separately, in the reduction engine, not the typer — one rewrite rule per computation rule. Getting elimination rules right is the crux of the whole design: notice how $\Sigma$-ELIM and $+$-ELIM and $\mathbb{N}$-ELIM all take a **motive** $C$ (a family over the eliminated type) plus one branch per constructor, and produce something in $C$ applied to the eliminated term — this is dependent pattern matching's underlying primitive, the thing `match`/`rec`/tactics eventually compile down to.
+
+## Identity types, formalized
+
+The identity-type rules (§A.2.10) are worth isolating because they are the appendix's own worked example of "define a family by structural recursion over a type's constructors," applied reflexively to equality itself:
+
+$$
+\dfrac{\Gamma \vdash A:U_i \quad \Gamma \vdash a:A \quad \Gamma \vdash b:A}{\Gamma \vdash a =_A b : U_i}\ {=}\text{-form}
 \qquad
-\frac{\Gamma, x : A \vdash b : B}{\Gamma \vdash \lambda(x:A).\, b : \prod_{(x:A)} B}\;\Pi\text{-INTRO}
+\dfrac{\Gamma \vdash A:U_i \quad \Gamma \vdash a:A}{\Gamma \vdash \mathrm{refl}_a : a =_A a}\ {=}\text{-intro}
 $$
 
+with elimination being exactly **path induction**: given a motive $C$ over the triple $(x, y, p{:}x{=}_Ay)$ and a case $c$ handling only the reflexivity instances ($z, z, \mathrm{refl}_z$), you get a function $\mathrm{ind}_{=_A}$ defined on *all* triples, computing to $c$ on the reflexivity case. This is the formal counterpart of the informal statement in the main text ("to prove something about all paths, it suffices to prove it about reflexivity paths") — and it is *exactly* the recursion principle a unification algorithm invokes whenever it needs to reason about equality proofs structurally rather than just checking them definitionally.
+
+## Elaboration: named explicitly, and explicitly outside the core rules
+
+Section A.2.11 contains a sentence that is unusually direct for this book: composition $g \circ f$, written informally as taking just $f$ and $g$, formally needs *also* the three types $A, B, C$ as explicit arguments —
+
+$$\circ :\equiv \lambda(A{:}U_i).\lambda(B{:}U_i).\lambda(C{:}U_i).\lambda(g{:}B\to C).\lambda(f{:}A\to B).\lambda(x{:}A).\, g(f(x))$$
+
+— and the appendix names, in one paragraph, exactly the cluster of problems a real implementation has to solve to let you write `g ∘ f` instead: **inference of implicit arguments, resolving typical ambiguity (universe levels), and ensuring names are defined only once — collectively called elaboration.** It states plainly: *elaboration must happen prior to checking a derivation, and is not usually presented as part of the core type theory* — but no usable implementation of type theory skips it.
+
+**This is the single most load-bearing sentence in the appendix for your compiler project.** It draws exactly the architectural line you need for a trusted-kernel design: the **kernel** only ever checks fully-explicit derivations in the A.2 rule sense (every implicit argument already filled in, every metavariable already resolved) — it has no notion of "figure this out." The **elaborator** is a separate, larger, more heuristic layer sitting in front of the kernel, whose entire job is producing a fully-explicit term the kernel can check. Concretely: implicit-argument inference is metavariable creation + (ideally Miller-pattern) unification; typical ambiguity is universe-level constraint generation and solving; "ensuring symbols are defined once" is elaboration-time name resolution. None of this needs to be trusted — if the elaborator produces a bad term, the kernel simply rejects it — which is exactly the trusted-computing-base separation you want: a small, rule-faithful kernel (this appendix, essentially, transcribed into code) behind a large, best-effort elaborator that never has to be trusted, only sound-when-it-succeeds.
+
+## Function extensionality and univalence, formalized as constants
+
+Section A.3 makes a design choice explicit that matters for anyone adding a new axiom to a kernel: **an axiom that adds no new syntax or judgmental equalities can be introduced either as a hypothesized variable used locally, or as a genuine new primitive constant inhabiting it globally.** The book picks the latter for both function extensionality and univalence, treating them as first-class parts of the core theory rather than optional extra hypotheses:
+
 $$
-\frac{\Gamma \vdash f : \prod_{(x:A)} B \qquad \Gamma \vdash a : A}{\Gamma \vdash f(a) : B[a/x]}\;\Pi\text{-ELIM}
+\dfrac{\Gamma \vdash f : \textstyle\prod_{(x:A)} B \quad \Gamma \vdash g : \textstyle\prod_{(x:A)} B}{\Gamma \vdash \mathrm{funext}(f,g) : \mathrm{isequiv}(\mathrm{happly}_{f,g})}\ \Pi\text{-ext}
 \qquad
-\frac{\Gamma \vdash f : \prod_{(x:A)} B}{\Gamma \vdash f \equiv (\lambda x.\, f(x)) : \prod_{(x:A)} B}\;\Pi\text{-UNIQ}
+\dfrac{\Gamma \vdash A:U_i \quad \Gamma \vdash B:U_i}{\Gamma \vdash \mathrm{univalence}(A,B) : \mathrm{isequiv}(\mathrm{idtoeqv}_{A,B})}\ U_i\text{-univ}
 $$
 
-plus the computation rule $(\lambda(x:A).\, b)(a) \equiv b[a/x]$. Note that Π-UNIQ — the η-rule missing from the first presentation — is right here, as a *judgmental* equality, because in this presentation the checker knows the type of $f$.
+Note the shape: neither rule introduces a *computation* rule alongside it — there is no reduction telling you what `funext(f,g)` or `univalence(A,B)` reduces *to*. That absence is exactly what breaks canonicity below.
 
-For the natural numbers, introduction gives $0 : \mathbb{N}$ and $\mathrm{succ}(n) : \mathbb{N}$; elimination is the induction principle $\mathrm{ind}_{\mathbb{N}}$ ("induction for naturals"); computation says $\mathrm{ind}_{\mathbb{N}}(x.C,\, c_0,\, x.y.c_s,\, 0) \equiv c_0$ and the successor case reduces by one step of recursion. For identity types, introduction is $\mathrm{refl}_a : a =_A a$ ("reflexivity at $a$"), elimination is path induction $\mathrm{ind}_{=_A}$, and computation says inducting on reflexivity returns the base case.
+## Canonicity, normalization, and consistency — for the axiom-free core
 
-One small notational idea makes the eliminator rules precise and worth stealing: **binders written into the arguments**. In $\mathrm{ind}_{\mathbb{N}}(x.C,\, c_0,\, x.y.c_s,\, n)$, the notation $x.C$ means "$C$ with $x$ bound", and $x.y.c_s$ binds both $x$ and $y$ in $c_s$. The eliminator is not a function taking functions; it is a syntactic operation that substitutes into bodies. Your implementation will feel the difference the moment you try to represent $\mathrm{ind}_{\mathbb{N}}$ as a Rust closure and realize the recursion hypothesis has to be injected *into the body*, not passed as a value.
+A.4 states the metatheoretic payoff for the system of A.1 (without univalence or [[Higher-Inductive-Types|higher inductive types]]), building it as a genuine proof chain, not a list of unrelated facts:
 
-**What breaks without this.** Without computation rules, eliminators have no specified behavior and normalization has no $\iota$-reductions to perform: the system still types terms, but nothing computes. Without uniqueness principles, you lose judgmental η, and every conversion check on functions becomes weaker than it should be — two pointwise-identical functions fail to compare equal, and downstream type checking rejects programs that are obviously fine.
+1. **Subject reduction** (Theorem A.4.1): reduction preserves typing — if $t:A$ and $t \downarrow t'$, then $t':A$.
+2. **Strong normalization** (Theorem A.4.2): every well-typed term's every reduction sequence terminates.
+3. **Normal-form characterization** (Lemma A.4.3): normal terms have an explicit grammar $v ::= k \mid \lambda x.\,v \mid c(\vec v) \mid f(\vec v)$ — closed normal *types* must be headed by a primitive constant.
+4. **Decidable typing on normal forms** (Theorem A.4.4).
+5. **Logical consistency** (Corollary A.4.5): *falls straight out of 1–3* — if $a : \mathbf{0}$ (the empty type) were derivable in the empty context, it would normalize (by 1, 2) to some closed normal term of type $\mathbf{0}$, but Lemma A.4.3's grammar admits no such term. No model-theoretic argument required — this is a purely syntactic, proof-theoretic consistency proof, in the tradition Gentzen started.
+6. **Canonicity** (Corollary A.4.6): any closed term $a : \mathbb{N}$ normalizes to a literal numeral $\mathrm{succ}^k(0)$ — computation is *total and observable*, not just "exists."
+7. **Decidability of proof-checking** (Corollary A.4.7): "recognizing a correct proof when you see one" is decidable, for normal-form terms.
 
-## Definitional equality: what it is, what it is not, and how it is decided
+**Then the appendix states, in one blunt paragraph, exactly why this all breaks once you add Appendix A.3's axioms:** `funext` and `univalence` applications, and higher-inductive-type constructors, **never simplify** — there's no computation rule for them, so they sit inert in normal form, wrecking Lemma A.4.3's grammar (a closed normal term of type $\mathbf{0}$ *could* now be, say, `univalence(...)`-derived garbage that never reduces away). The book is explicit that, at time of writing, restoring canonicity for univalence-extended type theory was **an open conjecture of Voevodsky's** — consistency for the extended theory is instead established only *semantically*, via a model in Kan simplicial sets (Voevodsky, for univalence) and a separate model due to Lumsdaine–Shulman for higher inductive types, rather than syntactically as in steps 1–7 above.
 
-Judgmental equality $\equiv$ is the most load-bearing concept in the whole appendix, so it deserves a careful tour.
-
-**What is in it.** Four kinds of reduction, using the traditional names your Lean sessions will surface:
-
-- **$\beta$**: applying a $\lambda$ — $(\lambda x.\, t)(u)$ reduces to $t[u/x]$.
-- **$\delta$**: unfolding defined constants — $\mathrm{double}(2)$ unfolds to $2 + 2$ via its defining equation.
-- **$\iota$**: computation rules of eliminators — $\mathrm{ind}_{\mathbb{N}}(\ldots, \mathrm{succ}(n))$ reduces to the successor clause applied to the recursive call.
-- **$\eta$**: function extensionality at the judgmental level — $f \equiv \lambda x.\, f(x)$.
-
-**What is not in it.** Any equality that requires *reasoning*. The book's Remark 1.12.2 is the canonical demonstration: addition of naturals is commutative only propositionally. For a variable $n$, the judgment $n + 1 \equiv 1 + n$ is **not** derivable — you must use the identity type and induction. But for a specific numeral, $3 + 1 \equiv 1 + 3$ **is** judgmental, because both sides reduce to $4$. Associativity of addition is the same story. Judgmental equality is computation; propositional equality is mathematics.
-
-Here is the distinction made concrete in Lean, where the kernel's conversion checker — the procedure internally called `isDefEq` — is precisely the decision procedure for this judgment:
-
-```lean
--- Judgmentally equal: β-reduction + ι (Nat.add computes on numerals).
--- `rfl` succeeds exactly when the kernel's isDefEq accepts the two sides.
-example : (fun x => x + 1) 2 = 3 := rfl
-#reduce (fun x => x + 1) 2        -- 3
-
--- δ: unfolding a defined constant is judgmental.
-def double (n : Nat) : Nat := n + n
-example : double 2 = 4 := rfl
-
--- NOT judgmentally equal — only propositionally so. `rfl` fails:
-example (n : Nat) : n + 1 = 1 + n := Nat.add_comm n 1
-
--- ...yet every *particular* instance is judgmental (both sides compute):
-example : 3 + 1 = 1 + 3 := rfl
-```
-
-**How it is decided.** The algorithm is the one sketched in Rust above: normalize both sides, compare normal forms. Two metatheorems make this legitimate:
-
-- **Confluence** (the diamond property): if a term reduces to $t_1$ and to $t_2$, both reduce further to a common term. So the normal form is unique when it exists.
-
-```mermaid
-flowchart TD
-  a["t"] --> b["t₁"]
-  a --> c["t₂"]
-  b --> d["t′"]
-  c --> d
-```
-
-- **Strong normalization** (Theorem A.4.2): well-typed terms have no infinite reduction sequences. So normalization terminates.
-
-Then Lemma A.4.3 characterizes what normal forms actually look like, which is what makes the final comparison cheap:
-
-$$
-v ::= k \mid \lambda x.\, v \mid c(\vec{v}) \mid f(\vec{v})
-\qquad
-k ::= x \mid k(v) \mid f(\vec{v})(k)
-$$
-
-Reading it: a normal form is an abstraction, a fully-applied primitive constant, a fully-applied defined constant, or a **neutral** term $k$ — a variable, or a neutral applied to an argument, or a partial application of a defined constant stuck on a variable argument. The key consequence: a *type* in normal form is either neutral or headed by a primitive constant. You never need to look inside binders to compare types.
-
-```mermaid
-flowchart LR
-  A["term t"] --> R["reduce: β, δ, ι, η"]
-  B["term u"] --> S["reduce: β, δ, ι, η"]
-  R --> NF1["normal form v"]
-  S --> NF2["normal form w"]
-  NF1 --> CMP{"v and w\nsyntactically identical?"}
-  NF2 --> CMP
-  CMP -- yes --> OK["accept: judgmentally equal"]
-  CMP -- no --> BAD["reject"]
-```
-
-**What breaks without this.** Types are compared up to judgmental equality (the conversion rule: from $a : A$ and $A \equiv B$, conclude $a : B$). If $\equiv$ were undecidable, type checking would be undecidable, and the entire premise of machine-checked proof collapses — you could not even say whether a derivation is well-formed. This is why the book insists (§1.1) that judgmental equality is a *meta-theoretic*, algorithmic matter, never something you can assume or negate inside the theory.
-
-## The metatheorem chain
-
-Appendix A.4 now runs the argument that everything so far was built to support. Each result feeds the next:
-
-```mermaid
-flowchart LR
-  SYN["Formal syntax\n+ inference rules"] --> PRES["Preservation\nThm A.4.1"]
-  SYN --> SN["Strong normalization\nThm A.4.2"]
-  SN --> NF["Normal-form characterization\nLemma A.4.3"]
-  PRES --> DEC["Decidable type-checking\nThm A.4.4"]
-  NF --> DEC
-  DEC --> CON["Logical consistency\nCor. A.4.5"]
-  DEC --> CAN["Canonicity\nCor. A.4.6"]
-  DEC --> PRF["Proof-checking decidable\nCor. A.4.7"]
-```
-
-The results, one sentence each, with what each one buys you:
-
-- **Preservation (Theorem A.4.1).** Reduction preserves typing: if $t : A$ and $t \downarrow t'$, then $t' : A$ (and similarly for types in universes). Without it, evaluation could smuggle a term out of its type, and your checker's verdict would depend on how far you chose to compute.
-- **Strong normalization (Theorem A.4.2).** Every well-typed term is strongly normalizing. This is the heavyweight; the book notes the proof uses Tait's computability method. It buys termination of conversion, hence termination of the whole checker.
-- **Normal forms (Lemma A.4.3).** The syntax of normal forms above. It buys cheap, structural comparison.
-- **Decidability of type-checking (Theorem A.4.4).** Whether $a : A$ holds is decidable for normal forms, and combined with normalization, in general. This is the product requirement: "we should be able to recognize a proof when we see one" (Introduction, p. 12).
-- **Logical consistency (Corollary A.4.5).** There is no closed term of type $\mathbf{0}$. The proof is a beautiful one-liner of a normal-form argument: if $\vdash a : \mathbf{0}$, normalize $a$ to $a'$; by Lemma A.4.3, a normal inhabitant of $\mathbf{0}$ would have to be a neutral or a constant-headed term — and $\mathbf{0}$ has neither constructors nor constants that produce it. No such normal form exists. Contradiction.
-- **Canonicity (Corollary A.4.6).** Every closed term $a : \mathbb{N}$ reduces to a numeral $\mathrm{succ}^k(0)$. Computation actually delivers answers; the system cannot prove "there exists a natural number" without being able to exhibit one.
-- **Decidability of proofhood (Corollary A.4.7).** Being a proof in the system is decidable. Checking a submitted derivation is a bounded mechanical task.
-
-**What breaks without this.** Drop normalization and consistency becomes unprovable by this method — you can no longer argue "any proof of $\mathbf{0}$ would normalize to an impossible normal form." Drop canonicity and your "verified" compiler might certify a program whose output it can never compute. These are not aesthetic properties; they are the difference between a foundation and a toy.
-
-## What homotopy type theory does to this clean picture
-
-Now the appendix turns to the part of the book you actually came for, and the metatheory gets honestly messier. Homotopy type theory is the base theory plus two features, and both are introduced in ways that the normalization machinery cannot digest.
-
-### Axioms are inhabitants with no reduction
-
-Function extensionality and univalence enter the formal system (Appendix A.3) as **primitive constants with no computation rules**:
-
-$$
-\Gamma \vdash \mathrm{funext}(f, g) : \mathrm{isequiv}(\mathrm{happly}_{f,g})
-\qquad
-\Gamma \vdash \mathrm{univalence}(A, B) : \mathrm{isequiv}(\mathrm{idtoeqv}_{A,B})
-$$
-
-Read aloud: $\mathrm{funext}$ is a constant witnessing that pointwise equality of functions makes them equal; $\mathrm{univalence}$ is a constant witnessing that $\mathrm{idtoeqv}$ ("identity to equivalence", the canonical map from paths between types to equivalences) is an equivalence. These are *axioms* in the precise sense of §1.1: atomic inhabitants declared to exist, with no rules governing their behavior beyond their type.
-
-The contrast with rules is the point. Rules are **procedural**: they tell you how to compute. Axioms are **opaque**: a term stuck on $\mathrm{univalence}(A,B)$ simply stops. There is no $\delta$, no $\iota$, nothing to fire. The appendix is blunt about the consequence: occurrences of univalence and of higher-inductive constructors never simplify, which breaks the normal-form characterization of Lemma A.4.3 outright.
-
-There is a middle option the book uses for everything else in Chapters 2–11: *propositional* computation rules, where the computation behavior holds as an inhabitant of an identity type rather than as a judgmental equality. You saw this pattern in §2.9–§2.10, where $\mathrm{ua}$ (the inverse of $\mathrm{idtoeqv}$, "univalence as an introduction rule for equality of types") satisfies $\mathrm{transport}^{X \mapsto X}(\mathrm{ua}(f), x) = f(x)$ only propositionally. The system gets the mathematics; the computation stops being definitional.
-
-### Higher inductive types split the computation rules
-
-The circle $S^1$ (Appendix A.3) shows the compromise in its final form. Point constructors stay judgmental:
-
-$$
-\mathrm{ind}_{S^1}(x.C,\, b,\, \ell,\, \mathrm{base}) \equiv b : C[\mathrm{base}/x]
-$$
-
-Path constructors become propositional: the rule S1-COMP2 does not say the induction principle computes on $\mathrm{loop}$ judgmentally; it gives you a *term* witnessing that the dependent application of the induced function to $\mathrm{loop}$ equals $\ell$. The reasons (from §6.2 and the Chapter 6 notes) are worth knowing: the operation $\mathrm{ap}$ ("action on paths") is itself defined via identity elimination, not primitive, and judgmental equalities should not depend on such choices; and semantically, left and right homotopies are equal only *up to homotopy*, so demanding judgmental computation asks for more than the semantics can give.
-
-### The open problem: canonicity for univalence
-
-With normalization unproven and normal forms gone, what survives? Consistency does — but by a completely different route. The book establishes it **semantically**: all the constructions have a model in Kan simplicial sets (Voevodsky's model), higher inductive types included (work of Lumsdaine and Shulman). Therefore the theory is consistent *relative to* ZFC with sufficiently many inaccessible cardinals (one per universe level). Note the shape of the guarantee: no longer "the syntax cannot produce $\mathbf{0}$," but "if ZFC is consistent, so is this." A model-theoretic proof replaces the syntactic one.
-
-Canonicity, meanwhile, becomes a conjecture. From the Introduction's open problems (posed by Voevodsky): given a closed term of type $\mathbb{N}$ in the theory extended with univalence, can one always find a numeral and a proof that the term equals that numeral — where the proof of equality may itself use univalence? More broadly: is there a constructive justification of univalence at all? As of the book, open.
-
-**What breaks without this** — or rather, what breaks *because* of this, and why you should care: every postulate you add to a checker is a place where computation stops. Add a function extensionality constant with no reduction, and suddenly terms like $(\mathrm{funext}(\ldots))(x)$ are stuck forever: your evaluator cannot run certified programs that touch them, and any canonicity argument about your system dies with it. The design space is exactly the book's: judgmental rules (computational, restrictive) → propositional computation (mathematically smooth, computationally inert) → opaque axioms (maximum power, zero computation). Budget your axioms like memory.
-
-## The guardrails that keep the core sane
-
-Two syntactic restrictions protect the base system, and both are stated in the book precisely because violating them produces inconsistency rather than mere inconvenience.
-
-**Strict positivity** (§5.6). In an inductive definition of a type $W$, the type $W$ may appear in constructor argument types only *strictly positively*: roughly, each constructor argument is either a type not mentioning $W$, or an iterated function type with codomain $W$. The motivating failures are staged. First, a constructor $g : (C \to \mathbb{N}) \to C$ is not even *formulable* — the recursion principle would need to "apply the function being defined to an argument of function type," which has no meaning. Second, and worse, a constructor $k : ((D \to \mathrm{Prop}) \to \mathrm{Prop}) \to D$ is formulable (the occurrence of $D$ is negative twice, hence covariant overall) and **inconsistent**: you can define an "injection" from the "power set" of $D$ into $D$, then diagonalize to get a proposition equivalent to its own negation. (There is a universe-level caveat: the full contradiction uses propositional resizing, but the warning stands.) Double negation is not forgiveness.
-
-**Higher inductive syntax** (§6.13) is, by contrast, admitted to be unsettled. Point constructors and 1-path constructors with sources and targets built from earlier constructors cover all the examples, but the general condition — that source and target expressions be *natural*, i.e., preserved by all functions — is stated informally, and the book shows why some condition is mandatory: a path constructor $\sigma : f_K(a) = f_K(b)$ for an arbitrary family $f : \prod_{X : \mathcal{U}} (X \to X)$ would make the induction principle unstatable, because there is no way to say what a dependent path over $\sigma$ should connect. If your future system grows HIT-like features (and quotient/quotient-like features are the usual gateway), this is the cliff to survey first.
-
-**What breaks without this.** Without strict positivity, the system proves false. There is no "without this" horror story to tell, because the story *is* the horror: a derivation of $\mathbf{0}$, at which point every metatheorem above is simultaneously void.
-
-## Elaboration: the invisible front end
-
-There is one more formal layer, mentioned almost apologetically in A.2.11, and it is arguably the most relevant section of the appendix for an elaborator builder. Consider function composition. Formally, the constant must take the types as explicit arguments:
-
-$$
-\circ :\equiv \lambda(A:\mathcal{U}).\, \lambda(B:\mathcal{U}).\, \lambda(C:\mathcal{U}).\, \lambda(g:B \to C).\, \lambda(f:A \to B).\, \lambda(x:A).\, g(f(x))
-$$
-
-But nobody writes $\circ(A, B, C, g, f)$. Everyone writes $g \circ f$, and a front end figures out $A, B, C$ from the types of $g$ and $f$. The appendix names this front end **elaboration**: inferring implicit arguments, resolving typical ambiguity in universe levels, ensuring symbols are defined once — all performed *before* derivation checking. The core theory, as presented, never sees it.
-
-This division of labor is exactly how a real proof assistant is structured, and it tells you where unification enters the picture. In Lean, the same kernel procedure `isDefEq` that decides definitional equality also runs *during elaboration*, with metavariables standing in for not-yet-known implicit arguments: solving "what must $A$ be so that $g \circ f$ type-checks?" is a unification problem whose tractable core is pattern unification over the kind of metavariable applications these constraints produce. The book does not discuss this machinery — it is outside the core formalism — but the appendix's observation lands exactly on the seam: the rules describe what checking *means*, elaboration describes how human input gets translated into something checkable, and the translation is where unification lives.
-
-**What breaks without this.** Nothing breaks *logically* — elaboration is sugar. What breaks is *usability at scale*: without implicit inference, every derived judgment carries a linear amount of bookkeeping that humans will not write and that error messages will drown in. Every real system rebuilds this layer; the only choice is whether you design it or inherit it.
+**Why this split matters directly for a refinement-type/verification kernel.** This is the general pattern you will hit the moment your own kernel needs to accept an externally-discharged obligation (an SMT-solver verdict standing in for a propositional proof, say) instead of a rule-derived term: you are doing exactly what `funext`/`univalence` do here — adding an inhabitant with **no accompanying computation rule** — and you inherit exactly this tradeoff. You keep logical soundness (the axiom/oracle result is still *sound* if the external procedure is sound) but you lose the syntactic canonicity argument (steps 1–7), and you have to fall back to a semantic consistency argument, or accept that "closed terms of decidable types reduce to canonical form" simply no longer holds uniformly across your whole language. A **proof-producing architecture** — where the SMT solver or abstract interpreter emits a certificate that the kernel can *replay* as an actual derivation (a Farkas-lemma witness, a resolution proof, an interpolant) rather than being trusted as an opaque oracle — is precisely the strategy for avoiding this loss: it keeps every accepted term inside the syntactic, rule-derived, canonicity-preserving fragment, pushing the "trust the solver" step outside the trusted computing base entirely, onto a checker for the *certificate format* instead of the solver itself.
 
 ## Where this leads
 
-**In the book.** Everything in Part I is developed inside exactly the rule system of A.2; Chapters 6–11 then stretch it. Axioms interact: §4.9 proves univalence *implies* function extensionality, so one of the two constants is in principle eliminable. The Chapter 7 truncation machinery and the Chapter 8 homotopy calculations all run on HIT rules whose computation is only propositional — which is why the encode-decode proofs there are so careful about which equalities are judgmental. And the canonicity question left open here gates any future *computational* interpretation of univalence, which the Introduction names as the field's most pressing problem.
+This appendix is the book's own answer to "what would it take to actually implement this," and it's the closest thing in the source to a direct blueprint for a kernel:
 
-**Backward references.** §1.1 for judgments versus propositions and the two equalities; §5.6 for the general grammar of inductive definitions; Remark 1.12.2 for the judgmental-versus-propositional boundary in practice.
-
-**For your project — both targets, load-bearing.**
-- *The Rust verifier.* Appendix A.2 is, line for line, the specification of your checker: contexts are your environment, the judgment forms are your public API, the rule names are the variants of your derivation enum, and the metatheorems are the properties you will want about it — preservation and normalization as your termination and soundness story, decidability as your UX guarantee. When you later add Hoare-triple judgments, you are *extending this judgment set*; the admissibility-of-substitution proof pattern is the template for showing your extended system still behaves under substitution of program variables.
-- *The elaborator.* Section A.2.11 plus §1.1 is your requirements document: elaboration as a pre-pass over a core with decidable conversion, implicit-argument inference as unification, typical ambiguity as universe-level resolution. Your planned Miller-pattern-unification core is precisely the standard tractable fragment for the metavariable problems that pass generates, run through a kernel whose `isDefEq` is the normalization algorithm of A.4.
-
-If you remember one sentence from the appendix, make it the one the book buries in the metatheory section: the base theory is consistent because normal forms cannot lie; the extended theory is consistent because someone built a model. Everything between those two facts is the engineering of foundations.
-
-[[book-guidelines|↩ Back to guidelines]]
+- The **A.1 vs. A.2** split (untyped-syntax-plus-convertibility vs. explicit-context natural deduction) is the same split you'll make between your *evaluator* (untyped reduction) and your *type-checker* (context-indexed judgments) — build both, keep them separately testable, and prove (or at least test-suite-enforce) that they agree via the definitional-equality bridge.
+- **Substitution and weakening as admissible, provable-not-assumed lemmas** is the exact theorem shape a Hoare-logic soundness proof needs at its base case — get the context/binder representation right here and that proof obligation elsewhere becomes free.
+- **The formation/introduction/elimination/computation template**, applied uniformly to every type former including identity types, is directly transcribable into a typing-rule enum and a matching reduction-rule enum — this is architecturally where a real Rust kernel starts.
+- **Elaboration, named and explicitly separated from the core rules**, is the load-bearing architectural decision for the whole compiler project: implicit-argument inference, universe-constraint solving, and name resolution all live in a large, heuristic, *untrusted* elaborator layer, strictly upstream of a small, rule-faithful, trusted kernel that only ever checks fully-explicit A.2-style derivations.
+- **Canonicity's fragility under axioms without computation rules** is the general theorem you'll want to keep in mind for every future extension of your own type theory (a refinement predicate discharged by SMT, an inductive-inductive real-number type, an effect axiom): each such extension either needs its own computation rule, or it costs you syntactic canonicity in exchange for a semantic (or proof-certificate-based) consistency argument instead.

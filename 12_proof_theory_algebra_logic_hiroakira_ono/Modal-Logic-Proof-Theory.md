@@ -127,7 +127,7 @@ A system has the **analytic cut property** if *every* provable sequent has some 
 
 **Theorem 4.4.** GS5 has the analytic cut property.
 
-This matters because analytic cut, combined with each logical rule being "acceptable" (every formula in a rule's premises is a subformula of something in its conclusion — true of (T) and (S5)), still delivers the **subformula property**: every formula anywhere in the proof is a subformula of something in the end sequent. That's the actual load-bearing fact — cut elimination was never the goal in itself, it was always a *means* to the subformula property, which is what actually powers decidability and interpolation arguments. Analytic cut gets you the subformula property by a different route, without needing cut gone entirely.
+This matters because analytic cut, combined with each logical rule being "acceptable" (every formula in a rule's premises is a subformula of something in its conclusion — true of (T) and (S5)), still delivers the **[[Subformula-Property|subformula property]]**: every formula anywhere in the proof is a subformula of something in the end sequent. That's the actual load-bearing fact — cut elimination was never the goal in itself, it was always a *means* to the subformula property, which is what actually powers decidability and interpolation arguments. Analytic cut gets you the subformula property by a different route, without needing cut gone entirely.
 
 **Theorem 4.5.** Craig's interpolation property holds for modal logic S5.
 

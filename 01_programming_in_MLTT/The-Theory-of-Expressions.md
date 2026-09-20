@@ -22,11 +22,11 @@ Chapter 3 answers both, and it does so *before* the book has said a single word 
 $$
 \frac{A\supset B \qquad A}{B}
 $$
-requires checking that the antecedent of the major premise is *the same* $A$ as the minor premise. If sameness here isn't decidable, this single rule — the simplest one in the whole system — can't be mechanically verified, and everything built on top of it (formation rules, elimination rules, an actual proof checker) inherits that failure. So the entire book's claim to be implementable rests on what Chapter 3 proves: that its notion of expression and its notion of $\equiv$ are decidable. This is the direct ancestor of `isDefEq` in a real proof assistant's kernel, and it's worth reading this chapter with that translation running in your head throughout.
+==requires checking that the antecedent of the major premise is *the same* $A$ as the minor premise== %%That means that the solver needs to determine that A is the same premise as found in A->B ?? %%. If sameness here isn't decidable, this single rule — the simplest one in the whole system — can't be mechanically verified, and everything built on top of it (formation rules, elimination rules, an actual proof checker) inherits that failure. So the entire book's claim to be implementable rests on what Chapter 3 proves: that its notion of expression and its notion of $\equiv$ are decidable. This is the direct ancestor of `isDefEq` in a real proof assistant's kernel, and it's worth reading this chapter with that translation running in your head throughout.
 
 ## Building expressions: four operations, one running example
 
-The chapter's method is instructive on its own: rather than starting from a grammar, it starts from ordinary mathematical notation and asks what *operations* are implicitly at work in it. Take
+The chapter's method is instructive on its own: ==rather than starting from a grammar==%%Why Formal verification books start introducing grammar or syntax notation rules? %%, it starts from ordinary mathematical notation and asks what *operations* are implicitly at work in it. Take
 $$
 y + \sin y.
 $$
@@ -67,7 +67,7 @@ This is where the chapter earns its title. Once you have both application and ab
 $$
 e \equiv ((x)e)(x).
 $$
-Two things about this definition matter more than they might look like they do at first pass. First, $\equiv$ is explicitly *not* about meaning — "definitional equality is a syntactical notion and has nothing to do with the meaning of the syntactical entities" (the book's own words). Second, it is going to have to be *decidable*, which is exactly why the rest of the chapter exists: an informal "same up to obviously-equivalent rewriting" relation is not something a checker can implement.
+Two things about this definition matter more than they might look like they do at first pass. First, $\equiv$ is explicitly *not* about meaning — =="definitional equality is a syntactical notion and has nothing to do with the meaning of the syntactical entities"== (the book's own words). Second, it is going to have to be *decidable*, which is exactly why the rest of the chapter exists: an informal "same up to obviously-equivalent rewriting" relation is not something a checker can implement.
 
 **Grounding.** This distinction — syntactic sameness-up-to-a-fixed-set-of-rules versus semantic sameness — is exactly the line Lean draws between *definitional equality* (`Eq` up to `rfl`, decided by the kernel's `isDefEq`) and *propositional equality* (an `Eq` proof term you have to construct, possibly using `rw`, `simp`, induction, anything). `rfl` succeeds exactly when the kernel's decision procedure for $\equiv$ says the two sides are the same expression by the rules this chapter is about to lay out — nothing more.
 
@@ -303,40 +303,13 @@ One genuine implementation detail worth flagging because it's a real simplificat
 
 The syntax-tree picture from §3.1 (the book's Figure 3.1, for $+(y,\sin(y))$) is worth redrawing with arities attached at every node, since that's the invariant this whole chapter is protecting:
 
-<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, monospace" font-size="14">
-  <!-- edges -->
-  <line x1="280" y1="55" x2="150" y2="120" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="280" y1="55" x2="400" y2="120" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="400" y1="150" x2="400" y2="205" stroke="#8a8a8a" stroke-width="1.5"/>
-
-  <!-- root: + -->
-  <rect x="245" y="20" width="70" height="36" rx="6" fill="none" stroke="#5b8dee" stroke-width="1.6"/>
-  <text x="280" y="43" text-anchor="middle" fill="#5b8dee">+</text>
-  <text x="280" y="72" text-anchor="middle" fill="#8a8a8a" font-size="12">arity 0⊗0→0</text>
-
-  <!-- left leaf: y -->
-  <rect x="115" y="120" width="70" height="36" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.4"/>
-  <text x="150" y="143" text-anchor="middle" fill="#8a8a8a">y</text>
-  <text x="150" y="172" text-anchor="middle" fill="#8a8a8a" font-size="12">arity 0</text>
-
-  <!-- right node: sin -->
-  <rect x="365" y="120" width="70" height="36" rx="6" fill="none" stroke="#5b8dee" stroke-width="1.6"/>
-  <text x="400" y="143" text-anchor="middle" fill="#5b8dee">sin</text>
-  <text x="400" y="172" text-anchor="middle" fill="#8a8a8a" font-size="12">arity 0→0</text>
-
-  <!-- sin's argument: y -->
-  <rect x="365" y="205" width="70" height="36" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.4"/>
-  <text x="400" y="228" text-anchor="middle" fill="#8a8a8a">y</text>
-
-  <!-- overall result label -->
-  <text x="280" y="15" text-anchor="middle" fill="#8a8a8a" font-size="12">+(y, sin(y))  :  arity 0</text>
-</svg>
+![[syntax_tree.svg]]
 
 Every application node in this tree only type-checks (arity-checks) because the operator's arrow arity matches its argument's arity at each step: $+$ wants $0\otimes 0$, gets $y{:}0$ and $\sin(y){:}0$, both match, result is $0$. Try to build $succ(succ)$ this way and the tree simply cannot be assembled — there's no node you can draw for it, because clause 4 of Section 3.8 has no premise it satisfies. That's the whole discipline in one picture: arity-checking is a structural precondition for the tree to exist, not a separate pass that runs on an already-built tree and rejects it after the fact.
 
 ## Where this leads
 
-Everything from Chapter 4 onward — [[The-Semantics-of-Judgement-Forms#Canonical and noncanonical expressions|canonical and noncanonical expressions]], the four categorical judgement forms, every formation/introduction/elimination/equality rule for every set former in the rest of the book — is stated as a condition on *expressions in the sense of this chapter*, checked for sameness using *exactly the $\equiv$ of this chapter*. When Chapter 5's substitution rules or Chapter 7's $\beta$-rule for $\Pi$-elimination invoke "the same expression" or "definitionally equal," they are invoking Section 3.9's fifteen rules, not some new notion introduced later. Arities themselves get retired once real sets/types take over classifying expressions from Chapter 4 on — but the *discipline* Section 3.6 introduces (classify expressions structurally, before doing anything semantic with them, specifically to keep self-reference out and equality decidable) reappears, essentially unchanged in spirit, as the reason type formation rules exist at all.
+Everything from Chapter 4 onward — [[The-Semantics-of-Judgement-Forms#Canonical and noncanonical expressions|canonical and noncanonical expressions]], [[the_semantic_judge_forms_qwen#The four categorical judgement forms|the four categorical judgement forms]], every formation/introduction/elimination/equality rule for every set former in the rest of the book — is stated as a condition on *expressions in the sense of this chapter*, checked for sameness using *exactly the $\equiv$ of this chapter*. When Chapter 5's substitution rules or Chapter 7's $\beta$-rule for $\Pi$-elimination invoke "the same expression" or "definitionally equal," they are invoking Section 3.9's fifteen rules, not some new notion introduced later. Arities themselves get retired once real sets/types take over classifying expressions from Chapter 4 on — but the *discipline* Section 3.6 introduces (classify expressions structurally, before doing anything semantic with them, specifically to keep self-reference out and equality decidable) reappears, essentially unchanged in spirit, as the reason type formation rules exist at all.
 
 **Direct connection to the two target systems.** This chapter is the syntactic substrate both of your projects sit on top of:
 

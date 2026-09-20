@@ -67,7 +67,7 @@ fn double<X>(f: impl Fn(X) -> X, a: X) -> X { f(f(a)) }
 
 The turbofish `id::<i64>` *is* type application, spelled differently — you're supplying the argument to an implicit $\forall$. Rust's monomorphizer performs, at compile time, something close to the substitution $[X \mapsto T_2]T_{12}$ for every instantiation site, generating a fresh specialized copy — the mechanical inverse of what TAPL's type-erasure semantics (§23.7, below) does at the *term* level.
 
-**Lean grounding.** Lean's `∀`/`Pi`-types make the correspondence to T-TAbs/T-TApp closer to literal, since Lean does not distinguish types from other sorts syntactically the way Rust's surface syntax does:
+**Lean [[ML-Implementation-Techniques#Grounding|grounding]].** Lean's `∀`/`Pi`-types make the correspondence to T-TAbs/T-TApp closer to literal, since Lean does not distinguish types from other sorts syntactically the way Rust's surface syntax does:
 
 ```lean
 -- id : ∀ (X : Type), X → X

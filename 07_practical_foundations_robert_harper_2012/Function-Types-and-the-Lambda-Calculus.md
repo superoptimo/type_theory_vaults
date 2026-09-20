@@ -68,7 +68,7 @@ enum CtxEntry {
 }
 ```
 
-**Lean grounding.** The two-judgment-form setup is the seed of what will later become a single, uniform typing judgment once functions become first class — a preview of why Lean's `Expr` has exactly one case for `.app` and one for `.lam`, with no separate "function definition" AST node. Lean doesn't need `fun`/`call` as primitives because it went straight to the higher-order design in §8.2.
+**Lean [[Recursive-Types#Grounding|grounding]].** The two-judgment-form setup is the seed of what will later become a single, uniform typing judgment once functions become first class — a preview of why Lean's `Expr` has exactly one case for `.app` and one for `.lam`, with no separate "function definition" AST node. Lean doesn't need `fun`/`call` as primitives because it went straight to the higher-order design in §8.2.
 
 ## 2. Higher-order functions as first-class values
 
@@ -81,7 +81,7 @@ $$
 e ::= \mathtt{lam}[\tau](x.e)\ \ (\lambda(x{:}\tau)\,e) \mid \mathtt{ap}(e_1;e_2)\ \ (e_1(e_2))
 $$
 
-**What breaks without this:** without function types, you cannot write `map`, `compose`, or any combinator that abstracts over *which* transformation to apply — you'd need a hand-written first-order function for every transformation, and no way to parameterize a function *by* a function. Harper's whole later development (System T's `it`, higher Ackermann definability, System F's polymorphism) depends on functions being ordinary values from here on.
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]]:** without function types, you cannot write `map`, `compose`, or any combinator that abstracts over *which* transformation to apply — you'd need a hand-written first-order function for every transformation, and no way to parameterize a function *by* a function. Harper's whole later development (System T's `it`, higher Ackermann definability, System F's polymorphism) depends on functions being ordinary values from here on.
 
 **Rust grounding.** This is exactly the difference between a free function `fn f(x: i32) -> i32 { .. }` (first-order, can't be passed around without extra machinery) and a closure value `let f: fn(i32) -> i32 = |x| x + x;` or, more generally, `Box<dyn Fn(i32) -> i32>`. Once functions are values, `arr(τ1;τ2)` is just `Fn(τ1) -> τ2` — a trait, not a special AST node. If you're writing a type checker, this is the moment `Type::Fn(Box<Type>, Box<Type>)` becomes a variant of your `Type` enum on exactly the same footing as `Type::Num` or `Type::Str`, rather than a separate table keyed by name.
 

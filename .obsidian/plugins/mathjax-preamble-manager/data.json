@@ -1,0 +1,15 @@
+{
+  "preambles": {
+    "preambles": [
+      {
+        "path": "preamble.sty"
+      }
+    ],
+    "folderPreambles": [
+      {
+        "folderPath": "/",
+        "preamblePath": "preamble.sty"
+      }
+    ]
+  }
+}

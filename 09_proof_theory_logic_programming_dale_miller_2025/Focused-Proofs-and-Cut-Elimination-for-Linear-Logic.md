@@ -1,12 +1,18 @@
 ---
 title: Focused Proofs and Cut-Elimination for Linear Logic
 source book: Proof Theory and Logic Programming (Dale Miller, 2025)
-chapter: "7 — Formal properties of linear logic focused proofs"
+chapter: 7 — Formal properties of linear logic focused proofs
 pages: printed pp. 139–164 (PDF pp. 147–172)
-tags: [proof-theory, linear-logic, focusing, cut-elimination, sequent-calculus, well-founded-recursion]
+tags:
+  - proof-theory
+  - linear-logic
+  - focusing
+  - cut-elimination
+  - sequent-calculus
+  - well-founded-recursion
 ---
 
-# Focused Proofs and Cut-Elimination for Linear Logic
+# Focused Proofs and Cut-Elimination for [[Linear-Logic|Linear Logic]]
 
 [[book-guidelines|↩ Back to guidelines]]
 
@@ -168,7 +174,7 @@ The proof is two nested inductions: (1) outer induction on the number of non-ato
 
 $L$ and $\Downarrow L_2$ don't share a connective set — $L$ has both polarities' full complement ($\otimes,\oplus,\exists,{!}$ positive; $\parbin,\&,\forall,{?}$ negative, plus $\bot,\top$), while $L_2$ only has the negative-flavored ones. So before you can compare provability across the two systems, you need a formula translation, and it has to be *polarity-aware*: a positive connective like $\otimes$ doesn't map to a positive $L_2$ connective (there isn't one) — it maps to its *negation's* De Morgan dual using $\multimap$ and $\bot$:
 $$(B\otimes C)^\blacktriangledown = B^\triangledown \multimap C^\triangledown \multimap \bot \qquad (B\oplus C)^\blacktriangledown = (B^\triangledown\multimap\bot)\ \&\ (C^\triangledown\multimap\bot) \qquad (!B)^\blacktriangledown = B^\triangledown \Rightarrow \bot$$
-while negative connectives translate structurally (homomorphically): $(B \parbin C)^\triangledown = B^\triangledown \parbin C^\triangledown$, $(?B)^\triangledown = {?}(B^\triangledown)$, etc. For a formula $P$ whose top connective is positive, $(P)^\triangledown := (P)^\blacktriangledown \multimap \bot$ — i.e. "the negative-polarity encoding of a positive formula is the negation of its direct encoding." This double-function setup ($\triangledown$ total, $\blacktriangledown$ only defined on positive-headed formulas) mirrors exactly the kind of polarity bookkeeping a focusing-aware elaborator or proof-search engine has to track at run time — it's the static, formula-level shadow of what the prover's `decide` rule does dynamically.
+while negative connectives translate structurally (homomorphically): $(B \parbin C)^\triangledown = B^\triangledown \parbin C^\triangledown$, $(?B)^\triangledown = {?}(B^\triangledown)$, etc. For a formula $P$ whose top connective is positive, $(P)^\triangledown := (P)^\blacktriangledown \multimap \bot$ — i.e. "the negative-polarity encoding of a positive formula is the negation of its direct encoding." This double-function [[Linear-Logic-Programming#Setup|setup]] ($\triangledown$ total, $\blacktriangledown$ only defined on positive-headed formulas) mirrors exactly the kind of polarity bookkeeping a focusing-aware elaborator or proof-search engine has to track at run time — it's the static, formula-level shadow of what the prover's `decide` rule does dynamically.
 
 ### Soundness (Prop. 7.16) and completeness (Theorem 7.18)
 

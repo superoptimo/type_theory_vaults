@@ -73,7 +73,7 @@ with the single rule $\Gamma \vdash \langle\rangle : \mathsf{unit}$, and Harper 
 
 This matters more than it looks like it should, because `unit` is the type that carries *no information whatsoever* — every well-typed expression of type `unit` is definitionally equal to $\langle\rangle$, so knowing "this has type `unit`" tells you nothing you didn't already know. That's precisely the right type for "a computation that runs for its effect and returns nothing interesting" — Rust's `()`, or a function whose only job is a side effect.
 
-**Rust grounding.**
+**Rust [[Recursive-Types#Grounding|grounding]].**
 
 ```rust
 fn log_message(msg: &str) -> () {   // or just `fn log_message(msg: &str)`

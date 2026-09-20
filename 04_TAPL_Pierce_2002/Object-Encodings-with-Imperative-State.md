@@ -59,7 +59,7 @@ fn make_counter() -> Counter {
 
 This is more machinery than idiomatic Rust would use for a counter (you'd just write a struct with a method), but it's the honest translation of Pierce's encoding: two closures sharing one heap cell via `Rc<Cell<_>>`, exactly playing the role of TAPL's shared reference `x`. The point of writing it this clunky way is to see that ordinary Rust structs-with-methods are *already* doing, at the language level, what this chapter does by hand at the term level.
 
-**Grounding (Python).** Python's own object model is close enough to make the correspondence almost too easy — `self.x` *is* the shared reference cell, and bound methods *are* the record of closures:
+**[[ML-Implementation-Techniques#Grounding|Grounding]] (Python).** Python's own object model is close enough to make the correspondence almost too easy — `self.x` *is* the shared reference cell, and bound methods *are* the record of closures:
 
 ```python
 def make_counter():

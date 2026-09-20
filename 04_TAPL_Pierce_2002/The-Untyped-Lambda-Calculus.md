@@ -240,7 +240,7 @@ $$
 
 Pierce is candid that this "informal convention" is a deliberate simplification for the sake of readable proofs and examples (Key Question in the guidelines: it's exactly this tradeoff). Chapter 6's de Bruijn-index representation is the book's answer to making substitution total, unambiguous, and machine-implementable without an implicit renaming convention hanging over every proof — indices simply have no names left to collide.
 
-**Rust grounding — this is load-bearing, not decorative.** A real capture-avoiding substitution needs a fresh-name generator and an explicit alpha-rename step whenever a binder's name shadows a free variable of what's being substituted:
+**Rust [[ML-Implementation-Techniques#Grounding|grounding]] — this is load-bearing, not decorative.** A real capture-avoiding substitution needs a fresh-name generator and an explicit alpha-rename step whenever a binder's name shadows a free variable of what's being substituted:
 
 ```rust
 fn subst(x: &str, s: &Term, t: &Term) -> Term {

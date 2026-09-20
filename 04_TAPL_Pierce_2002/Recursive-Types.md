@@ -180,7 +180,7 @@ build a running-sum accumulator. Streams are the case where a genuinely
 being unfolded forever, because the "next" element is only computed on
 demand (behind a `λ_:Unit`), not eagerly materialized.
 
-**Rust/Python grounding.** Rust's `Iterator` trait is the nominal,
+**Rust/Python [[ML-Implementation-Techniques#Grounding|grounding]].** Rust's `Iterator` trait is the nominal,
 "iso-recursive" cousin of `Stream` — an infinite `Stream` is idiomatically an
 `impl Iterator<Item = u64>` that never returns `None`. In Python, where there
 is no static type system to negotiate with, the same laziness falls straight

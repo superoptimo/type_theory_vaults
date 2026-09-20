@@ -11,7 +11,7 @@ tags: [proof-theory, logic-programming, operational-semantics, lambda-calculus, 
 
 ## Why this chapter is the payoff
 
-Every earlier chapter built a piece of machinery: sequent calculus, focusing, linear logic's resource-sensitivity, higher-order quantification. This chapter spends all of it at once. The question it answers is one every systems engineer has actually faced, usually without naming it this way: **if I want a formal, checkable specification of what a piece of code does when it runs, what is the specification actually made of, and how do I keep the "what" (the semantics) from turning into the "how" (an implementation) by accident?**
+Every earlier chapter built a piece of machinery: sequent calculus, focusing, [[Linear-Logic|linear logic]]'s resource-sensitivity, higher-order quantification. This chapter spends all of it at once. The question it answers is one every systems engineer has actually faced, usually without naming it this way: **if I want a formal, checkable specification of what a piece of code does when it runs, what is [[Higher-Order-Quantification#The specification|the specification]] actually made of, and how do I keep the "what" (the semantics) from turning into the "how" (an implementation) by accident?**
 
 The book's answer, stated plainly in the opening paragraph: use *proof search itself* as the source of dynamics. A logic program is not a description of a machine — it *is* one, if you pick the right fragment of logic. This is Chapter 1's thesis (proof search as computation, deliberately set in opposition to the Curry–Howard "proof normalization as computation" reading) cashed out on the most practical possible target: interpreters, transition systems, and abstract machines. If you build a Rust verifier that checks programs against logic-clause specifications — one of this vault's two standing projects — this chapter is close to a blueprint for the "reference evaluator" component of that system. Keep that in mind throughout; it isn't decoration.
 
@@ -29,9 +29,9 @@ The three aren't competitors; they're points on a spectrum of *how much order an
 
 ## Step 1: programs are terms, and binders are the meta-language's binders
 
-Before you can write clauses *about* a program, you need to represent the program itself as a term the logic can pattern-match on and rewrite. This is §13.2, and it's the one piece of this chapter that reaches furthest outside operational semantics proper — straight into elaborator/unifier territory.
+Before you can write clauses *about* a program, you need to represent [[Linear-Logic-Programming#The program|the program]] itself as a term the logic can pattern-match on and rewrite. This is §13.2, and it's the one piece of this chapter that reaches furthest outside operational semantics proper — straight into elaborator/unifier territory.
 
-**The problem it solves.** Any real programming language has binding constructs: lambda abstraction, let-bindings, quantifiers, channel-scoping in the π-calculus. If you represent these with a first-order encoding — say, a `Var(String)` node with a name string, or worse, raw de Bruijn indices threaded by hand — then every piece of code that touches the AST (substitution, transition rules, evaluators) has to independently get variable capture right. That's exactly the bookkeeping burden that turns "write an interpreter" into "write an interpreter and then spend three weeks debugging capture-avoiding substitution."
+**[[Linear-Logic-Programming#The problem|The problem]] it solves.** Any real programming language has binding constructs: lambda abstraction, let-bindings, quantifiers, channel-scoping in the π-calculus. If you represent these with a first-order encoding — say, a `Var(String)` node with a name string, or worse, raw de Bruijn indices threaded by hand — then every piece of code that touches the AST (substitution, transition rules, evaluators) has to independently get variable capture right. That's exactly the bookkeeping burden that turns "write an interpreter" into "write an interpreter and then spend three weeks debugging capture-avoiding substitution."
 
 Miller's move: don't invent a new binding mechanism. Reuse the one the meta-logic (simply typed λ-terms, Church's Simple Theory of Types) already has, and get its α-conversion, capture-avoiding substitution, and β-reduction for free. This is **higher-order abstract syntax (HOAS)**.
 
@@ -134,7 +134,7 @@ The chapter states this correctness claim precisely:
 
 > **Proposition 13.1.** Let $P$ and $Q$ be processes and $\alpha$ an action. Let $\bar n$ be a list of free names containing the free names in $P$, $Q$, and $\alpha$. The transition $P \xrightarrow{\alpha} Q$ is derivable in the π-calculus if and only if $\forall \bar n.[\![P \xrightarrow{\alpha} Q]\!]$ is provable from the logical theory $D_\pi$.
 
-This is an **adequacy theorem**: the encoding doesn't just resemble the original system, it's provably in lockstep with it — every derivation on one side corresponds to a derivation on the other, both directions. That's the standard you want from any "encode language $L$ as clauses" exercise, and it's the same shape of guarantee your Rust verifier would eventually need to state and prove about its own encoding of a source language's operational semantics.
+This is an **adequacy theorem**: [[Linear-Logic-Programming#The encoding|the encoding]] doesn't just resemble the original system, it's provably in lockstep with it — every derivation on one side corresponds to a derivation on the other, both directions. That's the standard you want from any "encode language $L$ as clauses" exercise, and it's the same shape of guarantee your Rust verifier would eventually need to state and prove about its own encoding of a source language's operational semantics.
 
 ## Step 4: binary clauses — forcing evaluation order
 

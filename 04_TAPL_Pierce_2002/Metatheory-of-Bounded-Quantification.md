@@ -73,7 +73,7 @@ impl Ctx {
 }
 ```
 
-**Grounding (Lean).** Lean's elaborator does the same move under a different name: `whnf` (weak head normal form reduction) unfolds definitions/metavariables until the head is a concrete constructor the elaborator can pattern-match on, before deciding whether something is a function type, a structure, etc. `Γ ⊢ S ⇑ T` is exposure-for-subtyping; `whnf` is exposure-for-reduction. Both exist for the same reason: the surface syntax of a type can hide its usable shape behind one layer of indirection (a variable bound, a `def`), and the algorithm needs a canonical way to peel that layer off before proceeding.
+**[[ML-Implementation-Techniques#Grounding|Grounding]] (Lean).** Lean's elaborator does the same move under a different name: `whnf` (weak head normal form reduction) unfolds definitions/metavariables until the head is a concrete constructor the elaborator can pattern-match on, before deciding whether something is a function type, a structure, etc. `Γ ⊢ S ⇑ T` is exposure-for-subtyping; `whnf` is exposure-for-reduction. Both exist for the same reason: the surface syntax of a type can hide its usable shape behind one layer of indirection (a variable bound, a `def`), and the algorithm needs a canonical way to peel that layer off before proceeding.
 
 ---
 

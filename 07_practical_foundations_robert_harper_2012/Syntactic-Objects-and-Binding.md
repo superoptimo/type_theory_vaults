@@ -54,7 +54,7 @@ enum Exp {
 
 Multiple sorts correspond to multiple mutually-recursive enums (`Exp`, `Cmd`, `Decl`, ...), each operator's arity is its variant's field types, and Rust's exhaustiveness checker on `match` is doing structural induction's case-enumeration step *for you*, at compile time, every time you write a function over `Exp`. If you've ever had `match` complain about a non-exhaustive pattern, that error is the compiler enforcing exactly the "these cases exhaust all possibilities" argument Harper makes informally in prose.
 
-**Grounding — Lean.** Lean's `inductive` is the most literal transcription of Harper's "smallest family satisfying these closure conditions":
+**[[Recursive-Types#Grounding|Grounding]] — Lean.** Lean's `inductive` is the most literal transcription of Harper's "smallest family satisfying these closure conditions":
 
 ```lean
 inductive Exp where
@@ -79,7 +79,7 @@ def eval_exp(e):
 
 ## 2. Variables as unknowns given meaning by substitution
 
-**What breaks without this.** If a "variable" were just a distinguished kind of leaf with no defined behavior, you couldn't say what a formula containing one *means*, nor how to specialize it. Harper is explicit: a variable's entire meaning comes from what happens when you substitute something for it.
+**[[Data-Abstraction-and-Existential-Types#What breaks without this|What breaks without this]].** If a "variable" were just a distinguished kind of leaf with no defined behavior, you couldn't say what a formula containing one *means*, nor how to specialize it. Harper is explicit: a variable's entire meaning comes from what happens when you substitute something for it.
 
 **The definition.** A variable is an unknown object drawn from a range of significance — for ASTs, that range is "ASTs of a specified sort." Substitution, written $[b/x]a$, is the operation of replacing every occurrence of $x$ in $a$ with $b$:
 

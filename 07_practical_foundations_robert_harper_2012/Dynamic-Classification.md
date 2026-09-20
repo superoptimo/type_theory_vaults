@@ -64,7 +64,9 @@ The reduction rules (evaluating within a global symbol signature $\Sigma$, with 
 
 $$
 \frac{e\ \mathsf{val}_\Sigma}{\mathsf{in}[a](e)\ \mathsf{val}_\Sigma} \tag{34.2a}
-\qquad
+$$
+
+$$
 \frac{\nu\Sigma\{e\} \mapsto \nu\Sigma'\{e'\}}{\nu\Sigma\{\mathsf{in}[a](e)\} \mapsto \nu\Sigma'\{\mathsf{in}[a](e')\}} \tag{34.2b}
 $$
 
@@ -117,7 +119,8 @@ $$
 
 $$
 \frac{}{\Gamma \vdash_{\Sigma,a\sim\tau} \mathsf{cls}[a] : \mathsf{class}(\tau)} \tag{34.3a}
-\qquad
+$$
+$$
 \frac{\Gamma \vdash_\Sigma e_1 : \mathsf{class}(\tau) \quad \Gamma \vdash_\Sigma e_2 : \tau}{\Gamma \vdash_\Sigma \mathsf{mk}(e_1;e_2) : \mathsf{clsfd}} \tag{34.3b}
 $$
 

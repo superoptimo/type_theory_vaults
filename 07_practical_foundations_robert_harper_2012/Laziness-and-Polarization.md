@@ -171,7 +171,7 @@ Once laziness is a *type*, rather than a global evaluation-order policy, you com
 
 These are genuinely different laziness profiles — the first suspends even discovering whether the list is empty; the second tells you immediately, deferring only what comes after. That distinction is invisible in a language with a single global laziness policy; it becomes expressible, and choosable per-definition, once laziness is a type.
 
-**Grounding (Python sketch, since Rust's ownership makes ad hoc self-referential thunks painful without `Rc<RefCell<_>>` boilerplate that would obscure the point):**
+**[[Recursive-Types#Grounding|Grounding]] (Python sketch, since Rust's ownership makes ad hoc self-referential thunks painful without `Rc<RefCell<_>>` boilerplate that would obscure the point):**
 
 ```python
 class Susp:

@@ -181,7 +181,7 @@ $$
 k;f \blacktriangleright e \mapsto k \blacktriangleright e \qquad (f \neq \mathtt{handle}(-;x.e_2)) \qquad (28.5\mathrm{g})
 $$
 
-The pivotal rule is (28.5f): once unwinding reaches a `handle` frame, the payload $e$ is *substituted into* $e_2$ for $x$, and evaluation resumes in place of the handler — with the handler frame itself gone. Everything else is a straightforward re-derivation of 28.2's rules with the payload threaded through. Safety (28.1) extends without new ideas — Harper calls it "a straightforward exercise."
+The pivotal rule is (28.5f): once unwinding reaches a `handle` frame, the payload $e$ is *substituted into* $e_2$ for $x$, and evaluation resumes in place of the handler — with the handler frame itself gone. Everything else is a straightforward re-derivation of 28.2's rules with the payload threaded through. [[State-and-Assignables#Safety|Safety]] (28.1) extends without new ideas — Harper calls it "a straightforward exercise."
 
 ```rust
 // Rust's Result<T, E> plus `?` operator statically encode exactly

@@ -149,7 +149,7 @@ A **well-formed state** matches expression and stack types up:
 
 $$\frac{k:\tau \quad e:\tau}{k \triangleright e\ \mathsf{ok}} \qquad \frac{k:\tau \quad e:\tau \quad e\ \mathsf{val}}{k \triangleleft e\ \mathsf{ok}}$$
 
-With those in place, safety is the same two-part shape you've already seen for [[Type-Safety|structural dynamics]] — *preservation* (a step from a well-formed state lands in a well-formed state) and *progress* (a well-formed state is either final or can step) — restated for machine states:
+With those in place, [[State-and-Assignables#Safety|safety]] is the same two-part shape you've already seen for [[Type-Safety|structural dynamics]] — *preservation* (a step from a well-formed state lands in a well-formed state) and *progress* (a well-formed state is either final or can step) — restated for machine states:
 
 > **Theorem 27.1 (Safety).**
 > 1. If $s\ \mathsf{ok}$ and $s \mapsto s'$, then $s'\ \mathsf{ok}$.

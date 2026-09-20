@@ -95,7 +95,7 @@ $$
 
 Crucially, this tree isn't just a proof artifact you draw by hand — its shape *is* the typechecking algorithm. At every node, exactly one rule's conclusion matches the term's top-level syntactic form (an application can only be concluded by T-App, an abstraction only by T-Abs, and so on), so there is never a choice to make about which rule to try. This property — **syntax-directedness** — is what makes typechecking here a simple, terminating structural recursion over the term rather than a search problem. (Contrast this with later systems, e.g. subtyping in Chapter 15, where [[Subtyping#The subsumption rule|the subsumption rule]] T-Sub can apply *anywhere*, breaking syntax-directedness and forcing a real algorithmic redesign in Chapter 16.)
 
-**Rust grounding — the typechecker mirrors the tree exactly:**
+**Rust [[ML-Implementation-Techniques#Grounding|grounding]] — the typechecker mirrors the tree exactly:**
 
 ```rust
 fn typeof_term(ctx: &Vec<(String, Type)>, t: &Term) -> Result<Type, String> {

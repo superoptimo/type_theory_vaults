@@ -63,7 +63,7 @@ reads with the left-hand comma as conjunction and the right-hand comma as *disju
 
 ## The three families of inference rules
 
-Miller partitions every rule in his sequent calculi into three kinds. This partition is worth internalizing because it will recur, unchanged in spirit, through classical, intuitionistic, and linear logic later in the book.
+Miller partitions every rule in his sequent calculi into three kinds. This partition is worth internalizing because it will recur, unchanged in spirit, through classical, intuitionistic, and [[Linear-Logic|linear logic]] later in the book.
 
 ### 1. Structural rules — rules about the *container*, not the content
 
@@ -175,11 +175,11 @@ Some permutations require extra structural rules to witness (Figure 3.6's exampl
 
 This leads to the sharper, load-bearing concept: an inference rule is **invertible** if the converse of "premises provable $\Rightarrow$ conclusion provable" also holds — i.e. "conclusion provable $\Rightarrow$ premises provable." Practically: if you're searching for a proof of a sequent and an invertible rule applies, you can *always* apply it, in any order relative to other invertible rules, with zero risk of accidentally making the goal unprovable. It's a don't-care choice — a step you can commit to without keeping a backtracking record.
 
-*What breaks without invertibility knowledge:* a search procedure that treats every rule choice as equally risky has to backtrack over every rule application, including the ones that were actually safe. Recognizing invertible rules is precisely what shrinks the branching factor of proof search from "every rule is a gamble" down to "only a genuinely small set of choices are gambles" — which is the whole setup for focusing, next.
+*What breaks without invertibility knowledge:* a search procedure that treats every rule choice as equally risky has to backtrack over every rule application, including the ones that were actually safe. Recognizing invertible rules is precisely what shrinks the branching factor of proof search from "every rule is a gamble" down to "only a genuinely small set of choices are gambles" — which is the whole [[Linear-Logic-Programming#Setup|setup]] for focusing, next.
 
 ## Focused vs. unfocused: taming the choice explosion
 
-Here's the problem in concrete numbers. Suppose $\Gamma$ has 1000 non-atomic formulas and you're trying to prove $\Gamma, B_1 \vee B_2, C_1 \wedge C_2 \vdash A$ for atomic $A$. An *unfocused* rule application has to pick which of the 1002 non-atomic occurrences gets its connective introduced next — "one of about a million choices," as the book puts it, most of which don't matter because of permutability (the order between $\wedge L_m$ and $\vee L$ in the example derivation doesn't affect the resulting premises).
+Here's [[Linear-Logic-Programming#The problem|the problem]] in concrete numbers. Suppose $\Gamma$ has 1000 non-atomic formulas and you're trying to prove $\Gamma, B_1 \vee B_2, C_1 \wedge C_2 \vdash A$ for atomic $A$. An *unfocused* rule application has to pick which of the 1002 non-atomic occurrences gets its connective introduced next — "one of about a million choices," as the book puts it, most of which don't matter because of permutability (the order between $\wedge L_m$ and $\vee L$ in the example derivation doesn't affect the resulting premises).
 
 **Focusing** is the fix: organize the search into two alternating, disciplined phases.
 
@@ -190,7 +190,7 @@ The notation for "this formula is under focus" is the **down-arrow / focus marke
 
 *What breaks without focusing:* nothing is unsound — unfocused (Gentzen-style) sequent calculus is complete. What breaks is *tractability of search*. Unfocused proof search has to consider redundant permutations of essentially-equivalent rule orderings as if they were distinct branches. Focusing collapses all of that redundancy into a small number of canonical, "synthetic" steps — which is exactly the mechanism a logic-programming interpreter needs to run efficiently instead of drowning in permutation-equivalent dead ends.
 
-**This is the single most load-bearing idea in the chapter for the standing project.** A Rust-embedded theorem prover organized around backward proof search is, structurally, exactly this two-phase focused discipline: goal-reduction is your "decompose the current goal by its head connective, no choices to make" pass, and backchaining/focus is your "pick a clause from the program and commit to unifying against it" pass — the same shape as an SLD-resolution step in Prolog, formalized as a proof rule instead of a resolution step. The book will make this precise for $\lambda$Prolog-style languages in Chapter 5, but the proof-theoretic *justification* for why that search discipline is complete — not just a convenient heuristic — is minted right here.
+**This is the single most load-bearing idea in the chapter for the standing project.** A Rust-embedded theorem prover organized around backward proof search is, structurally, exactly this two-phase focused discipline: goal-reduction is your "decompose the current goal by its head connective, no choices to make" pass, and backchaining/focus is your "pick a clause from [[Linear-Logic-Programming#The program|the program]] and commit to unifying against it" pass — the same shape as an SLD-resolution step in Prolog, formalized as a proof rule instead of a resolution step. The book will make this precise for $\lambda$Prolog-style languages in Chapter 5, but the proof-theoretic *justification* for why that search discipline is complete — not just a convenient heuristic — is minted right here.
 
 ## Cut-elimination: the theorem the whole book leans on
 

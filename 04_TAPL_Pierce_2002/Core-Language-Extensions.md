@@ -90,7 +90,7 @@ Evaluation rules `E-Pair1`/`E-Pair2` enforce left-to-right evaluation of the com
 
 **Records** generalize tuples again by attaching a label $l_i$ from a label set $\mathcal{L}$ to each field: $\{l_i{=}t_i^{\,i\in 1..n}\}$ of type $\{l_i{:}T_i^{\,i\in 1..n}\}$, projected by label rather than position. Pierce's presentation treats field *order* as significant — $\{partno{=}5524, cost{=}30.27\}$ and $\{cost{=}30.27, partno{=}5524\}$ are formally different terms of different (if isomorphic-looking) types — a choice revisited once subtyping makes unordered records natural (§15.6).
 
-This is exactly where Rust grounding is strongest: a labeled record with all-distinct fields *is* a Rust `struct`, field for field, and the typing rule T-Rcd is literally "every field's initializer must have the field's declared type" — the same check `rustc` performs on a struct literal.
+This is exactly where Rust [[ML-Implementation-Techniques#Grounding|grounding]] is strongest: a labeled record with all-distinct fields *is* a Rust `struct`, field for field, and the typing rule T-Rcd is literally "every field's initializer must have the field's declared type" — the same check `rustc` performs on a struct literal.
 
 ```rust
 struct PhysicalAddr { first_last: String, addr: String }

@@ -16,134 +16,134 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ## Topic List
 
-1. **[[Logic-Programming-as-Proof-Search|Logic Programming as Proof Search]]**
+1. **Logic Programming as Proof Search** : [[Logic-Programming-as-Proof-Search|Link]]
    - Computation-as-model versus computation-as-deduction
-   - [[The-Simply-Typed-Lambda-Calculus|Proof normalization versus proof search as computational paradigms]]
-   - [[Logic-Programming-as-Proof-Search|Sequents as the unit of computational state]]
-   - [[Logic-Programming-as-Proof-Search|Goal-directed search and the fixed search semantics of logical connectives]]
-   - [[Logic-Programming-as-Proof-Search|Backchaining against program clauses]]
+   - Proof normalization versus proof search as computational paradigms : [[The-Simply-Typed-Lambda-Calculus|Link]]
+   - Sequents as the unit of computational state : [[Logic-Programming-as-Proof-Search|Link]]
+   - Goal-directed search and the fixed search semantics of logical connectives : [[Logic-Programming-as-Proof-Search|Link]]
+   - Backchaining against program clauses : [[Logic-Programming-as-Proof-Search|Link]]
    - The cut rule and Gentzen's cut-elimination theorem
-   - [[Logic-Programming-as-Proof-Search|Uniform proofs and abstract logic programming languages]]
-   - [[Implementing-Proof-Systems|Focused proof systems]]
+   - Uniform proofs and abstract logic programming languages : [[Logic-Programming-as-Proof-Search|Link]]
+   - Focused proof systems : [[Implementing-Proof-Systems|Link]]
 
-2. **[[Typed-First-Order-Terms-and-Type-Structure|Typed First-Order Terms and Type Structure]]**
-   - [[Typed-First-Order-Terms-and-Type-Structure|Sorts, type constructors, and kinds]]
-   - [[Typed-First-Order-Terms-and-Type-Structure|Type expressions, target and argument types]]
-   - [[Typed-First-Order-Terms-and-Type-Structure|The order of a type]]
-   - [[Typed-First-Order-Terms-and-Type-Structure|Typed first-order terms and the type assignment calculus]]
-   - [[Polymorphic-and-Pervasive-Constants|Polymorphic and pervasive constants]]
-   - [[Typed-First-Order-Terms-and-Type-Structure|Parametric versus nonparametric polymorphism]]
-   - [[Lambda-Tree-Syntax-and-Computation-over-Binders|Representing structured data with value constructors]]
+2. **Typed First-Order Terms and Type Structure** : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+   - Sorts, type constructors, and kinds : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+   - Type expressions, target and argument types : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+   - The order of a type : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+   - Typed first-order terms and the type assignment calculus : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+   - Polymorphic and pervasive constants : [[Polymorphic-and-Pervasive-Constants|Link]]
+   - Parametric versus nonparametric polymorphism : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+   - Representing structured data with value constructors : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
    - Representing linguistic objects such as formulas and imperative programs
-   - Type declarations and operator declarations in $\lambda$Prolog
+   - Type declarations and operator declarations in $\lambda$Prolog : [[Polymorphic-and-Pervasive-Constants|Link]]
 
-3. **[[First-Order-Unification|First-Order Unification]]**
-   - [[First-Order-Unification|Unification problems as multisets of equations]]
-   - [[First-Order-Unification|Most general unifiers and solved form]]
-   - [[First-Order-Unification|Rigid terms and the term-reduction, reorientation, and variable-elimination transformations]]
+3. **First-Order Unification** : [[First-Order-Unification|Link]]
+   - Unification problems as multisets of equations : [[First-Order-Unification|Link]]
+   - Most general unifiers and solved form : [[First-Order-Unification|Link]]
+   - Rigid terms and the term-reduction, reorientation, and variable-elimination transformations : [[First-Order-Unification|Link]]
    - The occurs-check and constant clashes
-   - [[First-Order-Unification|Unification problems read as quantified formulas]]
+   - Unification problems read as quantified formulas : [[First-Order-Unification|Link1]], [[Higher-Order-Unification|Link2]]
 
-4. **[[First-Order-Horn-Clause-Logic-Programming|First-Order Horn Clause Logic Programming]]**
+4. **First-Order Horn Clause Logic Programming** : [[First-Order-Horn-Clause-Logic-Programming|Link]]
    - The fohc language of definite goals and clauses
    - Signatures, programs, and goals as sequent components
-   - [[First-Order-Horn-Clause-Logic-Programming|Right-introduction and left-introduction proof rules]]
-   - [[First-Order-Horn-Clause-Logic-Programming|Answer substitutions]]
-   - [[First-Order-Horn-Clause-Logic-Programming|Completeness of fohc for classical and intuitionistic logic]]
+   - Right-introduction and left-introduction proof rules : [[First-Order-Horn-Clause-Logic-Programming|Link]]
+   - Answer substitutions : [[First-Order-Horn-Clause-Logic-Programming|Link]]
+   - Completeness of fohc for classical and intuitionistic logic : [[First-Order-Horn-Clause-Logic-Programming|Link]]
    - Predicate-indexed clauses and the Warren Abstract Machine
-   - [[First-Order-Horn-Clause-Logic-Programming|The operational role of types beyond static well-formedness]]
-   - [[First-Order-Unification|Determinate and transparent types]]
+   - The operational role of types beyond static well-formedness : [[First-Order-Horn-Clause-Logic-Programming|Link]]
+   - Determinate and transparent types : [[First-Order-Unification|Link]]
 
-5. **[[Hereditary-Harrop-Formulas-and-Modular-Search|Hereditary Harrop Formulas and Modular Search]]**
+5. **Hereditary Harrop Formulas and Modular Search** : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
    - The fohh language admitting implications and universal quantifiers in goals
-   - [[Hereditary-Harrop-Formulas-and-Modular-Search|The disjunction and existential property of hereditary Harrop formulas]]
-   - [[Logic-Programming-as-Proof-Search|Program and signature augmentation during proof search]]
-   - [[Hereditary-Harrop-Formulas-and-Modular-Search|Hypothetical reasoning via implicational goals]]
-   - [[Hereditary-Harrop-Formulas-and-Modular-Search|Eigenvariables and the generic reading of universal goals]]
-   - [[Hereditary-Harrop-Formulas-and-Modular-Search|Minimal logic, intuitionistic logic, and ex falso quodlibet]]
-   - [[Hereditary-Harrop-Formulas-and-Modular-Search|Open-world versus closed-world assumption]]
-   - [[Hereditary-Harrop-Formulas-and-Modular-Search|Scope extrusion and the failure of fohh under classical logic]]
+   - The disjunction and existential property of hereditary Harrop formulas : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+   - Program and signature augmentation during proof search : [[Logic-Programming-as-Proof-Search|Link]]
+   - Hypothetical reasoning via implicational goals : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+   - Eigenvariables and the generic reading of universal goals : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+   - Minimal logic, intuitionistic logic, and ex falso quodlibet : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+   - Open-world versus closed-world assumption : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+   - Scope extrusion and the failure of fohh under classical logic : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
 
-6. **[[The-Simply-Typed-Lambda-Calculus|The Simply Typed $\lambda$-Calculus]]**
-   - [[The-Simply-Typed-Lambda-Calculus|Abstraction, application, and the type assignment calculus for $\lambda$-terms]]
-   - [[The-Simply-Typed-Lambda-Calculus|$\alpha$-, $\beta$-, and $\eta$-conversion]]
-   - [[The-Simply-Typed-Lambda-Calculus|$\beta$-normal form and $\lambda$-normal form]]
+6. **The Simply Typed $\lambda$-Calculus** : [[The-Simply-Typed-Lambda-Calculus|Link]]
+   - Abstraction, application, and the type assignment calculus for $\lambda$-terms : [[The-Simply-Typed-Lambda-Calculus|Link]]
+   - $\alpha$-, $\beta$-, and $\eta$-conversion : [[The-Simply-Typed-Lambda-Calculus|Link]]
+   - $\beta$-normal form and $\lambda$-normal form : [[The-Simply-Typed-Lambda-Calculus|Link]]
    - Church numerals and the complexity of $\beta$-normalization
-   - [[The-Simply-Typed-Lambda-Calculus|Quantifiers as abstractions over formulas of type $o$]]
+   - Quantifiers as abstractions over formulas of type $o$ : [[The-Simply-Typed-Lambda-Calculus|Link]]
 
-7. **[[Higher-Order-Unification|Higher-Order Unification]]**
-   - [[First-Order-Unification|Unification problems as quantified equalities with mixed quantifier prefixes]]
+7. **Higher-Order Unification** : [[Higher-Order-Unification|Link]]
+   - Unification problems as quantified equalities with mixed quantifier prefixes : [[First-Order-Unification|Link1]], [[Higher-Order-Unification|Link2]]
    - Raising as the dual of Skolemization
    - Unifiers versus solutions under nonempty-domain assumptions
-   - [[Higher-Order-Unification|Rigid and flexible terms, and the classification of equations]]
+   - Rigid and flexible terms, and the classification of equations : [[Higher-Order-Unification|Link]]
    - Undecidability via Post correspondence and Hilbert's Tenth Problem
-   - [[Higher-Order-Unification|Huet's pre-unification procedure and matching trees]]
+   - Huet's pre-unification procedure and matching trees : [[Higher-Order-Unification|Link]]
    - Imitation and projection substitutions
    - Absence of most general unifiers and of finite complete sets of unifiers
    - The $L_\lambda$ pattern subset and its decidable, unitary unification
 
-8. **[[Higher-Order-Logic-Programming-Languages|Higher-Order Logic Programming Languages]]**
+8. **Higher-Order Logic Programming Languages** : [[Higher-Order-Logic-Programming-Languages|Link]]
    - hohc, hohh, and hohh$^+$ as higher-order extensions of fohc and fohh
-   - [[Higher-Order-Logic-Programming-Languages|Rigid versus flexible atoms and the restriction on clause heads]]
+   - Rigid versus flexible atoms and the restriction on clause heads : [[Higher-Order-Logic-Programming-Languages|Link1]], [[Higher-Order-Unification|Link2]]
    - The Herbrand universe for higher-order programs
    - Predicate-name hiding via essentially universal clause heads
    - Flexible goals and strategies for handling them
-   - [[Higher-Order-Logic-Programming-Languages|Defining logical constants and negation-as-failure within the language]]
-   - [[Higher-Order-Logic-Programming-Languages|Functions represented as $\lambda$-terms and functional difference lists]]
-   - [[Higher-Order-Logic-Programming-Languages|Limits of higher-order unification as a general-purpose programming tool]]
-   - [[Higher-Order-Logic-Programming-Languages|Comparison with higher-order functional programming]]
+   - Defining logical constants and negation-as-failure within the language : [[Higher-Order-Logic-Programming-Languages|Link]]
+   - Functions represented as $\lambda$-terms and functional difference lists : [[Higher-Order-Logic-Programming-Languages|Link]]
+   - Limits of higher-order unification as a general-purpose programming tool : [[Higher-Order-Logic-Programming-Languages|Link1]], [[Higher-Order-Unification|Link2]]
+   - Comparison with higher-order functional programming : [[Higher-Order-Logic-Programming-Languages|Link1]], [[Computing-over-Functional-Programs|Link2]]
 
-9. **[[Modular-Program-Structuring|Modular Program Structuring]]**
-   - [[Modular-Program-Structuring|Modules and signatures as $\lambda$Prolog's units of structuring]]
-   - [[Modular-Program-Structuring|Accumulation of modules and of signatures]]
-   - [[Modular-Program-Structuring|Signature elaboration and module well-formedness]]
-   - [[Modular-Program-Structuring|E-formulas and existential quantification over program clauses]]
+9. **Modular Program Structuring** : [[Modular-Program-Structuring|Link]]
+   - Modules and signatures as $\lambda$Prolog's units of structuring : [[Modular-Program-Structuring|Link]]
+   - Accumulation of modules and of signatures : [[Modular-Program-Structuring|Link]]
+   - Signature elaboration and module well-formedness : [[Modular-Program-Structuring|Link]]
+   - E-formulas and existential quantification over program clauses : [[Modular-Program-Structuring|Link]]
    - Static scoping of hidden constants and the module query interpretation
    - Abstract datatypes and code extensibility through modules
    - Module parametrization by accumulated signatures
    - Resolution of the call/1 ambiguity through logical module semantics
 
-10. **[[Lambda-Tree-Syntax-and-Computation-over-Binders|$\lambda$-Tree Syntax and Computation over Binders]]**
-    - [[Lambda-Tree-Syntax-and-Computation-over-Binders|Representing binding structure via second-order constants paired with abstraction]]
-    - [[Lambda-Tree-Syntax-and-Computation-over-Binders|Object-level substitution realized as meta-level $\beta$-conversion]]
-    - [[Lambda-Tree-Syntax-and-Computation-over-Binders|Mobility of binders across term, formula, and proof level]]
+10. **$\lambda$-Tree Syntax and Computation over Binders** : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
+    - Representing binding structure via second-order constants paired with abstraction : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
+    - Object-level substitution realized as meta-level $\beta$-conversion : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
+    - Mobility of binders across term, formula, and proof level : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
     - Eigenvariable-based recursion under a binder
-    - [[Lambda-Tree-Syntax-and-Computation-over-Binders|Higher-order abstract syntax versus $\lambda$-tree syntax]]
+    - Higher-order abstract syntax versus $\lambda$-tree syntax : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
     - De Bruijn representations and their translation
-    - [[Lambda-Tree-Syntax-and-Computation-over-Binders|Signature-dependent copy clauses for substitution]]
+    - Signature-dependent copy clauses for substitution : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
     - The $L_\lambda$ subset as the computational core of $\lambda$-tree syntax programs
 
-11. **[[Implementing-Proof-Systems|Implementing Proof Systems]]**
-    - [[Implementing-Proof-Systems|Loop-free reformulation of sequent calculus rules as decision procedures]]
-    - [[Implementing-Proof-Systems|Natural deduction proof objects and the # typing-style relation]]
+11. **Implementing Proof Systems** : [[Implementing-Proof-Systems|Link]]
+    - Loop-free reformulation of sequent calculus rules as decision procedures : [[Implementing-Proof-Systems|Link]]
+    - Natural deduction proof objects and the # typing-style relation : [[Implementing-Proof-Systems|Link]]
     - Hypothetical judgments and eigenvariable freshness in encoded rules
-    - [[Implementing-Proof-Systems|A sequent calculus for classical logic and its zoned sequent structure]]
+    - A sequent calculus for classical logic and its zoned sequent structure : [[Implementing-Proof-Systems|Link]]
     - Iterative deepening for completeness under existential instantiation
-    - [[Implementing-Proof-Systems|Goals, tactics, and tacticals as a theorem-proving architecture]]
-    - [[Logic-Programming-as-Proof-Search|Invertible rules in proof search]]
+    - Goals, tactics, and tacticals as a theorem-proving architecture : [[Implementing-Proof-Systems|Link]]
+    - Invertible rules in proof search : [[Logic-Programming-as-Proof-Search|Link]]
 
-12. **[[Computing-over-Functional-Programs|Computing over Functional Programs]]**
-    - [[Typed-First-Order-Terms-and-Type-Structure|The miniFP language and its type-neutral, then type-restricted, representation]]
-    - [[Computing-over-Functional-Programs|Big-step versus evaluation-context (small-step) specifications of evaluation]]
+12. **Computing over Functional Programs** : [[Computing-over-Functional-Programs|Link]]
+    - The miniFP language and its type-neutral, then type-restricted, representation : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+    - Big-step versus evaluation-context (small-step) specifications of evaluation : [[Computing-over-Functional-Programs|Link]]
     - Fixpoint evaluation by unfolding
-    - [[Computing-over-Functional-Programs|Intensional term equality versus structural program equality]]
-    - [[Computing-over-Functional-Programs|Partial evaluation and mixed evaluation under a binder]]
-    - [[Computing-over-Functional-Programs|Continuation-passing style transformation and administrative redexes]]
+    - Intensional term equality versus structural program equality : [[Computing-over-Functional-Programs|Link]]
+    - Partial evaluation and mixed evaluation under a binder : [[Computing-over-Functional-Programs|Link]]
+    - Continuation-passing style transformation and administrative redexes : [[Computing-over-Functional-Programs|Link]]
 
-13. **[[Encoding-the-Pi-Calculus|Encoding the $\pi$-Calculus]]**
-    - [[Lambda-Tree-Syntax-and-Computation-over-Binders|$\lambda$-tree syntax representation of process syntax and name binding]]
+13. **Encoding the $\pi$-Calculus** : [[Encoding-the-Pi-Calculus|Link]]
+    - $\lambda$-tree syntax representation of process syntax and name binding : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
     - Free-action and bound-action one-step transition relations
-    - [[Hereditary-Harrop-Formulas-and-Modular-Search|Declarative encoding of freshness and scope-extrusion side conditions]]
-    - [[Higher-Order-Unification|Traces and the animation of process behavior]]
-    - [[Encoding-the-Pi-Calculus|May-judgments versus must-judgments]]
+    - Declarative encoding of freshness and scope-extrusion side conditions : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+    - Traces and the animation of process behavior : [[Higher-Order-Unification|Link]]
+    - May-judgments versus must-judgments : [[Encoding-the-Pi-Calculus|Link]]
     - The unsoundness of a naive simulation encoding
     - Encoding the call-by-name $\lambda$-calculus translation into the $\pi$-calculus
 
-14. **[[The-Teyjus-Implementation|The Teyjus Implementation]]**
+14. **The Teyjus Implementation** : [[The-Teyjus-Implementation|Link]]
     - Compiler, emulator, linker, and disassembler toolchain
-    - [[The-Teyjus-Implementation|The read-prove-print loop and type inference at the top level]]
+    - The read-prove-print loop and type inference at the top level : [[The-Teyjus-Implementation|Link]]
     - Realizing the modules language through separate compilation
-    - [[The-Teyjus-Implementation|exportdef and useonly module-interface disciplines]]
+    - exportdef and useonly module-interface disciplines : [[The-Teyjus-Implementation|Link]]
     - Built-in arithmetic, stream I/O, cut, and negation predicates
     - Deviations from the idealized language, including partial higher-order unification
 
@@ -173,15 +173,15 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 1: First-Order Terms and Representations of Data (pp. 10–33)
 
-**Summary:** Introduces the typed first-order term language of $\lambda$Prolog (sorts, type constructors, kinds, type expressions, terms) and first-order unification as the mechanism for decomposing and constructing data, illustrated through representations of lists, binary trees, logical formulas, and imperative programs.
+**Summary:** Introduces the typed first-order term language of $\lambda$Prolog (sorts, type constructors, kinds, type expressions, terms) and first-order unification as the mechanism for decomposing and constructing data, illustrated through representations of lists, binary trees, logical formulas, and imperative programs. : [[First-Order-Unification|Link1]], [[Typed-First-Order-Terms-and-Type-Structure|Link2]]
 
 **Key Definitions & Concepts by Section:**
-- **1.1 Sorts and type constructors** — sort (atomic, unanalyzable type, e.g. $\mathtt{int}$, $\mathtt{real}$, $\mathtt{string}$, $\mathtt{o}$ for formulas); type constructor (e.g. $\mathtt{list}$, produces new types from arguments); kind (the "type" of types; $\mathtt{kind\_exp} ::= \mathtt{type} \mid \mathtt{type} \to \mathtt{kind\_exp}$); kind declaration
-- **1.2 Type expressions** — type variables versus type constructors; target type and argument types of a type expression; functional versus nonfunctional type; primitive type; the order of a type $\mathrm{ord}(\tau)$, and its potential increase under substitution for type variables
-- **1.3 Typed first-order terms** — constant and value constructor; pervasive constants; polymorphic constants; type and operator declarations; term variables; well-formed application; typed first-order term; the type assignment calculus judgment $\Sigma;\Gamma \vdash t:\tau$; most general typing; canonical form of a term, with head and arguments
-- **1.4 Representing symbolic objects** — encoding data classes with distinct value constructors sharing a target type; parametric versus nonparametric polymorphism; representing logical formulas (the $\mathtt{var}$ constructor for object-level variables, and the fundamental limitation that first-order encodings of quantifiers cannot capture true binding force); representing imperative programs via type-neutral encodings
-- **1.5 Unification of typed first-order terms** — unification problem as a multiset of equations; unifier and most general unifier; solved form; rigid term; the term-reduction, reorientation, and variable-elimination transformations; constant clash; occurs-check; reading unification problems as $\forall\exists$-quantified formulas
-- **1.6 Bibliographic notes** — Robinson's, Martelli–Montanari's, and Paterson–Wegman's unification algorithms; $\lambda$Prolog as the first polymorphically typed logic programming language; the LF/Twelf dependently typed alternative
+- **1.1 Sorts and type constructors** — sort (atomic, unanalyzable type, e.g. $\mathtt{int}$, $\mathtt{real}$, $\mathtt{string}$, $\mathtt{o}$ for formulas); type constructor (e.g. $\mathtt{list}$, produces new types from arguments); kind (the "type" of types; $\mathtt{kind\_exp} ::= \mathtt{type} \mid \mathtt{type} \to \mathtt{kind\_exp}$); kind declaration : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+- **1.2 Type expressions** — type variables versus type constructors; target type and argument types of a type expression; functional versus nonfunctional type; primitive type; the order of a type $\mathrm{ord}(\tau)$, and its potential increase under substitution for type variables : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+- **1.3 Typed first-order terms** — constant and value constructor; pervasive constants; polymorphic constants; type and operator declarations; term variables; well-formed application; typed first-order term; the type assignment calculus judgment $\Sigma;\Gamma \vdash t:\tau$; most general typing; canonical form of a term, with head and arguments : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+- **1.4 Representing symbolic objects** — encoding data classes with distinct value constructors sharing a target type; parametric versus nonparametric polymorphism; representing logical formulas (the $\mathtt{var}$ constructor for object-level variables, and the fundamental limitation that first-order encodings of quantifiers cannot capture true binding force); representing imperative programs via type-neutral encodings : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+- **1.5 Unification of typed first-order terms** — unification problem as a multiset of equations; unifier and most general unifier; solved form; rigid term; the term-reduction, reorientation, and variable-elimination transformations; constant clash; occurs-check; reading unification problems as $\forall\exists$-quantified formulas : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+- **1.6 Bibliographic notes** — Robinson's, Martelli–Montanari's, and Paterson–Wegman's unification algorithms; $\lambda$Prolog as the first polymorphically typed logic programming language; the LF/Twelf dependently typed alternative : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why does $\lambda$Prolog need typed first-order terms rather than untyped Prolog-style terms, and what practical property (parametric polymorphism) does this buy for data representation?
@@ -192,17 +192,17 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 2: First-Order Horn Clauses (pp. 34–73)
 
-**Summary:** Develops an abstract framework for logic programming — signatures, program clauses, goals, and a sequent calculus with fixed search semantics — then instantiates it as fohc, the logic of first-order Horn clauses, exploring its programming use, its pragmatics, its relationship to classical and intuitionistic provability, and the operational role played by types.
+**Summary:** Develops an abstract framework for logic programming — signatures, program clauses, goals, and a sequent calculus with fixed search semantics — then instantiates it as fohc, the logic of first-order Horn clauses, exploring its programming use, its pragmatics, its relationship to classical and intuitionistic provability, and the operational role played by types. : [[First-Order-Horn-Clause-Logic-Programming|Link]]
 
 **Key Definitions & Concepts by Section:**
-- **2.1 First-order formulas** — relation symbol; first-order atomic formula; logical constants ($\top$, $\wedge$, $\vee$, $\supset$); universal and existential quantification written via the binding operators $\mathtt{pi}$ and $\mathtt{sigma}$; $\alpha$-convertibility of formulas; the typed first-order $\Sigma$-formula judgment
-- **2.2 Logic programming and search semantics** — the four ingredients of a logic programming setting (signatures, program clauses, goals, a proof calculus); the sequent $\Sigma;P \longrightarrow G$; reduction rules per connective (AND, OR, INSTAN, AUGMENT, GENERIC, TRUE); definite formulas; answer substitution; fohc as the logic underlying Prolog
-- **2.3 Horn clauses and their computational interpretation** — the fohc goal and clause grammars; backchaining and its proof rules (decide, initial, $\supset L$, $\wedge L$, $\forall L$); the flat, global signature-and-program property of fohc
-- **2.4 Programming with first-order Horn clauses** — implicit universal quantification of clause variables; modules as named collections of declarations and clauses; the read-prove-print loop; recursive relation definitions and encoding provability relations as fohc programs
+- **2.1 First-order formulas** — relation symbol; first-order atomic formula; logical constants ($\top$, $\wedge$, $\vee$, $\supset$); universal and existential quantification written via the binding operators $\mathtt{pi}$ and $\mathtt{sigma}$; $\alpha$-convertibility of formulas; the typed first-order $\Sigma$-formula judgment : [[First-Order-Horn-Clause-Logic-Programming|Link1]], [[First-Order-Unification|Link2]], [[Higher-Order-Unification|Link3]], [[Typed-First-Order-Terms-and-Type-Structure|Link4]]
+- **2.2 Logic programming and search semantics** — the four ingredients of a logic programming setting (signatures, program clauses, goals, a proof calculus); the sequent $\Sigma;P \longrightarrow G$; reduction rules per connective (AND, OR, INSTAN, AUGMENT, GENERIC, TRUE); definite formulas; answer substitution; fohc as the logic underlying Prolog : [[Logic-Programming-as-Proof-Search|Link]]
+- **2.3 Horn clauses and their computational interpretation** — the fohc goal and clause grammars; backchaining and its proof rules (decide, initial, $\supset L$, $\wedge L$, $\forall L$); the flat, global signature-and-program property of fohc : [[Logic-Programming-as-Proof-Search|Link]]
+- **2.4 Programming with first-order Horn clauses** — implicit universal quantification of clause variables; modules as named collections of declarations and clauses; the read-prove-print loop; recursive relation definitions and encoding provability relations as fohc programs : [[First-Order-Horn-Clause-Logic-Programming|Link]]
 - **2.5 Pragmatic aspects of computing with Horn clauses** — the need for a fixed, predictable search strategy for programming transparency; program as an ordered list; logic variables; predicate-indexed clause compilation
-- **2.6 The relationship with logical notions** — the cut rule as lemma introduction; cut-elimination for fohc; alternative equivalent presentations of fohc clauses and the exponential blow-up tradeoffs among them
-- **2.7 The meaning and use of types** — types as classifying, not evaluating, expressions; transparent and determinate types; type checking versus type inference via unification
-- **2.8 Bibliographic notes** — uniform proofs and abstract logic programming languages; focused proof systems; the Warren Abstract Machine
+- **2.6 The relationship with logical notions** — the cut rule as lemma introduction; cut-elimination for fohc; alternative equivalent presentations of fohc clauses and the exponential blow-up tradeoffs among them : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+- **2.7 The meaning and use of types** — types as classifying, not evaluating, expressions; transparent and determinate types; type checking versus type inference via unification : [[Typed-First-Order-Terms-and-Type-Structure|Link]]
+- **2.8 Bibliographic notes** — uniform proofs and abstract logic programming languages; focused proof systems; the Warren Abstract Machine : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. What is the precise sense in which goal-directed search fixes a search semantics for logical connectives independently of the program, and how does this differ from how atomic goals are handled via backchaining?
@@ -213,14 +213,14 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 3: First-Order Hereditary Harrop Formulas (pp. 75–95)
 
-**Summary:** Extends fohc by admitting implications and universal quantifiers inside goal formulas, yielding fohh — a logic in which the program and signature can grow and shrink dynamically during proof search — enabling hypothetical reasoning and local auxiliary clauses, and relates fohh's operational semantics precisely to minimal and intuitionistic (but not classical) provability.
+**Summary:** Extends fohc by admitting implications and universal quantifiers inside goal formulas, yielding fohh — a logic in which the program and signature can grow and shrink dynamically during proof search — enabling hypothetical reasoning and local auxiliary clauses, and relates fohh's operational semantics precisely to minimal and intuitionistic (but not classical) provability. : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
 
 **Key Definitions & Concepts by Section:**
 - **3.1 The syntax of goals and program clauses** — the fohh goal and clause grammars admitting $\supset$ and $\forall$ in goals; positive and negative subformula occurrence; the disjunction and existential property characterizing hereditary Harrop formulas; clausal order of a formula
-- **3.2 Implicational goals** — the AUGMENT rule and stack-discipline program growth; hypothetical reasoning via implicational goals; risk of nontermination under depth-first search
-- **3.3 Universally quantified goals** — the GENERIC rule and eigenvariables; intensional versus extensional readings of universal quantification; capture-avoiding substitution; logic variables occurring inside program clauses
-- **3.4 The relationship with logical notions** — logical equivalence versus preserved computational behavior; fohh's soundness and completeness for intuitionistic but not classical logic; scope extrusion and Peirce's formula as a counterexample; minimal logic versus intuitionistic logic; logic program inconsistency; syntactic subsets of fohh
-- **3.5 Bibliographic notes** — Harrop formulas versus hereditary Harrop formulas; open-world versus closed-world assumption; Kripke models; the $\nabla$-quantifier for generic quantification under a closed-world assumption
+- **3.2 Implicational goals** — the AUGMENT rule and stack-discipline program growth; hypothetical reasoning via implicational goals; risk of nontermination under depth-first search : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+- **3.3 Universally quantified goals** — the GENERIC rule and eigenvariables; intensional versus extensional readings of universal quantification; capture-avoiding substitution; logic variables occurring inside program clauses : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+- **3.4 The relationship with logical notions** — logical equivalence versus preserved computational behavior; fohh's soundness and completeness for intuitionistic but not classical logic; scope extrusion and Peirce's formula as a counterexample; minimal logic versus intuitionistic logic; logic program inconsistency; syntactic subsets of fohh : [[Hereditary-Harrop-Formulas-and-Modular-Search|Link]]
+- **3.5 Bibliographic notes** — Harrop formulas versus hereditary Harrop formulas; open-world versus closed-world assumption; Kripke models; the $\nabla$-quantifier for generic quantification under a closed-world assumption : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why does allowing implications and universal quantifiers into goal formulas require giving up fohc's flat, global signature-and-program property, and what computational capability does this buy?
@@ -231,16 +231,16 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 4: Typed $\lambda$-Terms and Formulas (pp. 96–117)
 
-**Summary:** Introduces the simply typed $\lambda$-calculus underlying the book's higher-order logic — abstraction, application, the type assignment calculus, and $\alpha$-, $\beta$-, $\eta$-conversion — then reframes unification problems as quantified equality formulas with mixed quantifier prefixes, closing with two undecidability results establishing the expressive power of higher-order unification.
+**Summary:** Introduces the simply typed $\lambda$-calculus underlying the book's higher-order logic — abstraction, application, the type assignment calculus, and $\alpha$-, $\beta$-, $\eta$-conversion — then reframes unification problems as quantified equality formulas with mixed quantifier prefixes, closing with two undecidability results establishing the expressive power of higher-order unification. : [[The-Simply-Typed-Lambda-Calculus|Link]]
 
 **Key Definitions & Concepts by Section:**
 - **4.1 Syntax for $\lambda$-terms and formulas** — abstraction and the type assignment calculus judgment $\Sigma;\Gamma \vdash t:\tau$; well-formed $\Sigma$-term; simply typed $\lambda$-term; formula as a term of type $o$; quantifiers defined via abstraction
-- **4.2 The rules of $\lambda$-conversion** — the "free for" substitution proviso; $\alpha$-, $\beta$-, and $\eta$-conversion; $\lambda$-conversion as the logic's notion of equality
-- **4.3 Some properties of $\lambda$-conversion** — $\beta$-redex and $\eta$-redex; $\beta$-normal form and $\lambda$-normal form; Church numerals; the potential superexponential blow-up of term size under normalization, and three reasons this is avoided in practice
-- **4.4 Unification problems as quantified equalities** — the generalized unification problem with mixed $\forall/\exists$ prefixes; raising as a dual operation to Skolemization; the distinction between a unifier and a solution; the significance of empty types
-- **4.5 Solving unification problems** — $\beta$-normal form structure (binder, head, arguments); rigid versus flexible terms; the classification of equations as rigid-rigid, rigid-flexible, and flexible-flexible
-- **4.6 Some hard unification problems** — reduction of the Post correspondence problem and of Hilbert's Tenth Problem to higher-order unification, establishing its undecidability
-- **4.7 Bibliographic notes** — Church's invention of the $\lambda$-calculus and Simple Theory of Types; Huet's first systematic study of higher-order unification
+- **4.2 The rules of $\lambda$-conversion** — the "free for" substitution proviso; $\alpha$-, $\beta$-, and $\eta$-conversion; $\lambda$-conversion as the logic's notion of equality : [[The-Simply-Typed-Lambda-Calculus|Link]]
+- **4.3 Some properties of $\lambda$-conversion** — $\beta$-redex and $\eta$-redex; $\beta$-normal form and $\lambda$-normal form; Church numerals; the potential superexponential blow-up of term size under normalization, and three reasons this is avoided in practice : [[The-Simply-Typed-Lambda-Calculus|Link]]
+- **4.4 Unification problems as quantified equalities** — the generalized unification problem with mixed $\forall/\exists$ prefixes; raising as a dual operation to Skolemization; the distinction between a unifier and a solution; the significance of empty types : [[First-Order-Unification|Link1]], [[Higher-Order-Unification|Link2]]
+- **4.5 Solving unification problems** — $\beta$-normal form structure (binder, head, arguments); rigid versus flexible terms; the classification of equations as rigid-rigid, rigid-flexible, and flexible-flexible : [[First-Order-Unification|Link1]], [[Higher-Order-Unification|Link2]]
+- **4.6 Some hard unification problems** — reduction of the Post correspondence problem and of Hilbert's Tenth Problem to higher-order unification, establishing its undecidability : [[Higher-Order-Unification|Link1]], [[First-Order-Unification|Link2]], [[Higher-Order-Logic-Programming-Languages|Link3]]
+- **4.7 Bibliographic notes** — Church's invention of the $\lambda$-calculus and Simple Theory of Types; Huet's first systematic study of higher-order unification : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why is a "solution" to a unification problem a strictly stronger notion than a "unifier" in this higher-order intuitionistic setting?
@@ -254,17 +254,17 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 **Summary:** Builds the higher-order logic programming languages hohc, hohh, and hohh$^+$ by extending fohc/fohh's atomic formulas to admit $\lambda$-terms while restricting where flexible atoms and logical symbols may occur, then explores the practical programming power this yields, including reasoning about higher-order programs, defining logical constants, and using $\lambda$-terms as functions.
 
 **Key Definitions & Concepts by Section:**
-- **5.1 Atomic formulas in higher-order logic programs** — rigid versus flexible atoms; inconsistent theory; why flexible clause heads are disallowed; polarity of a logical symbol occurrence
-- **5.2 Higher-order logic programming languages** — the Herbrand universes for hohc and hohh; hohc and hohh grammars; hohh$^+$ and its liberalized, essentially universally quantified clause heads
-- **5.3 Examples of higher-order programming** — predicate-quantified library predicates; continuation-passing-style transformation of Horn programs; hohh$^+$ memoization examples
-- **5.4 Flexible atoms as goals** — three strategies for handling flexible goals (suspension, eager solving, run-time error)
-- **5.5 Reasoning about higher-order programs** — proving symmetry of a hidden-predicate definition of $\mathtt{reverse}$, requiring metatheoretic reasoning beyond operational semantics
-- **5.6 Defining some of the logical constants** — partial, right-introduction-only definitions of $\bot$, $\top$, $\vee$, $\exists$ via hohc clauses
+- **5.1 Atomic formulas in higher-order logic programs** — rigid versus flexible atoms; inconsistent theory; why flexible clause heads are disallowed; polarity of a logical symbol occurrence : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.2 Higher-order logic programming languages** — the Herbrand universes for hohc and hohh; hohc and hohh grammars; hohh$^+$ and its liberalized, essentially universally quantified clause heads : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.3 Examples of higher-order programming** — predicate-quantified library predicates; continuation-passing-style transformation of Horn programs; hohh$^+$ memoization examples : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.4 Flexible atoms as goals** — three strategies for handling flexible goals (suspension, eager solving, run-time error) : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.5 Reasoning about higher-order programs** — proving symmetry of a hidden-predicate definition of $\mathtt{reverse}$, requiring metatheoretic reasoning beyond operational semantics : [[Higher-Order-Logic-Programming-Languages|Link1]], [[Logic-Programming-as-Proof-Search|Link2]]
+- **5.6 Defining some of the logical constants** — partial, right-introduction-only definitions of $\bot$, $\top$, $\vee$, $\exists$ via hohc clauses : [[Higher-Order-Logic-Programming-Languages|Link]]
 - **5.7 The conditional and negation-as-failure** — cut-based definitions of $\mathtt{if}$ and $\mathtt{not}$, and the logical properties they break
-- **5.8 Using $\lambda$-terms as functions** — running "function evaluation" backward via unification; difference lists and functional difference lists
-- **5.9 Higher-order unification is not a panacea** — cautionary examples of spurious or redundant solutions, favoring explicit structural recursion instead
-- **5.10 Comparison with functional programming** — nonpredicate function variables and directly expressible intensional predicate equality
-- **5.11 Bibliographic notes** — Church's Simple Theory of Types; the shared 1987 origin of $\lambda$Prolog and LF/Twelf
+- **5.8 Using $\lambda$-terms as functions** — running "function evaluation" backward via unification; difference lists and functional difference lists : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.9 Higher-order unification is not a panacea** — cautionary examples of spurious or redundant solutions, favoring explicit structural recursion instead : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.10 Comparison with functional programming** — nonpredicate function variables and directly expressible intensional predicate equality : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **5.11 Bibliographic notes** — Church's Simple Theory of Types; the shared 1987 origin of $\lambda$Prolog and LF/Twelf : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why must the head of a program clause be a rigid atom in hohc/hohh, and what concretely goes wrong if flexible clause heads were allowed?
@@ -275,16 +275,16 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 6: Mechanisms for Structuring Large Programs (pp. 150–173)
 
-**Summary:** Develops a module system for $\lambda$Prolog entirely from the logical connectives of hohh$^+$, using existential quantification over program clauses to formalize the hiding of local names, and shows the system supports abstract datatypes, code extensibility, parametrization, and principled higher-order predicate visibility.
+**Summary:** Develops a module system for $\lambda$Prolog entirely from the logical connectives of hohh$^+$, using existential quantification over program clauses to formalize the hiding of local names, and shows the system supports abstract datatypes, code extensibility, parametrization, and principled higher-order predicate visibility. : [[Higher-Order-Logic-Programming-Languages|Link]]
 
 **Key Definitions & Concepts by Section:**
-- **6.1 Desiderata for modular programming** — programming-in-the-small versus programming-in-the-large; representation independence
-- **6.2 A modules language** — module and signature declarations; pervasive constants; accumulation of modules and of signatures
-- **6.3 Matching signatures and modules** — signature elaboration; mergeable signatures; module well-formedness; implicit signature and matching
-- **6.4 The logical interpretation of modules** — E-formulas extending hohh$^+$ syntax; the four-part sequent $\Sigma;P \dashv \Theta \to G$; translation of a module into an E-formula; static scoping via existential quantification; module elaboration as compile-time inlining
-- **6.5 Some programming aspects of the modules language** — abstract datatypes; code extensibility across modules; signature accumulation as module parametrization; resolution of the call/1 naming-ambiguity problem
-- **6.6 Implementation considerations** — module elaboration versus a separate-compilation, link-time inlining strategy
-- **6.7 Bibliographic notes** — algebra-of-composition versus logic-extension approaches to modules; comparison to Standard ML structures and existential types
+- **6.1 Desiderata for modular programming** — programming-in-the-small versus programming-in-the-large; representation independence : [[Modular-Program-Structuring|Link1]], [[First-Order-Horn-Clause-Logic-Programming|Link2]]
+- **6.2 A modules language** — module and signature declarations; pervasive constants; accumulation of modules and of signatures : [[Modular-Program-Structuring|Link]]
+- **6.3 Matching signatures and modules** — signature elaboration; mergeable signatures; module well-formedness; implicit signature and matching : [[Modular-Program-Structuring|Link]]
+- **6.4 The logical interpretation of modules** — E-formulas extending hohh$^+$ syntax; the four-part sequent $\Sigma;P \dashv \Theta \to G$; translation of a module into an E-formula; static scoping via existential quantification; module elaboration as compile-time inlining : [[Modular-Program-Structuring|Link]]
+- **6.5 Some programming aspects of the modules language** — abstract datatypes; code extensibility across modules; signature accumulation as module parametrization; resolution of the call/1 naming-ambiguity problem : [[Higher-Order-Logic-Programming-Languages|Link]]
+- **6.6 Implementation considerations** — module elaboration versus a separate-compilation, link-time inlining strategy : [[The-Teyjus-Implementation|Link1]], [[Modular-Program-Structuring|Link2]]
+- **6.7 Bibliographic notes** — algebra-of-composition versus logic-extension approaches to modules; comparison to Standard ML structures and existential types : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why does the book define modules and signatures via a translation into E-formulas inside hohh$^+$ rather than as an independent syntactic layer?
@@ -295,18 +295,18 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 7: Computations over $\lambda$-Terms (pp. 175–210)
 
-**Summary:** Shows how $\lambda$-abstraction can encode syntactic objects with binding structure so that object-level substitution reduces to meta-level $\beta$-conversion, develops the "mobility of binders" idiom for computing under binders, introduces $\lambda$-tree syntax, and identifies the $L_\lambda$ subset of hohh in which only simple $\beta_0$-reduction is needed.
+**Summary:** Shows how $\lambda$-abstraction can encode syntactic objects with binding structure so that object-level substitution reduces to meta-level $\beta$-conversion, develops the "mobility of binders" idiom for computing under binders, introduces $\lambda$-tree syntax, and identifies the $L_\lambda$ subset of hohh in which only simple $\beta_0$-reduction is needed. : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
 
 **Key Definitions & Concepts by Section:**
 - **7.1 Representing objects with binding structure** — encoding quantifiers and untyped $\lambda$-terms via second-order constants paired with meta-level abstraction, folding $\alpha$-, $\beta$-, and $\eta$-conversion into equality
-- **7.2 Realizing object-level substitution** — object-level instantiation via $\beta$-conversion; call-by-name and call-by-value evaluation predicates for untyped $\lambda$-terms
-- **7.3 Mobility of binders** — term-level binding moving to formula-level then proof-level binding via eigenvariables; the general hohh idiom for recursing under a binder
-- **7.4 Computing with untyped $\lambda$-terms** — $\beta$-normal and $\beta$-body-normal forms; path-based reduction; type inference and the subject-reduction theorem; translation to and from de Bruijn syntax
-- **7.5 Computations over first-order formulas** — negation normal form and prenex normal form; recognizing fohc/fohh syntactic classes
-- **7.6 Specifying object-level substitution** — substitution via direct $\beta$-reduction versus signature-dependent copy clauses; substitution as a relation, not a function
-- **7.7 The $\lambda$-tree approach to abstract syntax** — higher-order abstract syntax versus $\lambda$-tree syntax, and structural analyzability
+- **7.2 Realizing object-level substitution** — object-level instantiation via $\beta$-conversion; call-by-name and call-by-value evaluation predicates for untyped $\lambda$-terms : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
+- **7.3 Mobility of binders** — term-level binding moving to formula-level then proof-level binding via eigenvariables; the general hohh idiom for recursing under a binder : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
+- **7.4 Computing with untyped $\lambda$-terms** — $\beta$-normal and $\beta$-body-normal forms; path-based reduction; type inference and the subject-reduction theorem; translation to and from de Bruijn syntax : [[The-Simply-Typed-Lambda-Calculus|Link]]
+- **7.5 Computations over first-order formulas** — negation normal form and prenex normal form; recognizing fohc/fohh syntactic classes : [[Computing-over-Functional-Programs|Link1]], [[First-Order-Unification|Link2]], [[Higher-Order-Unification|Link3]]
+- **7.6 Specifying object-level substitution** — substitution via direct $\beta$-reduction versus signature-dependent copy clauses; substitution as a relation, not a function : [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link]]
+- **7.7 The $\lambda$-tree approach to abstract syntax** — higher-order abstract syntax versus $\lambda$-tree syntax, and structural analyzability : [[Computing-over-Functional-Programs|Link1]], [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link2]]
 - **7.8 The $L_\lambda$ subset of $\lambda$Prolog** — essentially universal versus essentially existential variable occurrences; the pattern condition; $\beta_0$-conversion as the only reduction needed
-- **7.9 Bibliographic notes** — origins of $\lambda$-tree syntax, higher-order abstract syntax, de Bruijn representations, and nominal logic
+- **7.9 Bibliographic notes** — origins of $\lambda$-tree syntax, higher-order abstract syntax, de Bruijn representations, and nominal logic : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. What does it mean for a term-level binder to become a formula-level then proof-level binder during proof search, and why does this mobility make recursive computation under binders possible?
@@ -317,14 +317,14 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 8: Unification of $\lambda$-Terms (pp. 211–228)
 
-**Summary:** Studies the algorithmic properties of higher-order unification, showing it is undecidable and admits neither most general unifiers nor finite complete sets of unifiers in general, then develops Huet's pre-unification procedure and shows that restricting to the $L_\lambda$ pattern subset recovers decidability and most general unifiers.
+**Summary:** Studies the algorithmic properties of higher-order unification, showing it is undecidable and admits neither most general unifiers nor finite complete sets of unifiers in general, then develops Huet's pre-unification procedure and shows that restricting to the $L_\lambda$ pattern subset recovers decidability and most general unifiers. : [[Higher-Order-Logic-Programming-Languages|Link1]], [[The-Simply-Typed-Lambda-Calculus|Link2]], [[First-Order-Unification|Link3]]
 
 **Key Definitions & Concepts by Section:**
-- **8.1 Properties of the higher-order unification problem** — the $\forall\exists\forall$ prefix normal form; absence of most general unifiers; complete sets of unifiers; undecidability of unifiability
+- **8.1 Properties of the higher-order unification problem** — the $\forall\exists\forall$ prefix normal form; absence of most general unifiers; complete sets of unifiers; undecidability of unifiability : [[Higher-Order-Unification|Link1]], [[Higher-Order-Logic-Programming-Languages|Link2]]
 - **8.2 A procedure for checking for unifiability** — simplification of rigid-rigid equations; imitation and projection substitutions for flexible-rigid equations; pre-unification; matching trees; potential nontermination
-- **8.3 Higher-order pattern unification** — the $L_\lambda$ condition restated as the pattern property; deterministic substitution choice; variable elimination generalized to the pattern case
-- **8.4 Pragmatic aspects of higher-order unification** — the cost of dynamic raising and delayed raising as an optimization; dynamic $L_\lambda$ programming
-- **8.5 Bibliographic notes** — Huet's dissertation and pre-unification procedure; undecidability results at various orders; identification of higher-order pattern unification and its linear-time algorithm
+- **8.3 Higher-order pattern unification** — the $L_\lambda$ condition restated as the pattern property; deterministic substitution choice; variable elimination generalized to the pattern case : [[Higher-Order-Unification|Link]]
+- **8.4 Pragmatic aspects of higher-order unification** — the cost of dynamic raising and delayed raising as an optimization; dynamic $L_\lambda$ programming : [[Higher-Order-Unification|Link]]
+- **8.5 Bibliographic notes** — Huet's dissertation and pre-unification procedure; undecidability results at various orders; identification of higher-order pattern unification and its linear-time algorithm : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why can higher-order unification problems fail to have a most general unifier or even a finite complete set of unifiers?
@@ -335,14 +335,14 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 9: Implementing Proof Systems (pp. 229–246)
 
-**Summary:** Shows how $\lambda$Prolog can specify and implement proof systems — sequent-calculus decision procedures, natural-deduction proof checkers and provers for intuitionistic logic, a sequent-style prover for classical logic, and a general goals/tactics/tacticals architecture for building controllable theorem provers.
+**Summary:** Shows how $\lambda$Prolog can specify and implement proof systems — sequent-calculus decision procedures, natural-deduction proof checkers and provers for intuitionistic logic, a sequent-style prover for classical logic, and a general goals/tactics/tacticals architecture for building controllable theorem provers. : [[Implementing-Proof-Systems|Link]]
 
 **Key Definitions & Concepts by Section:**
-- **9.1 Deduction in propositional intuitionistic logic** — loop-free reformulation of sequent-calculus rules as a decision procedure; the naive-translation nontermination problem
-- **9.2 Encoding natural deduction for intuitionistic logic** — proof objects as typed $\lambda$Prolog terms; the # relation encoding hypothetical judgments and eigenvariable freshness
-- **9.3 A theorem prover for classical logic** — the four-zone sequent for classical logic in negation normal form; iterative deepening for completeness; pitfalls of combining cut with free logic variables
+- **9.1 Deduction in propositional intuitionistic logic** — loop-free reformulation of sequent-calculus rules as a decision procedure; the naive-translation nontermination problem : [[First-Order-Horn-Clause-Logic-Programming|Link1]], [[First-Order-Unification|Link2]]
+- **9.2 Encoding natural deduction for intuitionistic logic** — proof objects as typed $\lambda$Prolog terms; the # relation encoding hypothetical judgments and eigenvariable freshness : [[Implementing-Proof-Systems|Link]]
+- **9.3 A theorem prover for classical logic** — the four-zone sequent for classical logic in negation normal form; iterative deepening for completeness; pitfalls of combining cut with free logic variables : [[Implementing-Proof-Systems|Link]]
 - **9.4 A general architecture for theorem provers** — primitive versus compound goals; tactics and tacticals; invertible rules
-- **9.5 Bibliographic notes** — origins of the sequent calculus and its contraction rule; the # relation as an analogue of LF typing judgments; the LCF tactics/tacticals tradition
+- **9.5 Bibliographic notes** — origins of the sequent calculus and its contraction rule; the # relation as an analogue of LF typing judgments; the LCF tactics/tacticals tradition : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why does a direct translation of a sequent calculus into $\lambda$Prolog clauses typically fail to be a complete proof procedure, and what kind of reformulation restores it?
@@ -353,13 +353,13 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 10: Computations over Functional Programs (pp. 247–260)
 
-**Summary:** Illustrates $\lambda$Prolog's ability to represent and compute over program syntax by defining miniFP, a small typed functional language, giving it contrasting big-step and small-step operational semantics, and showing how the representation supports program transformations including partial evaluation and continuation-passing-style transformation.
+**Summary:** Illustrates $\lambda$Prolog's ability to represent and compute over program syntax by defining miniFP, a small typed functional language, giving it contrasting big-step and small-step operational semantics, and showing how the representation supports program transformations including partial evaluation and continuation-passing-style transformation. : [[Computing-over-Functional-Programs|Link]]
 
 **Key Definitions & Concepts by Section:**
-- **10.1 The miniFP programming language** — $\lambda$-tree syntax encoding of miniFP; the separate $\mathtt{typeof}$ judgment restricting to well-typed programs
-- **10.2 Specifying evaluation for miniFP programs** — big-step versus evaluation-context small-step specifications; fixpoint evaluation by unfolding; the mismatch between raw term equality and structural program equality
-- **10.3 Manipulating functional programs** — partial evaluation by unfolding; mixed evaluation under a binder; the continuation-passing-style transformation and administrative redexes
-- **10.4 Bibliographic notes** — denotational versus operational semantics traditions; Plotkin's structural operational semantics and Kahn's natural semantics; Fischer's CPS transformation
+- **10.1 The miniFP programming language** — $\lambda$-tree syntax encoding of miniFP; the separate $\mathtt{typeof}$ judgment restricting to well-typed programs : [[Higher-Order-Logic-Programming-Languages|Link1]], [[Computing-over-Functional-Programs|Link2]], [[Logic-Programming-as-Proof-Search|Link3]]
+- **10.2 Specifying evaluation for miniFP programs** — big-step versus evaluation-context small-step specifications; fixpoint evaluation by unfolding; the mismatch between raw term equality and structural program equality : [[Computing-over-Functional-Programs|Link]]
+- **10.3 Manipulating functional programs** — partial evaluation by unfolding; mixed evaluation under a binder; the continuation-passing-style transformation and administrative redexes : [[Computing-over-Functional-Programs|Link]]
+- **10.4 Bibliographic notes** — denotational versus operational semantics traditions; Plotkin's structural operational semantics and Kahn's natural semantics; Fischer's CPS transformation : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. Why must miniFP's term representation first be defined untyped and then constrained by a separate $\mathtt{typeof}$ relation?
@@ -370,15 +370,15 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Chapter 11: Encoding a Process Calculus Language (pp. 261–275)
 
-**Summary:** Encodes the $\pi$-calculus in $\lambda$Prolog using $\lambda$-tree syntax, showing that its name-binding and scope-extrusion phenomena can be captured through $\lambda$Prolog's binders and generic quantification, develops transition semantics and simulation, and exposes a genuine limitation of logic programming for universally quantified "must" properties.
+**Summary:** Encodes the $\pi$-calculus in $\lambda$Prolog using $\lambda$-tree syntax, showing that its name-binding and scope-extrusion phenomena can be captured through $\lambda$Prolog's binders and generic quantification, develops transition semantics and simulation, and exposes a genuine limitation of logic programming for universally quantified "must" properties. : [[Encoding-the-Pi-Calculus|Link]]
 
 **Key Definitions & Concepts by Section:**
-- **11.1 Representing the expressions of the $\pi$-calculus** — $\lambda$-tree syntax encoding of process syntax using binding constructs for input and restriction
-- **11.2 Specifying one-step transitions** — free-action and bound-action transition predicates; declarative encoding of freshness side-conditions via nested quantifiers
-- **11.3 Animating $\pi$-calculus expressions** — using the transition predicates as an interpreter; traces
-- **11.4 May- versus must-judgments** — the natural expressibility of may-judgments versus the unsoundness of a naive simulation encoding for must-judgments
-- **11.5 Mapping the $\lambda$-calculus into the $\pi$-calculus** — a compositional $\lambda$Prolog specification of Milner's call-by-name translation
-- **11.6 Bibliographic notes** — origins of the $\pi$-calculus; the $L_\lambda$ fragment and Sangiorgi's $\pi I$ calculus; the $\nabla$ quantifier as a fix for must-judgments
+- **11.1 Representing the expressions of the $\pi$-calculus** — $\lambda$-tree syntax encoding of process syntax using binding constructs for input and restriction : [[Encoding-the-Pi-Calculus|Link1]], [[Lambda-Tree-Syntax-and-Computation-over-Binders|Link2]]
+- **11.2 Specifying one-step transitions** — free-action and bound-action transition predicates; declarative encoding of freshness side-conditions via nested quantifiers : [[Encoding-the-Pi-Calculus|Link]]
+- **11.3 Animating $\pi$-calculus expressions** — using the transition predicates as an interpreter; traces : [[Encoding-the-Pi-Calculus|Link]]
+- **11.4 May- versus must-judgments** — the natural expressibility of may-judgments versus the unsoundness of a naive simulation encoding for must-judgments : [[Encoding-the-Pi-Calculus|Link]]
+- **11.5 Mapping the $\lambda$-calculus into the $\pi$-calculus** — a compositional $\lambda$Prolog specification of Milner's call-by-name translation : [[Encoding-the-Pi-Calculus|Link]]
+- **11.6 Bibliographic notes** — origins of the $\pi$-calculus; the $L_\lambda$ fragment and Sangiorgi's $\pi I$ calculus; the $\nabla$ quantifier as a fix for must-judgments : [[Computing-over-Functional-Programs|Link]]
 
 **Key Questions:**
 1. How does $\lambda$Prolog's use of nested quantifiers automatically enforce freshness and no-capture side-conditions in the transition rules?
@@ -389,7 +389,7 @@ The authors aim to show that treating formulas, terms, and proofs as first-class
 
 ### Appendix: The Teyjus System (pp. 277–288)
 
-**Summary:** A practical, non-formal introduction to Teyjus, the reference implementation of $\lambda$Prolog used to run the programs presented throughout the book, covering its compilation and execution model, its interactive top level, its realization of the modules language, and its deviations from the idealized language of the main text.
+**Summary:** A practical, non-formal introduction to Teyjus, the reference implementation of $\lambda$Prolog used to run the programs presented throughout the book, covering its compilation and execution model, its interactive top level, its realization of the modules language, and its deviations from the idealized language of the main text. : [[Encoding-the-Pi-Calculus|Link]]
 
 **Key Definitions & Concepts by Section:**
 - **A.1 An overview of the Teyjus system** — the virtual-machine-plus-compiler architecture; the toolchain of $\mathtt{tjcc}$, $\mathtt{tjsim}$, $\mathtt{tjlink}$, $\mathtt{tjdis}$, $\mathtt{tjdepend}$

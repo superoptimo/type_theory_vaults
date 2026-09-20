@@ -72,7 +72,7 @@ test X :- p a => p b => p X. % define instead...
 ?- test X.                    % ...and query the wrapper
 ```
 
-**What breaks without this workaround:** nothing conceptually — it's a pure implementation gap, not a semantic one, and it's a good illustration of a recurring theme in real systems: the *idealized* language (Chapters 3 and 5's fohh/hohh with implicational and universal goals) and the *implemented* language can diverge for reasons that have nothing to do with logic and everything to do with which code paths the compiler happens to support.
+**[[Polymorphic-and-Pervasive-Constants#What breaks without this|What breaks without this]] workaround:** nothing conceptually — it's a pure implementation gap, not a semantic one, and it's a good illustration of a recurring theme in real systems: the *idealized* language (Chapters 3 and 5's fohh/hohh with implicational and universal goals) and the *implemented* language can diverge for reasons that have nothing to do with logic and everything to do with which code paths the compiler happens to support.
 
 ## Modules, for real: two-stage compile-then-link
 

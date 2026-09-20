@@ -13,7 +13,7 @@ Walk through the [[Type-Safety|progress theorem]] for `t1 t2` by hand. Induction
 
 That's the entire job of a **canonical forms lemma**: it says, for a given type $T$, exactly which syntactic shapes a *value* of type $T$ can possibly have. "Canonical form" here just means "the form guaranteed by the type" — not a form you compute or normalize to, but the shape typing forces on you. Pierce introduces the name at exactly this pressure point in Chapter 8 (p. 95): right when the progress proof needs the fact and has no other way to get it.
 
-**What breaks without it.** Drop the lemma and the progress proof for application has an unfillable hole exactly where evaluation needs to act: you'd know $t_1\,t_2$ *should* be able to step (both parts are done reducing, the type says this is a function applied to an argument) but you'd have no syntactic license to invoke any evaluation rule at all. The theorem wouldn't be false — it just wouldn't have a proof, because the one bridge from "the type says X" to "the syntax literally is X" would be missing.
+**[[Existential-Types#What breaks without it|What breaks without it]].** Drop the lemma and the progress proof for application has an unfillable hole exactly where evaluation needs to act: you'd know $t_1\,t_2$ *should* be able to step (both parts are done reducing, the type says this is a function applied to an argument) but you'd have no syntactic license to invoke any evaluation rule at all. The theorem wouldn't be false — it just wouldn't have a proof, because the one bridge from "the type says X" to "the syntax literally is X" would be missing.
 
 ## Two lemmas that read the typing rules in opposite directions
 
@@ -45,7 +45,7 @@ The proof is a finite case check: the grammar says values have exactly four shap
 
 Part (2) is the one that matters. It's exactly the missing bridge from the opening section: given $t_1 : T_{11}\to T_{12}$ and $t_1$ a value, part (2) hands progress the fact that $t_1$ is *literally* an abstraction $\lambda x{:}T_{11}.\,t_{12}$ — at which point `E-AppAbs` is guaranteed applicable, and the fourth case of the application proof closes. Pierce's own proof note (9.3.4) is "straightforward — similar to 8.3.1," and it genuinely is: the argument is the same finite-case elimination, just against the (now four-clause) syntax of $\lambda_\to$ terms — $x$, $\lambda x{:}T.t$, $t_1\,t_2$, plus booleans — where only the abstraction case can have an arrow type.
 
-**Rust grounding.** In an interpreter, a canonical forms lemma is the theorem that lets you write an `unwrap()` or a wildcard-eliding match without a runtime check, because the type checker has already ruled the other cases out *for you*, at compile time of the object language:
+**Rust [[Bounded-Quantification#Grounding|grounding]].** In an interpreter, a canonical forms lemma is the theorem that lets you write an `unwrap()` or a wildcard-eliding match without a runtime check, because the type checker has already ruled the other cases out *for you*, at compile time of the object language:
 
 ```rust
 enum Term {
@@ -75,7 +75,7 @@ fn step_app(t1: &Term, t2: &Term) -> Term {
 
 The `panic!` arm is dead code *if and only if* the type checker actually implements the typing rules that this lemma is a theorem about. That's the real content of "type safety": the compiler isn't hoping the interpreter's pattern match is exhaustive, it's relying on a proof that it is.
 
-**Lean grounding.** Lean's kernel faces the identical problem every time it reduces a term during typechecking: `whnf` on an application needs its head to actually *be* a lambda before it can beta-reduce, and the kernel's soundness depends on that always being derivable from typing, not merely assumed:
+**Lean [[ML-Implementation-Techniques#Grounding|grounding]].** Lean's kernel faces the identical problem every time it reduces a term during typechecking: `whnf` on an application needs its head to actually *be* a lambda before it can beta-reduce, and the kernel's soundness depends on that always being derivable from typing, not merely assumed:
 
 ```lean
 -- Canonical Forms (9.3.4.2), stated as a theorem about a HasType judgment
@@ -127,7 +127,7 @@ Here there is no "peel back one level and recurse" move available, because defin
 
 ## Where this leads
 
-Canonical forms lemmas are the recurring, easy-to-underestimate hinge of every progress proof in the book — [[Type-Safety|Type Safety]] states the general "safety = progress + preservation" architecture, but it's this lemma, restated once per chapter, that does the actual work of connecting a typing judgment back to concrete syntax at every single point where evaluation needs to pattern-match on a value. The pattern across the book is remarkably stable once you see it:
+Canonical forms lemmas are the recurring, easy-to-underestimate hinge of every progress proof in the book — [[Type-Safety|Type Safety]] states the general "[[Type-Safety#Safety = Progress + Preservation|safety = progress + preservation]]" architecture, but it's this lemma, restated once per chapter, that does the actual work of connecting a typing judgment back to concrete syntax at every single point where evaluation needs to pattern-match on a value. The pattern across the book is remarkably stable once you see it:
 
 ```mermaid
 flowchart LR

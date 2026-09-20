@@ -1,0 +1,85 @@
+# Notes on Category Theory (with examples from basic mathematics) — Index
+
+[[book-guidelines|↩ Back to guidelines]]
+
+1. **Categories and Their Basic Structure** : [[Categories-and-Their-Basic-Structure|Link]]
+   - Objects morphisms composition and identities : [[Categories-and-Their-Basic-Structure|Link]]
+   - Categories from relations groups and monoids : [[Categories-and-Their-Basic-Structure|Link]]
+   - Isomorphisms and groupoids : [[Categories-and-Their-Basic-Structure|Link]]
+   - The opposite category and duality : [[Categories-and-Their-Basic-Structure|Link]]
+   - Monomorphisms and epimorphisms : [[Categories-and-Their-Basic-Structure|Link]]
+   - Split monomorphisms and split epimorphisms : [[Categories-and-Their-Basic-Structure|Link]]
+
+2. **Functors** : [[Functors|Link]]
+   - Functors preserving relations and operations : [[Functors|Link]]
+   - Forgetful functors : [[Functors|Link]]
+   - Contravariant functors and presheaves : [[Functors|Link]]
+   - Functors detecting complexity : [[Functors|Link]]
+   - Continuous and cocontinuous functors : [[Functors|Link]]
+
+3. **Natural Transformations** : [[Natural-Transformations|Link]]
+   - Natural transformations and naturality squares : [[Natural-Transformations|Link]]
+   - Natural isomorphisms : [[Natural-Transformations|Link1]], [[Categories-and-Their-Basic-Structure|Link2]]
+   - Functor categories : [[Natural-Transformations|Link1]], [[Studying-Categories-via-Functors|Link2]]
+   - Diagrams as functors : [[Natural-Transformations|Link]]
+   - Whiskering and horizontal composition : [[Natural-Transformations|Link]]
+
+4. **Studying Categories via Functors** : [[Studying-Categories-via-Functors|Link]]
+   - Subcategories : [[Studying-Categories-via-Functors|Link]]
+   - Faithful full and essentially surjective functors : [[Studying-Categories-via-Functors|Link]]
+   - Equivalence of categories : [[Studying-Categories-via-Functors|Link]]
+
+5. **Representable Functors and Presheaves** : [[Representable-Functors-and-Presheaves|Link]]
+   - Representable functors : [[Functors|Link1]], [[Limits-and-Colimits|Link2]], [[Representable-Functors-and-Presheaves|Link3]]
+   - The Yoneda embedding theorem : [[Representable-Functors-and-Presheaves|Link]]
+
+6. **The Yoneda Lemma** : [[The-Yoneda-Lemma|Link]]
+   - Statement and proof of the Yoneda lemma : [[The-Yoneda-Lemma|Link]]
+   - Particular cases and applications : [[The-Yoneda-Lemma|Link]]
+
+7. **Universal Properties** : [[Universal-Properties|Link]]
+   - Universal property of the cartesian product : [[Universal-Properties|Link]]
+   - Universal property of the tensor product : [[Universal-Properties|Link]]
+
+8. **Limits and Colimits** : [[Limits-and-Colimits|Link]]
+   - Cones cocones and universal cones : [[Limits-and-Colimits|Link]]
+   - Limits and colimits as constrained optimization : [[Limits-and-Colimits|Link]]
+   - Invariants and orbits of a group action : [[Limits-and-Colimits|Link]]
+   - Products and coproducts : [[Limits-and-Colimits|Link]]
+   - Equalizers and coequalizers : [[Limits-and-Colimits|Link]]
+   - Pullbacks and pushouts : [[Limits-and-Colimits|Link]]
+   - Initial and terminal objects : [[Limits-and-Colimits|Link]]
+   - Completeness of the category of sets : [[Limits-and-Colimits|Link]]
+
+9. **Adjunctions** : [[Adjunctions|Link]]
+   - Adjoint functors and hom-set bijections : [[Adjunctions|Link]]
+   - Free-forgetful adjunctions : [[Adjunctions|Link]]
+   - Galois connections : [[Adjunctions|Link]]
+   - Unit and counit of an adjunction : [[Monads-Comonads-and-Adjunctions|Link1]], [[Adjunctions|Link2]]
+   - Triangle identities : [[Adjunctions|Link]]
+   - Adjunctions preserve limits and colimits : [[Adjunctions|Link]]
+   - The adjoint functor theorem for preorders : [[Adjunctions|Link]]
+
+10. **Monads** : [[Monads|Link]]
+    - Monad as an extension of spaces : [[Monads|Link]]
+    - Kleisli morphisms and the Kleisli category : [[Monads|Link]]
+    - The Kleisli adjunction : [[Comonads|Link1]], [[Monads-Comonads-and-Adjunctions|Link2]], [[Monads|Link3]]
+    - Closure operators and idempotent monads : [[Monads|Link]]
+    - Monad as a theory of operations : [[Monads|Link]]
+    - Algebras of a monad and free algebras : [[Monads|Link1]], [[Monads-Comonads-and-Adjunctions|Link2]]
+    - The Eilenberg-Moore adjunction : [[Monads-Comonads-and-Adjunctions|Link1]], [[Monads|Link2]]
+
+11. **Comonads** : [[Comonads|Link]]
+    - Comonad as extra information : [[Comonads|Link]]
+    - Co-Kleisli morphisms and the co-Kleisli category : [[Monads|Link]]
+    - The co-Kleisli adjunction : [[Comonads|Link]]
+    - Comonad as a process on spaces : [[Comonads|Link]]
+    - Coalgebras of a comonad : [[Comonads|Link]]
+    - The adjunction of coalgebras : [[Comonads|Link]]
+
+12. **Monads Comonads and Adjunctions** : [[Monads-Comonads-and-Adjunctions|Link]]
+    - Every adjunction induces a monad and a comonad : [[Monads-Comonads-and-Adjunctions|Link]]
+    - Monadicity of an adjunction : [[Monads-Comonads-and-Adjunctions|Link]]
+    - The adjunction between categories and multigraphs is monadic : [[Monads-Comonads-and-Adjunctions|Link1]], [[Categories-and-Their-Basic-Structure|Link2]]
+
+---

@@ -84,7 +84,7 @@ $$
 
 The second rule is the crux: to take one step, you substitute the predecessor `e` for `x`, and — this is the important part — you substitute the *unevaluated recursive call* `rec(e; e0; x.y.e1)` for `y`. Harper is explicit that this recursive call is not forced eagerly; "if the value of `y` is not required in the rest of the computation, the recursive call will not be evaluated." That's a laziness-by-default property of the recursor itself, independent of whether the rest of the language is call-by-value or call-by-name.
 
-**Lean grounding.** Lean's own structural recursion on `Nat` is close to a literal transcription of this typing rule, because Lean's kernel enforces essentially the same "recursive call only on a structurally smaller argument" discipline via its termination checker:
+**Lean [[Recursive-Types#Grounding|grounding]].** Lean's own structural recursion on `Nat` is close to a literal transcription of this typing rule, because Lean's kernel enforces essentially the same "recursive call only on a structurally smaller argument" discipline via its termination checker:
 
 ```lean
 def rec_nat {motive : Type} (n : Nat) (z_case : motive) (step : Nat → motive → motive) : motive :=

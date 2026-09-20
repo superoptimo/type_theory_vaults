@@ -72,7 +72,7 @@ Once $C$ (generated from $B$ by $f,g$) is nailed down, the payoff is a proof tec
 
 The proof is a one-liner given the top-down characterization: $S$ is inductive, so $C = C^\star \subseteq S$; and $S \subseteq C$ was assumed. Done.
 
-This is the general shape of *every* structural induction proof you've ever written: "show the property holds on the base cases, show it's preserved by each constructor, conclude it holds everywhere." Enderton immediately puts it to work: he defines a "special" wff to be one using only symbols from $\{A_2,A_3,A_5\}$ and connectives from $\{\neg,\rightarrow\}$, and uses the Induction Principle to show every wff is either special or requires $\wedge$/$A_9$/etc. — by checking that "special-or-not-special" is closed under all five formula-building operations.
+This is the general shape of *every* structural induction proof you've ever written: "show the property holds on the base cases, show it's preserved by each constructor, conclude it holds everywhere." Enderton immediately puts it to work: he defines a "special" wff to be one using only symbols from $\{A_2,A_3,A_5\}$ and connectives from $\{\neg,\rightarrow\}$, and uses [[Sentential-Propositional-Logic#The Induction Principle|the Induction Principle]] to show every wff is either special or requires $\wedge$/$A_9$/etc. — by checking that "special-or-not-special" is closed under all five formula-building operations.
 
 **Rust/Python grounding.** This is `match` exhaustiveness plus structural recursion, stated as a theorem instead of assumed as a language guarantee:
 
@@ -108,7 +108,7 @@ In plain terms: every element of $C$ was built in *exactly one way* — you can 
 
 Enderton's own gloss is worth keeping verbatim: think of $\bar h$ as *painting* every element of $C$ some color. $h$ tells you the colors of the bricks; $F$ tells you how to combine the colors of $x,y$ into the color of $f(x,y)$; $G$ tells you how to convert the color of $x$ into the color of $g(x)$. The danger is a **collision** — some point being reachable both as $f(x,y)$ and as $g(z)$, with $F$ and $G$ voting for different colors on the same point. Freeness is *exactly* the hypothesis that rules this out: disjoint ranges mean no point is ever reached two structurally-different ways, and injectivity of $f,g$ means that even within one construction rule, the "arguments" ($x,y$, or $z$) that produced a given point are uniquely recoverable — so $F$ and $G$ are always being asked to combine a well-defined pair of already-computed colors, never an ambiguous one.
 
-Read algebraically (as Enderton flags), the theorem says exactly: *any map of the generators into another algebra extends uniquely to a homomorphism* — the universal property of a free algebra, specialized to the one-binary/one-unary-operation signature.
+Read algebraically (as Enderton flags), [[Godels-Incompleteness-Theorems#The theorem|the theorem]] says exactly: *any map of the generators into another algebra extends uniquely to a homomorphism* — the universal property of a free algebra, specialized to the one-binary/one-unary-operation signature.
 
 **Proof sketch (the "acceptable function" argument).** This is worth internalizing because it's a genuinely reusable technique, not just this-theorem-only machinery. Call a partial function $v$ (domain $\subseteq C$, range $\subseteq V$) *acceptable* if it respects the defining equations wherever it's defined — i.e. it agrees with $h$ on $B \cap \operatorname{dom} v$, and whenever $f(x,y)$ or $g(x)$ is in $\operatorname{dom} v$, so are $x$ (and $y$), with the value computed via $F$ or $G$. Let $\bar h = \bigcup \{v \mid v \text{ acceptable}\}$ — literally the union, as a set of ordered pairs, of *every* finite (or partial) approximation that respects the rules. Four things need checking, and only step 3 uses freeness:
 
@@ -228,7 +228,7 @@ flowchart LR
     S14a --> Ch3
 ```
 
-Everything downstream that says "define X by cases on the structure of a wff/term/deduction" — truth-value extension, substitution, Gödel numbering, the arithmetization of syntax in Chapter 3 — is a fresh application of exactly this Recursion Theorem, re-derived from freeness each time the underlying alphabet changes.
+Everything downstream that says "define X by cases on the structure of a wff/term/deduction" — truth-value extension, substitution, Gödel numbering, the [[Arithmetization-of-Syntax|arithmetization of syntax]] in Chapter 3 — is a fresh application of exactly this Recursion Theorem, re-derived from freeness each time the underlying alphabet changes.
 
 **This is genuinely load-bearing for the compiler/verifier and elaborator projects.** The Recursion Theorem, stated abstractly here, *is* the formal justification for:
 

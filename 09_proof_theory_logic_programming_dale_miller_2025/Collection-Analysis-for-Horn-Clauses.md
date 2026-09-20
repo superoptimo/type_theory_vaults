@@ -5,14 +5,13 @@ chapter: "Chapter 11, Collection analysis for Horn clauses"
 pages: "printed pp. 221–235 (PDF pp. 229–243)"
 tags: [linear-logic, static-analysis, horn-clauses, multiset, substitution, higher-order-instantiation, rust, lean]
 ---
-
 # Collection Analysis for Horn Clauses
 
 [[book-guidelines|↩ Back to guidelines]]
 
 ## Why this chapter matters: static analysis, but the whole toolbox is linear logic
 
-Here's the pitch the chapter opens with, and it's worth taking completely seriously: **you can prove a Horn clause program has a partial-correctness property without doing induction, without a model, and without running it — by translating the program into a linear logic formula and checking that formula is a theorem.** That's it. That's collection analysis.
+Here's the pitch the chapter opens with, and it's worth taking completely seriously: **you can prove a Horn clause program has a partial-correctness property without doing induction, without a model, and without running it — by translating [[Linear-Logic-Programming#The program|the program]] into a [[Linear-Logic|linear logic]] formula and checking that formula is a theorem.** That's it. That's collection analysis.
 
 If you've ever written or used a borrow checker, this should feel structurally familiar before a single symbol shows up. A borrow checker doesn't prove your program is correct — it proves a *coarser*, decidable property (no aliased mutable access) by abstracting away almost everything about what your program computes and keeping only a shape: who owns what, when. Collection analysis does exactly this move for Horn clause (Prolog-style) programs. It doesn't try to prove your `sort` predicate produces a *correctly ordered* list — that would need induction and invariants, real theorem-proving work. Instead it abstracts every list in the program down to a coarser shape — a multiset, forgetting order; or a set, forgetting order *and* multiplicity; or (as we'll see at the end) a list-shaped structure that keeps order — and asks a much easier question: does the program, read at that coarser resolution, still type-check? If yes, you get "no elements were created, dropped, or duplicated" for free, statically, without ever proving the harder property "the output is sorted."
 
@@ -259,7 +258,7 @@ Multisets forget order; sets forget order and multiplicity. What if you want to 
 
 **What breaks without a non-commutative connective.** Both $\parr$ (multiset union) and $\&$ (set union) are commutative — that's the whole point, it's what makes them the right tool for order-forgetting approximations. To encode something order-*sensitive*, you need a connective that isn't commutative. Linear implication $\multimap$ fits: $A \multimap B$ is emphatically not the same as $B \multimap A$.
 
-The encoding (fixing some propositional constant $p$ as a "continuation" token): the list `(a::b::nil)` becomes
+[[Linear-Logic-Programming#The encoding|The encoding]] (fixing some propositional constant $p$ as a "continuation" token): the list `(a::b::nil)` becomes
 
 $$(((\bot \multimap p) \multimap \text{item}\ b) \multimap p) \multimap \text{item}\ a$$
 

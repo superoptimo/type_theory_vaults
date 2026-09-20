@@ -1,0 +1,259 @@
+{
+  "main": {
+    "id": "0ddbdcd6cf9149f4",
+    "type": "split",
+    "children": [
+      {
+        "id": "53cb5b46e0787f58",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3a8ee6b7e406d84d",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "63037413f4e57e8d",
+    "type": "split",
+    "children": [
+      {
+        "id": "87f04f6ec170ef2b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1925bc7dee4669c6",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "1b9b342d9966e903",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "Goldbach",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "4cfa352d312cbee7",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 374.6428108215332
+  },
+  "right": {
+    "id": "66e09ade5f6d7f19",
+    "type": "split",
+    "children": [
+      {
+        "id": "c2b0625671d6a29d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ceb8a8a1e57e257e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "c5a8cdd9b37eb94a",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "vaults/03_proofs_and_types_girard_1989/Sense-and-Denotation.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "4e39e6408fb11f91",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "f9f58e45932319ae",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "fdcee76aaa2930e4",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "vaults/09_proof_theory_logic_programming_dale_miller_2025/Encoding-Security-Protocols-and-Process-Calculi.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          },
+          {
+            "id": "73c968874d456a36",
+            "type": "leaf",
+            "state": {
+              "type": "latex-symbol-picker-view",
+              "state": {},
+              "icon": "sigma",
+              "title": "LaTeX symbol picker"
+            }
+          },
+          {
+            "id": "d26737f7bd47f426",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {},
+              "icon": "lucide-info",
+              "title": "File properties"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 398.51629638671875,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "latex-symbol-picker:Open LaTeX symbol picker": false,
+      "obsidian42-brat:BRAT": false
+    }
+  },
+  "active": "3a8ee6b7e406d84d",
+  "lastOpenFiles": [
+    "07_practical_foundations_robert_harper_2012/Dynamic-Types-and-the-Untyped-Lambda-Calculus.md",
+    "07_practical_foundations_robert_harper_2012/Dynamic-Classification.md",
+    "custom_notes/MLTT Grammatical Categories.md",
+    "custom_notes/MLTT General Theory of Expressions and Arities.md",
+    "07_practical_foundations_robert_harper_2012/book-guidelines.md",
+    "05_ATAPL_Pierce_2004/Proof-Carrying-Code.md",
+    "86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/STT-A-Constructive-Higher-Order-Logic.md",
+    "86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/The-λΠ-Calculus-Modulo-Theory.md",
+    "learning-roadmap-type-theory.md",
+    "05_ATAPL_Pierce_2004/index.md",
+    "86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/book-guidelines.md",
+    "09_proof_theory_logic_programming_dale_miller_2025/Linear-Logic.md",
+    "09_proof_theory_logic_programming_dale_miller_2025/Higher-Order-Quantification.md",
+    "09_proof_theory_logic_programming_dale_miller_2025/Collection-Analysis-for-Horn-Clauses.md",
+    "preamble.sty",
+    "09_proof_theory_logic_programming_dale_miller_2025/Encoding-Security-Protocols-and-Process-Calculi.md",
+    "workspace/learning-roadmap_old.md",
+    "workspace/learning-roadmap-sat-smt-csp.md",
+    "workspace/learning-roadmap-type-theory.md",
+    "workspace/01_programming_in_MLTT/book-guidelines.md",
+    "workspace/learning-roadmap-static-analysis.md",
+    "workspace/89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/book-guidelines.md",
+    "workspace/learning-roadmap-automated-reasoning.md",
+    "workspace/15_handbook_logic_automated_reasoning_harrison_2009/book-guidelines.md",
+    "workspace/13_introduction_bisimulation_coinduction_sangiorgi/book-guidelines.md",
+    "workspace/11_ulf_norell_thesis_2007/index.md",
+    "workspace/13_introduction_bisimulation_coinduction_sangiorgi/index.md",
+    "workspace/13_introduction_bisimulation_coinduction_sangiorgi",
+    "workspace/12_proof_theory_algebra_logic_hiroakira_ono",
+    "workspace/11_ulf_norell_thesis_2007",
+    "scripts/crosslink2.py.tmp.5681.14bf63693979",
+    "scripts/crosslink2.py.tmp.5681.b40583019e2a",
+    "scripts/crosslink2.py.tmp.5681.60334b6b1b76",
+    "vaults/40_A_Framework_for_Modular_Extensible_Equivalence-Preserving_Compilation_Dustin_Jammer_2020/Related-Frameworks-and-Future-Directions.md.tmp.7350.e1685c3b86a4",
+    "vaults/40_A_Framework_for_Modular_Extensible_Equivalence-Preserving_Compilation_Dustin_Jammer_2020/Proof-Automation-and-Elaboration.md.tmp.7350.621c5b99f577",
+    "vaults/40_A_Framework_for_Modular_Extensible_Equivalence-Preserving_Compilation_Dustin_Jammer_2020/Extending-the-Case-Study.md.tmp.7350.167c9a1b5100",
+    "scratchpad_pg-05.png",
+    "workspace/01_programming_in_MLTT/pi_formation_rules.svg",
+    "vaults/01_programming_in_MLTT/pi_formation_rules.svg",
+    "workspace/01_programming_in_MLTT/judgement_telescope.svg",
+    "vaults/01_programming_in_MLTT/judgement_telescope.svg",
+    "vaults/36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/octagon_domain.svg",
+    "vaults/36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/backward_pass.svg",
+    "workspace/01_programming_in_MLTT/syntax_tree.svg",
+    "vaults/01_programming_in_MLTT/syntax_tree.svg",
+    "workspace/Structural Induction.canvas",
+    "workspace/09_proof_theory_logic_programming_dale_miller_2025/connectives_miller.svg",
+    "workspace/ConstructiveLogic.canvas"
+  ]
+}

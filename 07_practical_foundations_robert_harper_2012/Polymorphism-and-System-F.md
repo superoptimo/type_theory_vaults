@@ -101,7 +101,7 @@ $$
 $$
 Type application always steps eagerly regardless of CBV/CBN — there is no "value restriction" analogue at the type level here, since types carry no runtime cost to substitute. Canonical Forms (Lemma 20.3) extends cleanly: a value of type $\forall(t.\tau')$ is always $\Lambda(t.e')$ for some $e'$, which gives Preservation and Progress (Theorems 20.4–20.5) by the usual rule-induction recipe from Chapter 6.
 
-**Grounding (Lean).** Lean's `∀` for Prop and its dependent function type `Π` are the proof-theoretic cousins of this exact mechanism — a term of type `∀ (t : Type), P t` is checked by extending the context with a fresh `t : Type` and checking the body, then eliminated by `.app` supplying a specific type, substituting via the kernel's `instantiate`. This is the same "extend context, check body, substitute back" shape your elaborator's implicit-argument resolution needs: an implicit `{α : Type}` argument in Lean is a $\forall$-bound type variable whose instantiation is inferred rather than written explicitly — but the underlying judgment ($\Delta,t{:}\text{Type}\vdash e:\tau$, then substitute) is exactly Rule 20.2d/20.2e.
+**[[Recursive-Types#Grounding|Grounding]] (Lean).** Lean's `∀` for Prop and its dependent function type `Π` are the proof-theoretic cousins of this exact mechanism — a term of type `∀ (t : Type), P t` is checked by extending the context with a fresh `t : Type` and checking the body, then eliminated by `.app` supplying a specific type, substituting via the kernel's `instantiate`. This is the same "extend context, check body, substitute back" shape your elaborator's implicit-argument resolution needs: an implicit `{α : Type}` argument in Lean is a $\forall$-bound type variable whose instantiation is inferred rather than written explicitly — but the underlying judgment ($\Delta,t{:}\text{Type}\vdash e:\tau$, then substitute) is exactly Rule 20.2d/20.2e.
 
 ## Impredicative instantiation
 
@@ -180,7 +180,7 @@ def church_zero():
 def church_succ(n):
     return lambda z, s: s(n(z, s))
 ```
-Python's dynamic typing means you lose the actual $\forall$-quantification and the safety it buys you, but the shape — "eliminate by supplying the case-handlers as arguments" — is identical to what the typed encoding does.
+Python's dynamic typing means you lose the actual $\forall$-quantification and the [[State-and-Assignables#Safety|safety]] it buys you, but the shape — "eliminate by supplying the case-handlers as arguments" — is identical to what the typed encoding does.
 
 ## Parametricity and free theorems
 

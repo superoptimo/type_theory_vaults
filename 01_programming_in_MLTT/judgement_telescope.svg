@@ -1,0 +1,32 @@
+<svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="14">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <!-- boxes -->
+  <rect x="20"  y="70" width="130" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="85"  y="95" text-anchor="middle" fill="#c8c8c8">x₁ ∈ C₁</text>
+
+  <rect x="190" y="70" width="150" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="265" y="95" text-anchor="middle" fill="#c8c8c8">x₂ ∈ C₂(x₁)</text>
+
+  <rect x="380" y="70" width="150" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="455" y="95" text-anchor="middle" fill="#c8c8c8">x₃ ∈ C₃(x₁,x₂)</text>
+
+  <rect x="570" y="70" width="110" height="40" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="625" y="95" text-anchor="middle" fill="#c8c8c8">…</text>
+
+  <!-- dependency arrows curving up from a box's type back to the vars it uses -->
+  <path d="M 265,70 Q 175,20 85,70" fill="none" stroke="#8a8a8a" stroke-width="1.3" marker-end="url(#arrowhead)"/>
+  <path d="M 455,70 Q 320,-10 85,70" fill="none" stroke="#8a8a8a" stroke-width="1.3" marker-end="url(#arrowhead)"/>
+  <path d="M 455,70 Q 370,20 265,70" fill="none" stroke="#8a8a8a" stroke-width="1.3" marker-end="url(#arrowhead)"/>
+
+  <text x="350" y="150" text-anchor="middle" fill="#9a9a9a" font-size="13">
+    each Cᵢ may depend on every variable bound before it — a genuine telescope,
+  </text>
+  <text x="350" y="170" text-anchor="middle" fill="#9a9a9a" font-size="13">
+    not just a flat list of independent declarations
+  </text>
+</svg>

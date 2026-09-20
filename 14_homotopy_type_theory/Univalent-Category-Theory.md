@@ -1,220 +1,293 @@
 ---
 title: Univalent Category Theory
-book: Homotopy Type Theory - Univalent Foundations of Mathematics
-chapters: "Chapter 9 §§9.1-9.9 (pp. 307-340)"
-tags: [hott, category-theory, precategory, idtoiso, yoneda-lemma, rezk-completion, structure-identity-principle, univalence, type-theory]
+book: "Homotopy Type Theory: Univalent Foundations of Mathematics"
+chapters: "Chapter 9, §§9.1, 9.2, 9.4, 9.5, 9.8, 9.9 (pp. 307–338)"
+tags: [type-theory, hott, category-theory, univalence, yoneda, rezk-completion, structure-identity-principle, precategory]
 ---
-
-# Univalent Category Theory
 
 [[book-guidelines|↩ Back to guidelines]]
 
-## The problem: category theory doesn't believe in equality
+## The problem: category theory has two notions of "same," and set theory can't tell them apart
 
-Ordinary set-theoretic category theory has an open secret: almost nothing you ever prove about a category cares about the *literal* identity of its objects. You never ask "is the object $\mathbb{Z}$ equal to the object $\mathbb{Q}$" — you ask whether there's an isomorphism between them, and if there is, you treat them as interchangeable for every categorical purpose. Equality of objects, as a notion, is present in the definition (objects form a set or a class) but essentially never *used*. Category theorists have known this for decades; it's why "equal up to isomorphism" is treated as good enough everywhere in practice, even though set theory offers no formal license for that laxity — in ZFC, isomorphic sets are still different sets, full stop.
+Ordinary set-theoretic category theory has a quiet embarrassment. You define a category as a set of objects and, for each pair, a set of morphisms. But almost nothing you ever prove about a category cares about equality of objects in that set-theoretic sense — it cares about *isomorphism*. Two isomorphic groups are "the same" for every purpose a group theorist has; whether they are the *same element of some ambient set* is an accident of how you happened to construct them. Category theory, as actually practiced, is invariant under isomorphism of objects and under equivalence of categories — but the foundational scaffolding (equality-as-identity-of-sets) doesn't reflect that invariance. It's a mismatch between what the theory *means* and what its ambient logic can *say*.
 
-This is exactly the tension that [[The-Univalence-Axiom-and-Its-Consequences|the univalence axiom]] resolves for *types*: it identifies the path type $A =_{\mathcal{U}} B$ with the type of equivalences $A \simeq B$, so that "equal" and "interchangeable" become literally the same notion. Chapter 9 asks whether the same move can be made for categories, and answers yes — with a specific, checkable condition on when it applies. As the book puts it, opening the chapter: category theory "is one which perhaps fits the least comfortably in set theoretic foundations," precisely because it's invariant under a weaker notion of sameness (isomorphism) than the ambient foundation's notion of equality — and univalent foundations is built to fix exactly this kind of mismatch.
+This is exactly the shape of problem the univalence axiom was built to solve for types: identify equality with the "correct" notion of sameness (equivalence), rather than making equality a strictly finer, less useful relation that you then have to route around with side conditions ("...unique up to isomorphism"). Chapter 9 asks: what if we set up category theory so that equality of objects is *by definition* identified with isomorphism? Univalence, applied one level down.
 
-**What breaks without this move.** If equality of objects and isomorphism of objects stay separate, you get two kinds of unpleasant friction. First, philosophical noise: every categorical construction has to be accompanied by an unstated disclaimer that "of course we mean up to isomorphism," because the formal notion of equality is stricter than the one anybody actually reasons with. Second — and this is the sharper, more technical problem — the single most useful theorem in all of category theory, "a fully faithful and essentially surjective functor is an equivalence of categories," turns out to be *equivalent to the axiom of choice* when objects form a literal set in the classical sense. Univalent foundations gets to choose whether to inherit that dependency, and Chapter 9's central achievement is showing it doesn't have to.
+**[[Sets-in-Univalent-Foundations#What breaks without this|What breaks without this]].** Concretely, the classical theorem "every fully faithful, essentially surjective functor is an equivalence of categories" is, in set-based foundations, *equivalent to the axiom of choice*. That's an odd place for a supposedly formal/structural fact to depend on a set-theoretic choice principle. Section 9.9 will show that once equality-of-objects is isomorphism, this theorem is provable with no choice principle at all — the "problem" was never about category theory, it was an artifact of a foundation that couldn't express "unique up to isomorphism" as literal uniqueness.
 
-## Precategories: mimicking the classical definition, cautiously
+## Precategories: the raw material, deliberately incomplete
 
-The book starts conservatively. Ignoring size issues, a set-based category is a set $A_0$ of objects and, for each $x, y \in A_0$, a set $\hom_A(x, y)$ of morphisms. Under dependent types the natural thing is a type $A_0$ of objects and, for each $a, b : A_0$, a type family of morphisms. If you let those hom-types carry arbitrary higher homotopy you'd be defining an $(\infty, 1)$-category — a much bigger project. Chapter 9 restricts to ordinary 1-categories, so it requires each $\hom_A(a, b)$ to be a *set* (a 0-type, no higher paths). With no further conditions on $A_0$, this gives:
+The book builds up in two stages, and the first stage is deliberately weaker than what you'd want to call "a category."
 
-> **Definition 9.1.1 (Precategory).** A precategory $A$ consists of:
-> (i) a type $A_0$ of objects (write $a : A$ for $a : A_0$);
-> (ii) for each $a, b : A$, a **set** $\hom_A(a, b)$ of morphisms;
-> (iii) an identity morphism $1_a : \hom_A(a, a)$ for each $a : A$;
-> (iv) composition $\hom_A(b,c) \to \hom_A(a,b) \to \hom_A(a,c)$, written $g \circ f$ or $gf$;
-> (v) unit laws $f = 1_b \circ f = f \circ 1_a$;
-> (vi) associativity $h \circ (g \circ f) = (h \circ g) \circ f$.
+**Definition 9.1.1 (precategory).** A precategory $A$ consists of:
 
-This is deliberately just the classical axioms, restated with dependent hom-types. The interesting part is what happens next.
+1. A type $A_0$ of objects (write $a : A$ for $a : A_0$).
+2. For each $a, b : A$, a *set* $\hom_A(a,b)$ of morphisms — set, not merely a type, because we're doing 1-category theory: no higher coherence data between parallel morphisms.
+3. Identities $1_a : \hom_A(a,a)$.
+4. Composition $\hom_A(b,c) \to \hom_A(a,b) \to \hom_A(a,c)$, written $g \circ f$.
+5. Unit laws $f = 1_b \circ f = f \circ 1_a$.
+6. Associativity $h \circ (g \circ f) = (h \circ g) \circ f$.
 
-**[[Homotopical-Interpretation-of-Type-Theory#Grounding|Grounding]] (Rust).** A precategory is close to a trait describing a graph with typed composition — think of `hom_A(a, b)` as a set of "proof objects" that a morphism exists, constrained so any two proofs of `hom_A(a,b)` compose associatively:
+Nothing here is surprising — it's the usual data of a category, indexed dependently (`hom` is a type family over pairs of objects, which is the natural encoding once you have dependent types: you never compare two morphisms unless their domains and codomains already agree, so there's no need for a separate "domain/codomain" projection out of some flat morphism-set).
+
+The gap: for $a, b : A_0$, there are now *two* candidate notions of "$a$ and $b$ are the same" — the identity type $a =_{A_0} b$, and the categorical notion of isomorphism:
+
+**Definition 9.1.2.** $f : \hom_A(a,b)$ is an *isomorphism* if there exists $g : \hom_A(b,a)$ with $g \circ f = 1_a$ and $f \circ g = 1_b$. Write $a \cong b$ for the type of such isomorphisms.
+
+A precategory gives you no guarantee these coincide. All it gives you is one direction, built by path induction exactly like every other canonical map out of an identity type in this book:
+
+**Lemma 9.1.4 (`idtoiso`).** For a precategory $A$ and $a,b:A$, there is a canonical map
+$$\mathrm{idtoiso} : (a = b) \to (a \cong b).$$
+
+*Proof sketch.* By induction on the identity, assume $a \equiv b$; then $1_a$ is trivially an isomorphism. $\blacksquare$
+
+This is the same trick as `idtoeqv` for types one universe level up (see [[The-Univalence-Axiom-and-Its-Consequences]]): whenever you have a "resource-bearing" equivalence relation on some collection of objects, path induction on the identity type gives you a map from equality into that relation for free — the direction from equality is *always* available, definitionally, because equal things trivially satisfy every reflexive relation. What's never free is the *converse* direction.
+
+**Lemma 9.1.3 (a load-bearing fact you'll rely on constantly).** For fixed $f$, "$f$ is an isomorphism" is a mere proposition, and hence $a \cong b$ is a *set*. The proof is the standard "inverses of isomorphisms are unique" argument: given two candidate inverses $g, g'$, both satisfy $g' = 1_a \circ g' = (g \circ f) \circ g' = g \circ (f \circ g') = g \circ 1_b = g$. This matters because it means `idtoiso`'s codomain is exactly as truncation-well-behaved as a set-theoretic equality would be — no coherence data is silently lost by working up to isomorphism instead of strict identity.
+
+## Definition 9.1.6: category = precategory where `idtoiso` is invertible
+
+**Definition 9.1.6.** A precategory $A$ is a **category** if for all $a, b : A$, the function $\mathrm{idtoiso}_{a,b}$ from Lemma 9.1.4 is an *equivalence* (has a genuine two-sided inverse in the HoTT sense, not merely "there merely exists an inverse function").
+
+This is the univalence move, transplanted: instead of positing a *new* axiom the way Chapter 2 does for types-in-a-universe, here it's baked directly into what counts as "category" — a precategory either satisfies this condition or it doesn't, so no consistency argument is needed the way it is for the type-level univalence axiom. (The set $\mathbf{Set}$ itself *is* a category exactly because the type-level univalence axiom holds — Example 9.1.7 — so type-level univalence and this category-level analogue are not independent; the former is used to establish an instance of the latter.)
+
+The immediate payoff: **in a category, $a \cong b$ implies $a = b$** — the theorem you actually wanted all along ("isomorphic structures are the same structure") is now just the statement that `idtoiso` has an inverse, called `isotoid`.
+
+**What this buys you structurally (Lemma 9.1.8).** In a category, the type of objects is a *1-type* (its identity types are all sets) — because $a = b$ is equivalent to $a \cong b$, which Lemma 9.1.3 already showed is a set. This is a strict generalization of the fact that $\mathbf{Set}$'s objects don't form a set (a set has a set of elements, i.e. is a 0-type, but $\mathbf{Set}$'s type of small sets is a 1-type) — a category of "set-level structures" is generally a 1-type of objects, one truncation level up from the structures themselves.
 
 ```rust
-trait Precategory {
-    type Obj;
-    type Hom<A, B>: Eq;              // hom_A(a,b) must be a *set*: at most
-                                       // one path between any two elements
-    fn id<A>() -> Self::Hom<A, A>;
-    fn compose<A, B, C>(g: Self::Hom<B, C>, f: Self::Hom<A, B>) -> Self::Hom<A, C>;
-    // unit and associativity laws are proof obligations, not enforced by the type checker
+// The "two notions of sameness" problem shows up directly if you ever tried
+// to implement a category/graph abstraction generically in Rust with derived
+// PartialEq. Structural (derive) equality on a `Group` struct compares the
+// *representation* — e.g. the literal Vec<Vec<usize>> Cayley table — not
+// "is isomorphic to." Two isomorphic-but-differently-labeled groups are
+// !=, exactly the precategory situation: you have hom-sets (isomorphisms)
+// but the ambient `==` doesn't see them.
+struct Group { elements: Vec<usize>, mul: Vec<Vec<usize>> }
+
+// `idtoiso` would be: fn from_eq(a: &Group, b: &Group) -> Option<Iso> — trivial,
+// since a == b implies the identity permutation works.
+// `isotoid` — the interesting, generally-absent direction — would be:
+// fn from_iso(iso: &Iso) -> Proof<Group1 == Group2>  // no such thing in Rust;
+// isomorphism never upgrades to structural equality, because Rust's `==` is
+// not "closed under the correct notion of sameness" the way a univalent
+// category's `=` is by construction.
+```
+
+**Lean correspondence.** This is precisely the situation Lean's kernel navigates every time it decides `isDefEq a b`: definitional equality is a *strict*, decidable relation (whnf-reduce and compare), deliberately narrower than propositional equality, which is in turn narrower than the "correct" notion of sameness a mathematician has in mind (e.g. `Quotient`-level or `Setoid`-level equivalence). A category in this book's sense is what you get if you insist those three collapse to one relation. HoTT's `Category` structure is essentially demanding that a piece of your type theory behave, internally, the way Lean's `isDefEq` *cannot* be made to behave for anything beyond syntactic equality — which is exactly why HoTT needs univalence as extra axiomatic content rather than getting it as a theorem.
+
+## Functors and natural transformations: nothing to add, but a lot to check
+
+**Definition 9.2.1 (functor).** $F : A \to B$ between precategories consists of an object map $F_0 : A_0 \to B_0$ and, for each $a,b$, a morphism-action $\hom_A(a,b) \to \hom_B(Fa,Fb)$, preserving identities and composition. By induction on identity, a functor automatically preserves `idtoiso` — it doesn't need to be told to send isomorphisms to isomorphisms; that's a free theorem, not a separate axiom.
+
+**Definition 9.2.2 (natural transformation).** $\gamma : F \to G$ is a family of components $\gamma_a : \hom_B(Fa, Ga)$ satisfying naturality $Gf \circ \gamma_a = \gamma_b \circ Ff$. Because each $\hom_B(Fa,Gb)$ is a set, naturality — an equation between morphisms — is automatically a mere proposition; so identity of natural transformations reduces entirely to identity of their components, and the type of natural transformations $F \to G$ is again a set. This truncation bookkeeping recurs throughout the chapter and is worth internalizing as a pattern: *whenever the ambient hom-sets are sets, any equational side-condition you attach is automatically propositional*, so you never have to separately argue coherence of coherence data.
+
+These assemble into the **functor precategory** $B^A$ (Definition 9.2.3): objects are functors $A \to B$, morphisms are natural transformations, with componentwise identity and composition.
+
+**Theorem 9.2.5 — the first real payoff of the "category" definition.** *If $A$ is a precategory and $B$ is a category, then $B^A$ is a category.* In other words, categories of functors into a category are themselves categories: naturally isomorphic functors are *equal* functors, not just related-up-to-a-side-condition. The proof is a careful bookkeeping exercise: given a natural isomorphism $\gamma : F \cong G$, function extensionality plus `isotoid` applied componentwise (using Lemma 9.1.9, the compatibility law $p_*(f) = \mathrm{idtoiso}(q) \circ f \circ \mathrm{idtoiso}(p)^{-1}$ relating transport and `idtoiso`) assembles a genuine equality $F = G$ of functors, and the round-trip back to $\gamma$ recovers exactly the original natural isomorphism component-by-component.
+
+**Why this is load-bearing for the rest of the chapter:** it means "the type of categories is closed under exponentiation by an arbitrary precategory" — you get to build $\mathbf{Set}^{A^{\mathrm{op}}}$ (used for the Yoneda embedding below) and know in advance it will already be a category, without a separate saturation step.
+
+```python
+# Illustrative sketch only (per style: Python for quick, non-load-bearing
+# illustration). Functors and natural transformations, structurally:
+class Functor:
+    def __init__(self, obj_map, hom_map):   # hom_map: (a,b,f) -> B-morphism
+        self.obj_map, self.hom_map = obj_map, hom_map
+
+class NatTrans:
+    def __init__(self, F, G, components):   # components: a -> B-morphism Fa->Ga
+        self.F, self.G, self.components = F, G, components
+    def is_iso(self, is_iso_in_B):
+        # Lemma 9.2.4: gamma is iso in B^A  iff  every component is iso in B
+        return all(is_iso_in_B(c) for c in self.components.values())
+```
+
+**Lean correspondence.** `Functor` in Lean's `CategoryTheory` library is definitionally this shape (`obj`, `map`, `map_id`, `map_comp`), and `NatTrans` similarly. The book's Theorem 9.2.5 is the reason `Functor.category` in Mathlib-style developments can treat naturally-isomorphic functors as literally interchangeable — the univalent framing here is what makes that interchangeability a theorem about *equality* rather than a design choice you have to keep re-justifying every time you `rw` under a natural isomorphism.
+
+## Equivalences of categories vs. weak equivalences — where AC used to live
+
+Classically, "$F : A \to B$ is an equivalence of categories" means: there's $G : B \to A$ with natural isomorphisms $FG \cong 1_B$, $GF \cong 1_A$. But "there exists such a $G$" is not automatically a mere proposition — exactly the same defect that makes the naive "has a quasi-inverse" notion of type-equivalence ill-behaved (§4.1). The fix is the same one used there: an **adjoint equivalence**, where you additionally require the *triangle identities* to hold, pinning down $G, \eta, \epsilon$ up to a canonical further choice.
+
+**Definition 9.4.1.** $F$ is an *equivalence of (pre)categories* if it's a left adjoint whose unit $\eta$ and counit $\epsilon$ are both isomorphisms.
+
+The book then gives an entirely elementary, purely 1-categorical reformulation:
+
+**Definitions 9.4.3–9.4.6.**
+- $F$ is **faithful** if each $F_{a,b} : \hom_A(a,b) \to \hom_B(Fa,Fb)$ is injective, **full** if surjective, **fully faithful** if both (equivalently, each $F_{a,b}$ is an equivalence of sets).
+- $F$ is **split essentially surjective** if for every $b:B$ there *merely-exists-with-witness*, i.e. there is *specified*, $a:A$ with $Fa \cong b$.
+- $F$ is **essentially surjective** if that existence is only *propositionally truncated* — $\exists a. Fa \cong b$ with no witness extractable.
+- $F$ is a **weak equivalence** if it is fully faithful and essentially surjective (the *truncated* version).
+
+**Lemma 9.4.5.** $F$ is an equivalence of precategories $\iff$ $F$ is fully faithful and *split* essentially surjective. This is the honest classical statement — and note it needs the *split* (choice-laden) version of essential surjectivity, because reconstructing the quasi-inverse functor $G$ on objects requires actually picking, for each $b$, a specific preimage $a$ and isomorphism.
+
+Here is the theorem that makes the whole categorical framework earn its keep:
+
+**Lemma 9.4.7.** *If $F : A \to B$ is fully faithful and $A$ is a category, then for any $b:B$ the type $\sum_{a:A} (Fa \cong b)$ is a mere proposition.* Consequently: **for categories (not precategories), "equivalence" and "weak equivalence" coincide** — merely-existing essential surjectivity is exactly as good as split essential surjectivity, with no choice required.
+
+*Why the proof works, mechanically*: given two witnesses $(a,f)$ and $(a',f')$ of $Fa\cong b \cong Fa'$, fully-faithfulness pulls the composite isomorphism $Fa \cong Fa'$ back to a genuine isomorphism $g : a \cong a'$ in $A$; and because $A$ is a *category*, $g$ upgrades to an actual equality $p : a = a'$ via `isotoid`. Transporting $f$ along $p$ recovers $f'$. So the space of witnesses collapses to a point — not because you did anything clever, but because being a category means "isomorphic implies literally equal," and literal equality of dependent-pair witnesses is exactly what contractibility of a $\Sigma$-type demands.
+
+**This is the resolution of the axiom-of-choice puzzle from the opening section.** Classically, "fully faithful + essentially surjective $\Rightarrow$ equivalence" needs AC because you must *choose*, for each $b$, a preimage and an isomorphism, uniformly — and set theory's mere existence gives you no canonical way to do that without choice. Here, the book calls this "the category-theoretic version of the principle of unique choice" (§3.9): when the space of choices is contractible, picking one is not a choice at all, it's forced. Univalence-for-categories is precisely what makes the space of choices contractible.
+
+**Isomorphism of categories (Definition 9.4.8)** is the still-stronger notion: $F$ fully faithful *and* $F_0$ an equivalence of types on objects. For categories, **Lemma 9.4.14** shows equivalence and isomorphism of categories actually coincide — again a phenomenon special to univalent categories; for precategories the two notions can genuinely diverge (Example 9.4.13: the "chaotic" precategory on a non-contractible type $X$ maps to the terminal category by an equivalence that is not an isomorphism).
+
+Finally, the whole point closes with:
+
+**Theorem 9.4.16.** For categories $A,B$: $(A = B) \simeq (A \simeq B)$ — equality of categories is equivalent to equivalence of categories. This is univalence propagated up another level: types satisfy $(A=B)\simeq(A\simeq B)$ by axiom; categories satisfy the analogous statement as a *theorem*, derived from the category axiom plus function extensionality. A corollary: **the type of categories (in a fixed universe) is itself a 2-type** — categories, functors, and natural transformations genuinely form a (2,1)-category internally, not just informally.
+
+```rust
+// Faithful / full / fully-faithful, as trait-level properties you'd actually
+// check on a functor between small (finite, decidable-hom) categories:
+trait Functor<A: Category, B: Category> {
+    fn map_obj(&self, a: A::Obj) -> B::Obj;
+    fn map_hom(&self, f: A::Hom) -> B::Hom;
+}
+
+fn is_fully_faithful<A: Category, B: Category, F: Functor<A,B>>(
+    f: &F, a: A::Obj, b: A::Obj,
+) -> bool {
+    // injective AND surjective on hom(a,b) -> hom(Fa,Fb)
+    let src: Vec<_> = A::hom_set(a, b);
+    let img: Vec<_> = src.iter().map(|h| f.map_hom(h.clone())).collect();
+    let tgt: Vec<_> = B::hom_set(f.map_obj(a), f.map_obj(b));
+    injective(&src, &img) && img.iter().collect::<HashSet<_>>().len() == tgt.len()
 }
 ```
-The `Eq` bound on `Hom<A,B>` is doing real work: it's the "hom-sets are sets" condition (9.1.1(ii)), and it's what will make identity of morphisms a mere proposition later.
 
-## Two notions of sameness, and the map between them
+**Why this matters for an elaborator/unifier (learning-goals connection):** "fully faithful" is structurally the same shape as asking a coercion/elaboration map to be *conservative* — it neither introduces new judgmental identifications between terms that weren't there in the source language, nor collapses distinctions that should survive. A type-checker's embedding of surface syntax into a core calculus is well-behaved exactly when it's the categorical analogue of fully faithful: the elaborated core terms are related exactly as much as the source terms were, no more (faithful) and no less (full, for the relations the elaborator is supposed to preserve, like definitional equality classes).
 
-Here's the wrinkle that pure precategories inherit from ordinary mathematics: for objects $a, b : A$, there are *two* candidate notions of "the same." There's the type-theoretic one, $a = b$ (a path in $A_0$), and there's the categorical one:
+## The Yoneda lemma: an object is exactly what it does to every test object
 
-> **Definition 9.1.2 (Isomorphism).** A morphism $f : \hom_A(a,b)$ is an isomorphism if there's $g : \hom_A(b,a)$ with $g \circ f = 1_a$ and $f \circ g = 1_b$. Write $a \cong b$ for the type of such isomorphisms.
+Two ingredients first (Definitions 9.5.1–9.5.2): the **opposite precategory** $A^{\mathrm{op}}$ (same objects, $\hom_{A^{\mathrm{op}}}(a,b) :\equiv \hom_A(b,a)$), and **products of precategories**. Then Lemma 9.5.3 establishes currying at the categorical level: functors $A \times B \to C$ correspond to functors $A \to C^B$ — exactly the exponential law you'd expect, lifted one level.
 
-**Lemma 9.1.3** shows "$f$ is an isomorphism" is always a mere proposition (any two witnessing inverses $g, g'$ are equal — a short calculation using that hom-sets are sets), so $a \cong b$ is itself a set. Good: isomorphism, like equality, is a well-behaved (proof-irrelevant) notion of sameness, not a structure you carry around.
+This currying is what lets you build the **hom-functor**
+$$\hom_A : A^{\mathrm{op}} \times A \to \mathbf{Set}, \qquad (a,b) \mapsto \hom_A(a,b),$$
+and, currying it, the **Yoneda embedding**
+$$y : A \to \mathbf{Set}^{A^{\mathrm{op}}}, \qquad y(a) :\equiv \hom_A(-, a).$$
 
-Now the crucial construction — the categorical analogue of `idtoeqv` from [[Formal-Metatheory#Univalence|univalence]]:
+$y(a)$ is the *presheaf* "what does everything else look like as seen from $a$" — the functor sending each test object $x$ to the set of arrows $x \to a$.
 
-> **Lemma 9.1.4 (idtoiso).** For a precategory $A$ and $a, b : A$: $(a = b) \to (a \cong b)$.
+**Theorem 9.5.4 (Yoneda lemma).** For any precategory $A$, any $a:A$, and any $F : \mathbf{Set}^{A^{\mathrm{op}}}$:
+$$\hom_{\mathbf{Set}^{A^{\mathrm{op}}}}(ya, F) \cong Fa,$$
+naturally in both $a$ and $F$.
 
-*Proof:* by path induction, assume $a \equiv b$; then $1_a : \hom_A(a,a)$ is trivially an isomorphism. This is *unconditional* — it needs no axiom, exactly like `idtoeqv` needed none. Equality always gives you an isomorphism (just not, in general, the other way).
+**The mechanism, not just the statement (this is where the "how you'd implement it" reading pays off).** A natural transformation $\alpha : ya \to F$ is *entirely determined by one value*, $\alpha_a(1_a) : Fa$ — plug in the identity morphism at the one point where $ya$ is guaranteed to have one. Conversely, given a single element $x : Fa$, you can *reconstruct the entire natural transformation* by defining $\alpha_{a'}(f) :\equiv F_{a,a'}(f)(x)$ for every $a'$ and every $f : a' \to a$ — naturality forces this formula, it isn't a choice. So the lemma isn't really "two sets happen to be in bijection" — it's "a natural transformation out of a representable functor carries *zero* information beyond where the identity morphism goes," a fact you can derive purely from unwinding definitions, with no cleverness.
 
-The book immediately flags the parallel explicitly: this is *exactly* the same situation that motivated univalence. In fact, **Example 9.1.5** makes the connection precise — the precategory $\mathbf{Set}$, with objects the sets of some universe and $\hom(A,B) :\equiv A \to B$, has `idtoiso` from Lemma 9.1.4 equal (restricted to sets) to `idtoeqv` from §2.10. Category theory's "isomorphism vs. equality" problem *is* univalence's "equivalence vs. equality" problem, one level up.
+**Corollary 9.5.6.** $y$ is fully faithful ($\hom_{\mathbf{Set}^{A^{\mathrm{op}}}}(ya,yb) \cong yb(a) \equiv \hom_A(a,b)$, directly from the lemma).
 
-> **Definition 9.1.6 (Category).** A precategory is a **category** if for all $a, b : A$, the function $\mathrm{idtoiso}_{a,b}$ is an equivalence.
+**Corollary 9.5.7.** If $A$ is a category, $y_0$ is an *embedding* on objects: $ya = yb \implies a = b$. This is the categorified Yoneda philosophy stated as a genuine theorem rather than folklore: **an object is (up to equality, in a univalent category!) completely determined by the presheaf of arrows into it.** "Determined by its universal property" stops being a slogan and becomes literally "the embedding $y_0$ has propositional fibers."
 
-So a category is a precategory satisfying its own miniature univalence axiom — one instance of it per object-pair, generalized in §9.8 into the structure identity principle. **Example 9.1.7**: the univalence axiom for types immediately implies $\mathbf{Set}$ is a category, and (by the same mechanism) any precategory of set-level structures — groups, rings, topological spaces — is a category. **Lemma 9.1.8**: in a category, the type of objects is automatically a 1-type (a groupoid, no higher structure), because $a = b$ is equivalent to the set $a \cong b$.
+**Definition 9.5.8 / Theorem 9.5.9 (representability).** $F$ is *representable* if $\exists a. ya \cong F$; and if $A$ is a category, "$F$ is representable" is a *mere proposition* — a representing object, when it exists, is unique, not just unique-up-to-a-side-condition. This directly generalizes the familiar "universal properties determine their object uniquely up to unique isomorphism" — here "unique isomorphism" upgrades all the way to "the very same object."
 
-The book names $\mathrm{isotoid} : (a \cong b) \to (a = b)$ for the inverse of `idtoiso`, and records its compatibility with composition: $\mathrm{idtoiso}(p^{-1}) = \mathrm{idtoiso}(p)^{-1}$, $\mathrm{idtoiso}(p \cdot q) = \mathrm{idtoiso}(q) \circ \mathrm{idtoiso}(p)$, and dually for `isotoid` — concatenating paths of objects corresponds to composing isomorphisms, contravariantly. There's also a naturality fact, Lemma 9.1.9, that will do the heavy lifting later: transporting a morphism $f$ along paths $p : a = a'$ and $q : b = b'$ is the same as conjugating it by the corresponding isomorphisms, $(p,q)_* (f) = \mathrm{idtoiso}(q) \circ f \circ \mathrm{idtoiso}(p)^{-1}$.
+The section closes by using representability to re-derive adjunctions (**Lemma 9.5.10**): $F$ is a left adjoint iff, for every $b$, the presheaf $a \mapsto \hom_B(Fa,b)$ on $A^{\mathrm{op}}$ is representable — cashing out "left adjoint" as "hom-set out of $F$ is *naturally* a hom-set into something," the standard adjunction-as-representable-functor viewpoint, now with propositional uniqueness for free (**Corollary 9.5.11**) whenever $A$ is a category.
 
-**Worked examples the book gives, worth keeping in mind:**
-- A **preorder** is a precategory where every hom-set is a mere proposition — this recovers "$a \le b$" reflexive/transitive. It's a category exactly when the underlying type is a set and $\le$ is antisymmetric: a **poset**.
-- Any 1-type $X$ gives a category with $\hom(x,y) :\equiv (x = y)$; when $X$ is a set this is the *discrete category*, and in general a *groupoid*.
-- The precategory with objects $X$ and $\hom(x,y) :\equiv \|x=y\|_0$ (the 0-truncated path space) is the *fundamental pregroupoid*.
-- $\mathbf{Rel}$, the precategory of sets and relations, turns out — with some legwork the book carries out via propositional truncation — to be a genuine category, not merely a precategory.
+```python
+# Yoneda, made concrete: for a *finite* category A given as an adjacency-list
+# of hom-sets, "the presheaf represented by a" is literally the column of
+# incoming-arrow-sets, and Yoneda says: a natural transformation out of that
+# column is *exactly* a choice of one element of F(a). No search required.
+def yoneda_reconstruct(F, a, x):
+    """Given F: obj -> set (a presheaf on A^op, restricted to hom-action
+    F_hom: (obj, morphism a'->a) -> function F(a)->F(a')), and x in F(a),
+    reconstruct the natural transformation y(a) -> F component-by-component."""
+    def alpha(a_prime, f):       # f : a_prime -> a
+        return F.hom_action(a_prime, f)(x)
+    return alpha
+```
 
-**Grounding (Lean).** `idtoiso` versus `isotoid` is a strict analogue of `Eq.mpr`/`Eq.mp` versus `cast`-based coercions built from a proof of isomorphism rather than a proof of `Eq`. The condition "idtoiso is an equivalence" is the categorical cousin of what makes a Lean structure well-behaved under `Quotient` or `Subtype` reasoning: you want propositional equality of the packaged structure to coincide *exactly* with the natural notion of "same underlying data, compatibly related," with no slack in either direction. This is the same shape of problem your project's `Quotient` handling has to get right — a quotient type is only well-founded for reasoning if "equal in the quotient" tracks "related by the equivalence relation" with no gap.
+**Lean correspondence — this is the primary grounding for this section per the standing project.** The Yoneda lemma is *the* categorical formalization of "proof search by representability": when your elaborator needs to solve a metavariable `?m : T` and `T` happens to be (isomorphic to) a representable presheaf — e.g. `T` is `Hom(-, a)`-shaped, as instance resolution goals typically are — Yoneda says the *entire* solution space is captured by a single canonical element, not by an open-ended search. This is structurally close to how Lean's typeclass resolution and `CategoryTheory.Yoneda` machinery actually get used together: representability arguments let Mathlib prove uniqueness of limits, colimits, and adjoints ("any two representing objects for the same functor are canonically isomorphic") in one stroke, rather than re-deriving uniqueness by hand for products, then again for pullbacks, then again for exponentials. Corollary 9.5.7's "$ya = yb \Rightarrow a = b$" is the univalent-foundations reason that argument goes through *on the nose* (equality) rather than merely up to (unstated) canonical isomorphism.
 
-## Functors and natural transformations: the totally expected definitions
+## The structure identity principle: univalence as a machine you can point at any signature
 
-**Definition 9.2.1 (Functor).** $F : A \to B$ consists of an object map $F_0 : A_0 \to B_0$, a morphism map $F_{a,b} : \hom_A(a,b) \to \hom_B(Fa, Fb)$ for each $a,b$, preservation of identities $F(1_a) = 1_{Fa}$, and preservation of composition $F(g \circ f) = Fg \circ Ff$. Nothing exotic — and by induction on identity, a functor automatically preserves `idtoiso` too.
+Section 9.8 generalizes the whole pattern. Instead of asking "when are two *types* equal" (univalence) or "when are two *categories* equal" (§9.4), it asks: given any first-order-ish notion of extra structure layered on top of an existing category $X$, when does *its* category of structured-objects-and-homomorphisms automatically satisfy "isomorphic implies equal"?
 
-**Definition 9.2.2 (Natural transformation).** $\gamma : F \to G$ consists of components $\gamma_a : \hom_B(Fa, Ga)$ for each $a$, satisfying naturality $Gf \circ \gamma_a = \gamma_b \circ Ff$. Because each $\hom_B(Fa, Gb)$ is a set, its identity type is a mere proposition — so the naturality axiom is automatically a mere proposition, and two natural transformations are equal exactly when their components agree pointwise. This is a small but important fact: it means the type of natural transformations $F \to G$ is itself a set, and equality of *functors* reduces to equality of the two underlying functions (on objects, then on hom-sets, transported).
+**Definition 9.8.1 (notion of structure).** A notion of structure $(P,H)$ over a precategory $X$ consists of:
 
-These assemble into the **functor precategory** $B^A$ (Definition 9.2.3), with objects functors $A \to B$ and morphisms natural transformations. **Lemma 9.2.4**: a natural transformation is an isomorphism in $B^A$ exactly when each component is an isomorphism in $B$ — componentwise invertibility is enough, no extra global coherence needed, precisely because naturality itself is proof-irrelevant.
+- A type family $P : X_0 \to \mathcal{U}$ — for $x:X_0$, elements of $P x$ are "$(P,H)$-structures on $x$" (e.g., $X = \mathbf{Set}$ and $Px$ = "a group-multiplication-and-identity making $x$ into a group").
+- For each $f : \hom_X(x,y)$ and $\alpha:Px$, $\beta:Py$, a mere proposition $H_{\alpha\beta}(f)$ — "$f$ is a $(P,H)$-homomorphism from $\alpha$ to $\beta$."
+- Reflexivity ($H_{\alpha\alpha}(1_x)$) and closure under composition of $H$.
 
-The chapter's first genuinely load-bearing theorem:
+This automatically makes $\alpha \le_x \beta :\equiv H_{\alpha\beta}(1_x)$ into a preorder on $Px$ (Example 9.1.14's construction, one level up). $(P,H)$ is a **standard notion of structure** if that preorder is a genuine partial order — i.e., $Px$ is a set, and mutual-$H$-comparability of two structures on the *same* object implies they're literally the same structure.
 
-> **Theorem 9.2.5.** If $A$ is a precategory and $B$ is a **category**, then $B^A$ is a category.
+Given $(P,H)$, you build the obvious precategory $\mathrm{Str}_{(P,H)}(X)$: objects are pairs $(x,\alpha)$ with $\alpha : Px$; morphisms $(x,\alpha)\to(y,\beta)$ are $H$-preserving morphisms $x\to y$ in $X$.
 
-The proof is worth walking through in outline because its pattern recurs throughout the chapter. Given naturally isomorphic $F, G : A \to B$ (i.e. $\gamma : F \cong G$ in $B^A$), you get, for each $a$, an isomorphism $\gamma_a : Fa \cong Ga$ — hence (because $B$ *is* a category) an actual identity $\mathrm{isotoid}(\gamma_a) : Fa = Ga$. [[Formal-Metatheory#Function extensionality|Function extensionality]] glues these pointwise identities into one identity $\bar\gamma : F_0 = G_0$ on the object-maps. The remaining functor data lives in mere propositions, so what's left is showing the two hom-maps agree when transported along $\bar\gamma$ — and this is exactly where Lemma 9.1.9's fact about transport-as-conjugation-by-isomorphism earns its keep, combined with naturality of $\gamma$. The three-way round trip (build $F = G$ from $\gamma$, extract $\gamma$ back from a path, and vice versa) confirms `idtoiso` for $B^A$ is genuinely an equivalence. The upshot: **naturally isomorphic functors between categories are equal, on the nose.** This is the first real payoff of the univalent redefinition — a routine, checkable statement in classical category theory ("naturally isomorphic functors are 'the same' functor") becomes a literal equality here, not an informal convention.
+**Theorem 9.8.2 (structure identity principle).** *If $X$ is a category and $(P,H)$ is a standard notion of structure over $X$, then $\mathrm{Str}_{(P,H)}(X)$ is a category.*
 
-**What breaks without categories (as opposed to precategories) here.** If $B$ is merely a precategory, $B^A$ need not be a category — natural isomorphism of functors won't force equality — so this theorem is precisely calibrated to univalent categories, not an accident of the generality chosen.
+*Mechanism:* an equality $(x,\alpha)=(y,\beta)$ in a $\Sigma$-type decomposes as a path $p:x=y$ plus $p_*(\alpha)=\beta$ (a mere proposition, since $P$ is set-valued); an isomorphism $(x,\alpha)\cong(y,\beta)$ decomposes as an isomorphism $f:x\cong y$ in $X$ plus $H_{\alpha\beta}(f)$ *and* $H_{\beta\alpha}(f^{-1})$ (also propositional). Since $X$ is a category, $(x=y)\simeq(x\cong y)$ already; the theorem just has to check the *remaining* propositional halves line up — and the "if" direction ($H_{\alpha\beta}(\mathrm{idtoiso}(p))$ and its converse imply $p_*(\alpha)=\beta$) is exactly where "standard" (antisymmetry of $\le_x$) gets used: mutual comparability of $\alpha,\beta$ via the identity morphism forces $\alpha=\beta$.
 
-The book also carefully tracks associativity and unit laws for functor composition (Lemmas 9.2.9–9.2.11): composition of functors is associative and unital, but *not definitionally* — the object-level composition is definitionally associative (it's just function composition), but the proof-data bundled into a functor (preservation of identities/composition) doesn't compose definitionally, so the book has to prove and coherently track a pentagon identity for reassociating triple composites. This is a genuinely HoTT-flavored wrinkle: equalities between equalities matter, and you have to check they cohere, not just that they exist.
+**Why this is a big deal (and this is the load-bearing takeaway for the standing project):** this theorem is a *generic, reusable engine* for proving "isomorphic algebraic structures are equal," applicable to any first-order signature at once, rather than needing a bespoke univalence proof for groups, then rings, then topological spaces, then partial orders, each time re-deriving "isomorphic groups are literally the same group." Example 9.8.4 makes this completely explicit: for any first-order signature $\Omega$ (function symbols with arities, relation symbols with arities), the category of $\Omega$-structures over $\mathbf{Set}$ is automatically a standard notion of structure, hence automatically satisfies univalence. Group theory, ring theory, graph theory, poset theory — all instances of one theorem, for free.
 
-**Grounding (Rust).** A functor between precategories is close to implementing a trait that maps both an associated type and its operations, and a natural transformation is a family of morphisms satisfying a commuting-square law — this is precisely the shape of a "polymorphic function over a trait" indexed by all instances, which is why the slogan "a natural transformation is a polymorphic function" (well known from Haskell/Rust generic programming) is literally the right intuition here, just refined to track proof-irrelevance carefully.
+**This is precisely the shape of a type-class/trait hierarchy with a soundness obligation attached.** A Rust `trait Monoid: Semigroup { ... }` (or, closer still, a Lean `structure` with a `Prop`-valued law field, e.g. `Group` bundling carrier, operations, and proof obligations) is a notion-of-structure in exactly this sense: $P$ is "the extra data + laws," $H$ is "what counts as a structure-preserving map." The structure identity principle says: *if the underlying category is univalent, and your structure's compatibility predicate is antisymmetric in the right sense, then isomorphism of instances of your trait/structure is automatically the same as `Eq` on instances* — a soundness guarantee for "derive-style" reasoning ("these two `Group` values are `PartialEq`-equal because there's an isomorphism between them") that most languages have to hand-wave, and that this theorem proves once, generically.
 
-## Adjunctions, and where proof-relevance first bites
+```rust
+// A "notion of structure" over Set, Rust-flavored: (P, H) where
+//   P x  = "a Group-structure on carrier x" (mul, identity, laws)
+//   H f  = "f preserves mul and identity"
+struct GroupStruct<X> { mul: fn(X, X) -> X, id: X }
 
-**Definition 9.3.1.** $F : A \to B$ is a left adjoint if there's $G : B \to A$, unit $\eta : 1_A \to GF$, counit $\epsilon : FG \to 1_B$, satisfying the triangle (zigzag) identities $(\epsilon F)(F\eta) = 1_F$ and $(G\epsilon)(\eta G) = 1_G$.
+fn is_homomorphism<X, Y>(
+    f: &dyn Fn(X) -> Y, gx: &GroupStruct<X>, gy: &GroupStruct<Y>,
+) -> bool
+where X: Copy, Y: Copy + PartialEq {
+    // H_{gx,gy}(f) : f(gx.id) == gy.id  and  f(gx.mul(a,b)) == gy.mul(f(a),f(b))
+    // (elided: universally quantified check over all a, b)
+    true
+}
+// The structure identity principle says: IF the ambient category (here, Set,
+// with its known-univalent hom = total functions) is univalent, AND
+// "mutually-homomorphic implies equal" holds for GroupStruct (antisymmetry —
+// this is where you'd actually have to do group-theoretic work, e.g. showing
+// a bijective homomorphism with a homomorphic inverse forces the *same*
+// multiplication table up to the bijection), THEN isomorphic GroupStructs on
+// the same carrier are literally equal as GroupStructs — no separate proof
+// needed per algebraic theory.
+```
 
-Classically, "being a left adjoint" is *structure* (you have to specify the adjoint data), not merely a *property*, because different choices of $(G, \eta, \epsilon)$ could in principle coexist. Univalent foundations lets you upgrade this:
+## The Rezk completion: turning "merely a precategory" into a category, universally
 
-> **Lemma 9.3.2.** If $A$ is a category, "$F$ is a left adjoint" is a mere proposition.
+Not every precategory is a category — the fundamental *pregroupoid* of a type $X$ (hom-sets $\lVert x=y\rVert_0$, Example 9.1.17) is generally not one, nor is the homotopy precategory of types (Example 9.1.18, hom-sets $\lVert X\to Y\rVert_0$). Section 9.9 constructs, for any precategory $A$, its universal "categorification" $\hat A$ — called the **Rezk completion** (or *stack completion*).
 
-The proof constructs, from two candidate adjoint structures $(G,\eta,\epsilon)$ and $(G',\eta',\epsilon')$, a natural isomorphism $\gamma : G \cong G'$ using the triangle identities — and then invokes Theorem 9.2.5 to upgrade that natural isomorphism to an actual *equality* $G = G'$ (since $A$ is a category, $A^B$ — or rather the relevant functor category — sees isomorphic functors as equal). This is the pattern that will repeat again and again in this chapter: get an isomorphism from bare category theory, then use `idtoiso`/`isotoid` for a *category* to upgrade it to an equality, collapsing what would classically be "unique up to unique isomorphism" hedging into a genuine uniqueness statement. Section §9.5 gives a second, cleaner proof of this same fact via representability of the Yoneda embedding.
+**The key lemma that makes the whole construction choice-free** is that *categories cannot distinguish weak equivalences from genuine equivalences of the domain*:
 
-## Equivalences of categories: three notions that collapse to one
+**Theorem 9.9.4.** If $A,B$ are precategories, $C$ is a category, and $H:A\to B$ is a weak equivalence, then precomposition $(-\circ H): C^B \to C^A$ is an **isomorphism** (of precategories).
 
-Classically, "equivalence of categories" is usually defined with an existential ("there exists $G$...") which, absent truncation, would be ill-behaved for the same reason `qinv` (quasi-inverse) is ill-behaved for type equivalences (see the sibling article on [[Equivalences-and-Their-Characterizations]]). So Chapter 9 makes the same move as Chapter 4's **half-adjoint equivalence**:
+*Mechanism, briefly:* fully-faithfulness of $(-\circ H)$ (Lemmas 9.9.1–9.9.2) is routine diagram chasing using that $H$ is full, faithful, essentially surjective. Essential surjectivity — recovering a functor $G:B\to C$ from any $F:A\to C$ with $GH\cong F$ — is where category-ness of $C$ does the real work: for each $b:B$, the book builds a type $X_b$ of "candidate values $G(b)$ compatible with $F$ along every witness $Ha\cong b$," and shows $X_b$ is *contractible*. Classically you'd only get "$G(b)$ is well-defined up to unique isomorphism" here — precisely the point where classical category theory needs choice to turn "up to unique iso" into an actual function $B_0 \to C_0$. Because $C$ is a category, "up to unique isomorphism" *is* "up to equality," so $X_b$ being inhabited-and-propositional means it's contractible, and choosing the unique inhabitant for every $b$ requires no choice principle at all — it's forced, one $b$ at a time, by contractibility, and $\Pi$ of contractible types is contractible.
 
-> **Definition 9.4.1.** $F : A \to B$ is an equivalence of (pre)categories if it's a left adjoint for which $\eta$ and $\epsilon$ are isomorphisms. Write $A \simeq B$ for the type of such equivalences.
+**This is Theorem 9.9.4's real content, restated for the compiler-building reader:** *"well-defined up to unique isomorphism" and "well-defined, full stop" are the same claim once your ambient category is univalent.* Any construction in ordinary mathematics that appeals to choice only to pick a canonical-but-technically-arbitrary representative (a colimit, a quotient's normal form, a completion) is, under univalence, not making a choice at all — it's evaluating a function into a space that happens to be a single point.
 
-By Lemmas 9.1.3 and 9.3.2, when $A$ is a category, "$F$ is an equivalence of precategories" is a mere proposition — the adjoint-equivalence packaging buys proof-irrelevance the naive definition wouldn't have.
+**Two constructions of $\hat A$:**
 
-The book then develops several equivalent characterizations, each one earning its own name:
+1. **Via Yoneda (slick, but universe-inflating).** Take $\hat A_0 :\equiv \{ F : \mathbf{Set}^{A^{\mathrm{op}}} \mid \exists a. \, ya \cong F \}$ — i.e., $\hat A$ is the full sub-precategory of *representable presheaves* inside $\mathbf{Set}^{A^{\mathrm{op}}}$. Since $\mathbf{Set}^{A^{\mathrm{op}}}$ is a category (Theorem 9.2.5, using univalence of $\mathbf{Set}$), and $\hat A$ is an embedding into it, $\hat A$ is a category. The Yoneda embedding $A\to\hat A$ is fully faithful (Corollary 9.5.6) and essentially surjective by construction — a weak equivalence. Drawback: $\hat A$ lives one universe level up from $A$, because it's built as a subtype of a presheaf category.
 
-- **Fully faithful**: each $F_{a,b}$ is an equivalence of hom-sets (injective + surjective, i.e. bijective on sets).
-- **Split essentially surjective**: for every $b : B$ there's a *specified* $a : A$ with $Fa \cong b$.
-- **Essentially surjective**: for every $b:B$ there *merely exists* such an $a$ (propositional truncation, not a chosen witness).
-- **Weak equivalence**: fully faithful + essentially surjective.
-- **Isomorphism of (pre)categories**: fully faithful, with $F_0$ an equivalence of the underlying *types* of objects.
+2. **Via a higher inductive type (universe-preserving, and the more instructive one for the standing project).** Define $\hat A_0$ as a HIT with constructors:
+   - $i : A_0 \to \hat A_0$ (embed the original objects),
+   - for each $e : a \cong b$ in $A$, a path constructor $j(e) : ia = ib$ — **isomorphisms become literal paths**, by fiat,
+   - $j(1_a) = \mathrm{refl}_{ia}$ and $j(g\circ f) = j(f)\centerdot j(g)$ (functoriality of $j$ on the nose),
+   - a 1-truncation constructor forcing $\hat A_0$ to be a 1-type.
 
-**Lemma 9.4.5**: equivalence of precategories $\iff$ fully faithful + split essentially surjective — this is a fact about arbitrary precategories, proved by an explicit back-and-forth construction (build $G$ from the split essential-surjectivity data, or vice versa). But "split" essential surjectivity is data, not a proposition, and won't generally be well-behaved unless something forces uniqueness of the witness. That's exactly what a *category* buys you:
+   This is the "quotient a groupoid of isomorphisms down to a space of paths" move, structurally identical to the two HIT-based constructions you'll have seen elsewhere in the book ($S^1$ from a point-plus-loop, or truncations from an equivalence relation) — except here what's being freely added is not just *a* path per generator but paths that already satisfy the *category axioms* by construction (constructors 3–4 are exactly functoriality of $j$). The rest of the proof (hom-sets on $\hat A_0$ defined by a careful double induction that uses univalence itself to turn each generating isomorphism-path $j(e)$ into a transport-equivalence on hom-sets, then shows the induced `idtoiso` is invertible by an encode-decode argument structurally identical to the one used for $\pi_1(S^1)$ in Chapter 8) is, as the book itself says, "wide and shallow" — mechanically checking that every HIT constructor plays nicely with every piece of categorical structure, exactly the kind of proof a proof assistant is suited to and a human is not.
 
-> **Lemma 9.4.7.** If $F : A \to B$ is fully faithful and $A$ is a category, then for any $b : B$ the type $\sum_{a:A} (Fa \cong b)$ is a mere proposition. Hence for fully faithful functors out of a category, essential surjectivity $\iff$ split essential surjectivity, and equivalence $\iff$ weak equivalence.
-
-The proof is a clean illustration of the `idtoiso`/category interplay: given two witnesses $(a,f)$ and $(a',f')$ of $Fa \cong b \cong Fa'$, fully-faithfulness pulls the composite isomorphism $f'^{-1}\circ f : Fa \cong Fa'$ back to a $g : a \cong a'$ in $A$; because $A$ is a category, $g$ upgrades to a path $p : a = a'$; and transporting along $p$ turns out to identify $f$ with $f'$. **This is the crux fact that makes "fully faithful and essentially surjective functor is an equivalence" true without the axiom of choice**, for categories (but *not* for precategories in general, and *not* — the book notes — for **strict categories**, precategories where merely the type of objects $A_0$ is required to be a *set* rather than requiring the full `idtoiso` condition; there, the statement is exactly as choice-dependent as in ordinary set-based mathematics). This trichotomy — precategory / strict category / (univalent) category — is exactly the point of the chapter's opening paragraph, and it's worth restating precisely:
-
-| Notion | "fully faithful + ess. surjective $\Rightarrow$ equivalence" |
-|---|---|
-| Precategory | provably false for some choice of AC-failing model; no consistent version holds |
-| Strict category ($A_0$ a set) | true, but equivalent to the axiom of choice |
-| Category (`idtoiso` an equivalence) | **provably true, no choice needed** |
-
-Finally, isomorphism of categories and equivalence of categories, which can differ for general precategories (**Example 9.4.13**, the indiscrete precategory on a non-contractible type is equivalent to the point but not isomorphic to it), turn out to coincide once both sides are genuine categories:
-
-> **Lemma 9.4.14.** For categories $A, B$, a functor $F : A \to B$ is an equivalence of categories iff it is an isomorphism of categories.
-
-And then the chapter's central theorem for this section:
-
-> **Theorem 9.4.16.** If $A$ and $B$ are categories, the canonical function $(A = B) \to (A \simeq B)$ (built by induction from the identity functor) is an equivalence.
-
-This is univalence, specialized to $\mathbf{Cat}$: equality of categories *is* equivalence of categories, and by the same reasoning that made the type of types a 2-groupoid, the type of categories is a **2-type** (its equalities are 1-types, i.e. isomorphism-of-functor-data behaves like a groupoid, and there's nothing higher). This is the theorem the whole chapter has been building toward: it says categories, functors, and natural transformations aren't just a "pre-2-category" (the classical, equality-agnostic packaging) but a genuine **2-category**, because equality at the top level (categories) now coincides with the right notion of sameness (equivalence).
-
-## The Yoneda lemma, and why it's stronger here than classically
-
-To state Yoneda you need opposite categories ($A^{\mathrm{op}}$: same objects, $\hom_{A^{\mathrm{op}}}(a,b) :\equiv \hom_A(b,a)$) and products (componentwise, Definitions 9.5.1–9.5.2), plus the currying equivalence between functors $A \times B \to C$ and functors $A \to C^B$ (Lemma 9.5.3 — the categorified version of `curry`/`uncurry`). Instantiating this on the hom-functor $\hom_A : A^{\mathrm{op}} \times A \to \mathbf{Set}$ gives the **Yoneda embedding**
-$$y : A \to \mathbf{Set}^{A^{\mathrm{op}}}, \qquad ya :\equiv \hom_A(-, a).$$
-
-> **Theorem 9.5.4 (Yoneda lemma).** For any precategory $A$, any $a : A$, and any functor $F : \mathbf{Set}^{A^{\mathrm{op}}}$: $\hom_{\mathbf{Set}^{A^{\mathrm{op}}}}(ya, F) \cong Fa$, naturally in both $a$ and $F$.
-
-The proof is the standard one — a natural transformation $\alpha : ya \to F$ is determined by, and recoverable from, the single element $\alpha_a(1_a) : Fa$ (evaluate the identity morphism; conversely, given $x : Fa$, build $\alpha_{a'}(f) :\equiv F_{a,a'}(f)(x)$) — but stated as a genuine *isomorphism of sets*, not merely a bijection between abstract classes, because everything in sight is already a set.
-
-Two corollaries make the univalent version strictly sharper than the classical one:
-
-- **Corollary 9.5.6.** $y$ is fully faithful (immediate from Yoneda applied to $F = yb$).
-- **Corollary 9.5.7.** If $A$ is a category, $y_0 : A_0 \to (\mathbf{Set}^{A^{\mathrm{op}}})_0$ is an **embedding** — in particular, $ya = yb$ implies $a = b$. This upgrades the classical "Yoneda embedding is fully faithful, hence injective-on-objects-up-to-isomorphism" to a literal statement about equality of objects, because a fully-faithful functor between categories induces an equivalence on identity types (not merely on isomorphism-types).
-
-**Theorem 9.5.9** then shows that for a category $A$, "$F$ is representable" (i.e. $F \cong ya$ for some $a$) is a mere proposition — representations, when they exist, are unique on the nose, not just up-to-unique-isomorphism. This lets the book re-derive Lemma 9.3.2 (left-adjoint data is a mere proposition, for categories) via **Lemma 9.5.10**: being a left adjoint is equivalent to a certain hom-functor being representable at every object, and representability's propositional-ness (Theorem 9.5.9) transports directly.
-
-**Grounding (Lean/Rust).** The Yoneda lemma's "an object is determined by the functor it represents" is the exact categorical shadow of extensionality principles your elaborator already leans on — an object is nothing more than how it interacts with everything else via morphisms, just as (in an extensional type theory) a function is nothing more than its input-output behavior. If you ever formalize a small internal category (e.g. a type-class hierarchy graph) inside your verifier, Corollary 9.5.7 is the fact licensing you to treat "same represented functor" and "same object" interchangeably — without it, you'd need a separate uniqueness argument every time.
-
-## The structure identity principle: generalizing univalence to arbitrary structures
-
-Section 9.8 abstracts the pattern seen in $\mathbf{Set}$: univalence says $(A = B) \simeq (A \simeq B)$ for bare types; the structure identity principle (SIP) generalizes this to *types-with-structure* — groups, posets, topological spaces, or anything else you can layer as extra data-plus-axioms over an existing category.
-
-> **Definition 9.8.1 (Notion of structure).** A notion of structure $(P, H)$ over a precategory $X$ consists of: (i) a type family $P : X_0 \to \mathcal{U}$ of "structures on $x$"; (ii) for $f : \hom_X(x,y)$, $\alpha : Px$, $\beta : Py$, a mere proposition $H_{\alpha\beta}(f)$ ("$f$ is a homomorphism from $\alpha$ to $\beta$"); (iii) $H_{\alpha\alpha}(1_x)$ for all $\alpha$; (iv) closure under composition, $H_{\alpha\beta}(f) \to H_{\beta\gamma}(g) \to H_{\alpha\gamma}(g \circ f)$.
-
-Given such $(P,H)$, defining $\alpha \le_x \beta :\equiv H_{\alpha\beta}(1_x)$ turns $Px$ into a preorder (conditions (iii)-(iv) are exactly reflexivity/transitivity). $(P,H)$ is called **standard** if this preorder is a genuine partial order for every $x$ — i.e. structures that are homomorphic to each other in both directions (via identity morphisms) are literally equal, not merely order-equivalent.
-
-From $(P,H)$ you build the precategory $\mathrm{Str}_{(P,H)}(X)$ of *structured objects*: objects are pairs $(x, \alpha)$ with $\alpha : Px$, and $\hom((x,\alpha),(y,\beta)) :\equiv \{f : x \to y \mid H_{\alpha\beta}(f)\}$.
-
-> **Theorem 9.8.2 (Structure identity principle).** If $X$ is a category and $(P,H)$ is a *standard* notion of structure over $X$, then $\mathrm{Str}_{(P,H)}(X)$ is a category.
-
-The proof pattern is by now familiar: an equality $(x,\alpha) = (y,\beta)$ in a $\Sigma$-type unpacks to a path $p : x=y$ plus a (propositional, since $P$ is set-valued) witness $p_*(\alpha) = \beta$; an isomorphism $(x,\alpha) \cong (y,\beta)$ unpacks to an isomorphism $f : x \cong y$ in $X$ with $H_{\alpha\beta}(f)$ and $H_{\beta\alpha}(f^{-1})$; and because $X$ is a category (so $(x=y)\simeq(x\cong y)$ already), the whole thing reduces to checking $p_*(\alpha)=\beta$ iff both $H$-conditions hold at $\mathrm{idtoiso}(p)$ — which follows from standardness by path induction ($p \equiv \mathrm{refl}$ collapses both $H$-conditions to $\alpha \le_x \beta$ and $\beta \le_x \alpha$, hence $\alpha=\beta$ by antisymmetry).
-
-Two worked instances the book gives: (1) re-deriving Theorem 9.2.5 ($B^A$ is a category when $B$ is) by exhibiting functor-data as a *standard notion of structure* over the precategory of plain object-maps $B^{A_0}$; (2) building the category of $\Omega$-structures for an arbitrary first-order signature $\Omega$ (function symbols with arities, relation symbols with arities) directly out of $\mathbf{Set}_{\mathcal{U}}$, recovering "isomorphic algebraic structures are equal" as an instance of the general theorem rather than a bespoke argument per structure. This is precisely Voevodsky's slogan realized formally: univalence isn't just about the universe of bare types — it propagates automatically to *any* category of structured sets built the standard way, and SIP is the theorem that makes that propagation rigorous instead of folkloric.
-
-**Why this is load-bearing for anything checker-shaped.** This is the piece of the chapter with the clearest mechanism-level payoff for a verifier or elaborator: SIP is exactly the theorem you'd invoke to justify that your own internal notion of "these two structured objects (e.g. two elaborated instances of a type class, or two `Quotient` representatives carrying extra invariants) are interchangeable" is *sound* — i.e. that treating isomorphic structures as equal doesn't silently break anything downstream, because equality-as-isomorphism is provably consistent with the ambient category being a genuine (univalent) category. Where Lean's `Quotient` machinery lets you *postulate* that related elements are equal, SIP is the theorem explaining *when that postulate is safe to generalize* to richer structured settings — it's the general form of "quotienting is fine here" rather than a case-by-case argument.
-
-## The Rezk completion: repairing a precategory into a category
-
-Not every precategory you naturally construct is a category — the "naive" precategory of, say, group presentations, or any precategory built without checking `idtoiso` is an equivalence, may fail Definition 9.1.6. Section 9.9 shows there's a universal fix.
-
-The key notion: a functor $H : A \to B$ is a **weak equivalence** if it's fully faithful and essentially surjective (Definition 9.4.6) — recall from §9.4 that for categories, weak equivalence and equivalence-of-categories coincide, but for general precategories a weak equivalence need not have a specified inverse functor.
-
-The load-bearing fact, built up through **Lemmas 9.9.1–9.9.2** and then:
-
-> **Theorem 9.9.4.** If $H : A \to B$ is a weak equivalence and $C$ is a category, then precomposition $(- \circ H) : C^B \to C^A$ is an **isomorphism** (of categories).
-
-In words: *categories cannot distinguish a precategory from anything weakly equivalent to it* — any functor out of $A$ into a category factors, uniquely, through any weak equivalence $A \to B$. The proof is a careful "contractible fiber" argument (repeated for objects, then morphisms) that crucially uses that $C$ is a category exactly at the step where classical category theory would need choice: to define a function landing on *objects* uniquely specified "up to unique isomorphism," you need "unique isomorphism" to *be* "unique equality" — i.e. you need $C$'s `idtoiso` to be an equivalence, so the space of choices is provably contractible rather than merely non-empty.
-
-This universal property identifies the **Rezk completion**:
-
-> **Theorem 9.9.5.** For any precategory $A$, there's a category $\hat A$ and a weak equivalence $A \to \hat A$.
-
-The book gives two constructions. The slick one: take $\hat A_0 :\equiv \{F : \mathbf{Set}^{A^{\mathrm{op}}} \mid \exists a. \, ya \cong F\}$ — the representable presheaves — with hom-sets inherited from the presheaf category. Since $\mathbf{Set}^{A^{\mathrm{op}}}$ is a category (Theorem 9.2.5, since $\mathbf{Set}$ is a category by univalence), and $\hat A$ embeds fully faithfully into it, $\hat A$ is a category too; the Yoneda embedding $A \to \hat A$ is fully faithful (Corollary 9.5.6) and essentially surjective by construction — hence a weak equivalence. Elegant, but it silently jumps a universe level (you need a universe containing $\mathbf{Set}_{\mathcal U}$ itself).
-
-The second construction avoids that cost with a **higher inductive type**: $\hat A_0$ is generated by a point $i(a)$ for every $a : A$, a path constructor $j_e : i(a) = i(b)$ for every isomorphism $e : a \cong b$, coherence equations making $j$ respect identities and composition, and a 1-truncation constructor forcing $\hat A_0$ to be a 1-type. The slogan: $\hat A_0$ is "$A_0$ with isomorphic objects freely identified." Building $\hom_{\hat A}$, the precategory structure, and finally proving $\hat A$ is a category is (the book's own words) "wide and shallow, with many short cases" — exactly the kind of proof that benefits from a proof assistant rather than hand-checking, and a genuine illustration of a HIT doing real mathematical work rather than serving as a toy example.
-
-Finally, the Rezk completion closes the loop on the trichotomy from §9.4:
-
-> **Theorem 9.9.8.** A precategory $C$ is a category iff, for *every* weak equivalence $H : A \to B$, precomposition $(-\circ H) : C^B \to C^A$ is an isomorphism.
-
-("Only if" is Theorem 9.9.4; "if" specializes to the canonical weak equivalence $I : A \to \hat A$ and shows $I$ must then be a genuine isomorphism, so $A \cong \hat A$ as precategories, and $\hat A$ being a category forces $A$ to be one too.) In other words: **"category" is not an arbitrary extra axiom bolted onto "precategory" — it's forced by insisting that your notion of sameness treat weak equivalences as isomorphisms**, which is a property you'd want on independent grounds (it's the categorified form of univalence itself: "things that behave the same everywhere are the same").
+**Theorem 9.9.8 — the completion characterizes [[Type-Theory-as-a-Foundational-System-Qwen#The definition|the definition]].** *A precategory $C$ is a category iff, for every weak equivalence $H:A\to B$ of precategories, $(-\circ H):C^B\to C^A$ is an isomorphism.* Combined with Theorem 9.9.4, this says: "category" is not an arbitrary extra condition tacked onto "precategory" — it is *exactly* "sees every weak equivalence as an actual equivalence." The notion of category is fully determined by the notion of weak equivalence; if you accept the latter as the correct notion of "sameness" between precategories (which, per the chapter's opening, is forced on you by wanting to be isomorphism-invariant), the former follows.
 
 ```mermaid
-flowchart TD
-    P["Precategory A<br/>(idtoiso not assumed invertible)"] -->|"Yoneda embedding<br/>(always fully faithful)"| YA["Representable presheaves in Set^(A^op)<br/>= Rezk completion Â"]
-    YA -->|"is always a category<br/>(Set is a category by univalence)"| CAT["Category Â"]
-    P -->|"weak equivalence A → Â"| CAT
-    CAT -->|"C^Â ≅ C^A for any category C<br/>(Thm 9.9.4)"| UNIV["Â is the universal repair:<br/>every functor A → C<br/>factors essentially uniquely through Â"]
+flowchart TB
+    subgraph Precategory World
+        A["precategory A<br/>(idtoiso may not be invertible)"]
+    end
+    subgraph Category World
+        Ahat["Â = Rezk completion<br/>(idtoiso IS an equivalence)"]
+    end
+    A -->|"I : A → Â<br/>fully faithful + essentially surjective<br/>= weak equivalence"| Ahat
+    Ahat -->|"universal property:<br/>any F : A → C (C a category)<br/>factors essentially uniquely through I"| C["any category C"]
+    A -.->|"F"| C
 ```
+
+**Examples that make it concrete:** the Rezk completion of the fundamental *pregroupoid* of a type $X$ is its fundamental *groupoid* — identifiable with the 1-truncation $\lVert X\rVert_1$ (Example 9.9.6). The Rezk completion of the homotopy precategory of types is the *homotopy category of types*, with object-type $\lVert\mathcal U\rVert_1$ (Example 9.9.7). Both are cases where "isomorphic-up-to-a-truncated-path" needed to be upgraded to "literally identified" before the category axiom could hold — Rezk completion is the generic machine for doing that upgrade.
+
+**Elaborator/unification framing.** The Rezk completion is the categorical mirror of a *quotient-by-a-congruence* construction you'd build for a term language modulo definitional equality: you start with raw syntax (a "precategory" where syntactic identity is finer than the equivalence you actually care about — $\alpha$-equivalence, or $\beta\eta$-conversion classes), and you freely add exactly the paths needed to make "provably-interconvertible" and "identical" coincide, no more and no less (the HIT's truncation and coherence constructors are precisely "no more" — they don't add junk paths beyond what functoriality forces). A trusted kernel implementing `isDefEq` is implicitly committing to *some* precategory of terms already being (or being convertible into, via a normalization procedure) a category in this sense: the soundness property you want from a normalizer is exactly "if two terms are related by the conversion relation, and you can't tell them apart at any test, they're the same term" — the elaborator-side analogue of Theorem 9.9.8's "sees every weak equivalence as an equivalence."
 
 ## Where this leads
 
-This chapter is the categorified instance of the whole book's central move. Chapters 1–4 build the machinery (path induction, transport, `idtoeqv`) and Chapter 2's univalence axiom asserts $(A=B)\simeq(A\simeq B)$ for bare types. Chapter 9 shows this same equation, restricted to hom-sets between objects (`idtoiso` an equivalence), is exactly the right definition to make "equivalent categories are equal" a *theorem* rather than folklore, and does so without invoking choice — a genuine mathematical dividend, not just an aesthetic one. Section 9.8's structure identity principle then generalizes the pattern one more notch: any category of set-level structures built the standard way over a univalent base automatically inherits "isomorphic $\Rightarrow$ equal," which is exactly the mechanism Chapter 10 relies on when it shows $\mathbf{Set}$ itself, and constructions like cardinal and [[Sets-in-Univalent-Foundations#Ordinal numbers|ordinal numbers]] built on top of it, behave the way a working mathematician expects (see the sibling topic on [[Sets-in-Univalent-Foundations|sets in univalent foundations]]). The Rezk completion, meanwhile, is the chapter's structural proof that "category" (as opposed to "precategory") isn't an arbitrary choice among several plausible definitions — it's the one forced by requiring that equivalence-invariant reasoning actually work, in exactly the same sense that univalent types are the ones where equivalence-invariant reasoning about types works.
+Chapter 9 sits at the head of the book's "mathematical applications" arc (Chapters 8–11): Chapter 8 built the raw $\infty$-groupoid machinery (higher paths, truncation levels, $\pi_1(S^1)$); Chapter 9 shows that 1-category theory, done univalently, both (a) resolves a genuine foundational awkwardness in classical category theory (the AC-dependence of "fully faithful + essentially surjective $\Rightarrow$ equivalence") and (b) hands you a reusable machine (the structure identity principle) for getting univalence "for free" on any first-order algebraic structure built over $\mathbf{Set}$. That machine is exactly what Chapter 10 needs: it shows $\mathbf{Set}$ itself is a $\Pi W$-pretopos using the category-theoretic apparatus built here, and the structure identity principle is what makes categories of set-level mathematical structures (groups, rings, ordinals, the cumulative hierarchy) behave the way univalent foundations promises throughout the rest of the book. The Rezk completion, meanwhile, is the chapter's clearest demonstration of [[Higher-Inductive-Types|higher inductive types]] earning their keep outside of pure homotopy theory — freely adding exactly the paths a universal property demands, and no more.
 
-For the standing project: the structure identity principle is the most directly transferable idea here — it's the general theorem behind any claim of the form "two differently-built-but-isomorphic instances of a structure should be treated as equal downstream," which is precisely the soundness condition a `Quotient`-based or type-class-resolution-based elaborator needs to get right. The rest of the chapter (weak equivalence, the Rezk completion, Yoneda) is genuinely elegant HoTT-native mathematics but sits further from the compiler/elaborator target — treat it, per this project's own stated non-goals, as high-value background rather than a component to reimplement.
+For the standing project: this chapter is the cleanest source-text illustration of the general slogan "isomorphism up to unique iso, upgraded to literal equality by univalence, removes an implicit dependency on choice." That is the exact shape of argument you'll want when justifying that your elaborator's handling of definitionally-equal (or even just observationally-equivalent) terms is sound without secretly baking in an unjustified choice principle — and the structure identity principle is a direct, reusable template for proving "my type-class/trait hierarchy's notion of `Eq` coincides with its notion of isomorphism" once, generically, rather than per-instance.

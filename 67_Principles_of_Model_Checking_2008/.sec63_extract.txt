@@ -1,0 +1,318 @@
+334                                                                 Computation Tree Logic
+
+
+Proof: Any CTL formula can be transformed into PNF by successively “pushing” negations
+“inside” the formula at hand. This is facilitated by the following equivalence laws:
+
+                        ¬true         ≡   false
+                        ¬¬Φ           ≡   Φ
+                        ¬(Φ ∧ Ψ)      ≡   ¬Φ ∨ ¬Ψ
+                        ¬∀ Φ         ≡   ∃ ¬Φ
+                        ¬∃ Φ         ≡   ∀ ¬Φ
+                        ¬∀(Φ U Ψ)     ≡   ∃((Φ ∧ ¬Ψ) W (¬Φ ∧ ¬Ψ))
+                        ¬∃(Φ U Ψ)     ≡   ∀((Φ ∧ ¬Ψ) W (¬Φ ∧ ¬Ψ)).
+
+
+
+
+Due to the fact that in the rules for ∀ U and ∃ U the number of occurrences of Ψ (and Φ)
+is doubled, the length of an equivalent CTL formula may be exponentially longer than the
+original CTL formula. 3 The same phenomenon appeared in deﬁning the PNF for LTL
+when using the weak-until operator. As for LTL, this exponential blowup can be avoided by
+using the release operator, which in CTL can be deﬁned by: ∃(Φ R Ψ) = ¬∀((¬Φ) U (¬Ψ))
+and ∀(Φ R Ψ) = ¬∃((¬Φ) U (¬Ψ)).
+
+
+
+6.3     Expressiveness of CTL vs. LTL
+
+Although many relevant properties of reactive systems can be speciﬁed in LTL and CTL,
+the logics CTL and LTL are incomparable according to their expressiveness. More pre-
+cisely, there are properties that one can express in CTL, but that cannot be expressed in
+LTL, and vice versa.
+
+Let us ﬁrst deﬁne what it means for CTL and LTL formulae to be equivalent. Intuitively
+speaking, equivalent means “express the same thing”. More precisely:
+
+
+Deﬁnition 6.17.      Equivalence between CTL- and LTL Formulae
+CTL formula Φ and LTL formula ϕ (both over AP) are equivalent, denoted Φ ≡ ϕ, if for
+any transition system TS over AP:
+
+                             TS |= Φ if and only if TS |= ϕ.
+   3
+ “ Although the rewrite
+                  ”     rules for ¬∀“U and ¬∃ U could”    be simpliﬁed by ¬∀(Φ U Ψ) ≡
+∃ (¬Ψ) W (¬Φ ∧ ¬Ψ) and ¬∃(Φ U Ψ) ≡ ∀ (¬Ψ) W (¬Φ ∧ ¬Ψ) , there is still a duplication of formula
+Ψ.
+Expressiveness of CTL vs. LTL                                                           335
+
+
+
+
+The LTL formula ϕ holds in state s of a transition system whenever all paths starting in
+s satisfy ϕ. Given this (semantical) universal quantiﬁcation over paths, it seems natural
+that, e.g., the LTL formula ♦a is equivalent to the CTL formula ∀♦a. This seems to
+suggest that for a given CTL formula, an equivalent LTL formula is obtained by simply
+omitting all universal path quantiﬁers (as these are implicit in LTL). The following result
+by Clarke and Draghicescu [85] (for which the proof is omitted) shows that dropping all
+(universal and existential) quantiﬁers is a safe way to generate an equivalent LTL formula,
+provided there are equivalent LTL formulae:
+
+
+Theorem 6.18.       Criterion for Transforming CTL Formulae into Equivalent
+LTL Formulae
+Let Φ be a CTL formula, and ϕ the LTL formula that is obtained by eliminating all path
+quantiﬁers in Φ. Then:
+
+        Φ ≡ ϕ or there does not exist any LTL formula that is equivalent to Φ.
+
+
+
+
+For the following CTL formulae, an equivalent LTL formula is obtained by simply omitting
+all path quantiﬁers: a, ∀ a, ∀(a U b), ∀♦ a, ∀ a, and ∀ ∀♦ a. The fact that the CTL
+formula ∀ ∀♦ a is equivalent to the LTL formula  ♦ a has been established earlier in
+Remark 6.8 (326). However, ∀♦ ∀ a and ♦  a are not equivalent. The LTL formula ♦a
+ensures that a will eventually forever (i.e., continuously from some point on) hold. The
+semantics of ∀♦ ∀ a is diﬀerent, however. The CTL formula ∀♦ ∀ a asserts that on any
+computation, eventually some state, s say, is reached such that s |= ∀ a. Note that
+
+                                       s |= ∀♦ ∀a
+                                               
+                                                 Φ
+
+if and only if for any path π = s0 s1 s2 . . . ∈ Paths(s), sj |= Φ for some j. For Φ = ∀ a,
+this entails that for any such path π there is some state sj such that all reachable states
+from sj satisfy the atomic proposition a.
+
+
+Lemma 6.19.       Persistence
+The CTL formula ∀♦∀a and the LTL formula ♦a are not equivalent.
+
+
+Proof: Consider the following transition system TS over AP = { a }:
+336                                                                 Computation Tree Logic
+
+
+
+                                 s0             s1           s2
+                                 {a}            ∅            {a}
+
+
+The initial state s0 satisﬁes the LTL formula ♦  a, since each path starting in s0 eventually
+remains forever in one of the two states s0 or s2 , which are both labeled with a. The CTL
+formula ∀♦ ∀ a, however, does not hold in s0 , since we have sω0 |= ♦ ∀ a (as s0 |= ∀ a).
+This is due to the fact that the path s∗0 s1 sω2 passes through the ¬a-state s1 . Thus, sω0
+is a path starting in s0 which will never reach a state satisfying ∀a, i.e., sω0 |= ♦ ∀ a.
+Accordingly, it follows that
+                                        s0 |= ∀♦ ∀ a.
+
+
+
+Given that the CTL formulae ∀♦ ∀ a and the LTL formula ♦  a are not equivalent and
+the fact that ♦  a is obtained from ∀♦ ∀ a by eliminating the universal path quantiﬁers,
+it follows from Theorem 6.18 that there does not exist an LTL formula that is equivalent
+to ∀♦ ∀ a. In a similar way, it can be shown that the CTL formulae ∀♦ (a ∧ ∀ a)
+and ♦ (a ∧  a) are not equivalent, and thus, the requirement ∀♦ (a ∧ ∀ a) cannot be
+expressed in LTL.
+
+
+Lemma 6.20.       Eventually an a-State with only direct a-Successors
+The CTL formula ∀♦ (a ∧ ∀ a) and the LTL formula ♦ (a ∧  a) are not equivalent.
+
+
+Proof: Consider the transition system depicted in Figure 6.6. All paths that start in the
+initial state s0 have either as preﬁx the path fragment s0 s1 or s0 s3 s4 . Clearly, all such
+paths satisfy the LTL formula ♦ (a ∧  a), and so, s0 |= ♦ (a ∧  a). On the other
+hand, however, s0 |= ∀♦ (a ∧ ∀ a) as the path s0 s1 (s2 )ω does not satisfy ♦ (a ∧ ∀ a).
+This follows from the fact that state s0 has the non-a-state s3 as direct successor, i.e.,
+s0 |= a ∧ ∀ a.
+
+
+These examples show that certain requirements that can be expressed in CTL, cannot
+be expressed in LTL. The following theorem provides, in addition, some examples of
+LTL formulae for which no equivalent CTL formula exists. This establishes that the
+expressiveness of the temporal logics LTL and CTL are incomparable.
+Expressiveness of CTL vs. LTL                                                                337
+
+
+                                                                       ∅
+                                                                       s3
+
+
+                       s2              s1            s0
+
+                        ∅              {a}          {a}
+                                                                       s4
+                                                                      {a}
+
+                     Figure 6.6: Transition system for ∀♦ (a ∧ ∀ a).
+
+
+
+             ∅                   {a}                      ∅                 {a}
+             s0                   t0                   s0                  t0
+
+
+
+
+          Figure 6.7: The base transition systems: TS0 (left) and TS0 (right).
+
+
+Theorem 6.21.       Incomparable Expressiveness of CTL and LTL
+
+
+
+
+ (a) There exist LTL formulae for which no equivalent CTL formula exists. This holds
+     for, for instance
+                              ♦a      or      ♦(a ∧  a).
+
+ (b) There exist CTL formulae for which no equivalent LTL formula exists. This holds
+     for, for instance
+
+                       ∀♦ ∀ a     and       ∀♦ (a ∧ ∀ a)    and    ∀ ∃♦ a.
+
+
+Proof:
+
+
+ (a) Consider the formula ♦  a. The proof for ♦ (a ∧  a) goes along similar lines and
+     is omitted here. Consider the two series of transition systems TS0 , TS1 , TS2 , . . . and
+     TS0 , TS1 , TS2 , . . . that are inductively deﬁned as follows (see Figures 6.7 and 6.8).
+338                                                                           Computation Tree Logic
+
+
+              ∅                    {a}
+              sn                     tn                TSn−1
+
+
+
+
+               ∅                   {a}
+
+              sn                    tn               TSn−1
+
+
+
+
+            Figure 6.8: Inductive construction of TSn (upper) and TSn (lower).
+
+
+      For all transition systems, AP = { a }, and the action labels are not important. Let,
+      for n ⩾ 0,
+                              TSn = (Sn , { τ }, →n , { sn }, { a }, Ln )
+      and
+                                 TSn = (Sn , { τ }, →n , { sn }, { a }, Ln )
+      where S0 = { s0 , t0 }, S0 = { s0 , t0 }, and for n > 0:
+                           
+                     Sn = Sn−1 ∪ { sn , tn } and Sn = Sn−1
+                                                        
+                                                            ∪ { sn , tn }.
+
+      The labeling functions are deﬁned such that all states ti are labeled with { a } and
+      all states si are labeled with ∅. Thus, L0 (s0 ) = ∅ and L0 (t0 ) = { a }, and for n > 0,
+      the labels of all states in TSn−1 remain the same and are extended with
+
+                       Ln (sn ) = Ln (sn ) = ∅    and Ln (tn ) = Ln (tn ) = { a }.
+
+      Finally, the transition relations →n and →n contain →n−1 (where →−1 = ∅), as well
+      as the transitions
+                       TSn : sn →n tn , tn →n tn , tn →n sn−1 , tn →n sn
+                       TSn : sn →n tn , tn →n tn , tn →n sn−1
+
+      where the action labels are omitted for simplicity.
+      Thus, the only diﬀerence between TSn and TSn is the fact that TSn includes the
+      edge tn → sn , whereas this edge is absent in TSn . Some example instantiations of
+      TSn and TSn are indicated in Figure 6.9.
+Expressiveness of CTL vs. LTL                                                                     339
+
+
+             ∅                {a}                     ∅                   {a}
+             s1                 t1                    s0                  t0
+
+
+
+
+             ∅                {a}                     ∅                   {a}
+
+             s1                t1                   s0                  t0
+
+
+
+
+           Figure 6.9: The transition systems TS1 (upper) and TS1 (lower).
+
+
+     It follows from the construction of TSn and TSn that
+
+                         TSn |= ♦a and          TSn |= ♦a for all n ⩾ 0.
+
+     This can be proven as follows. TSn contains the initial path (sn tn )ω that visits sn
+     and tn in an alternating fashion. We have that
+
+            trace((sn tn )ω ) = ∅ { a } ∅ { a } ∅ . . .       thus trace((sn tn )ω ) |= ♦  a.
+
+     As the considered path is initial, it follows that TSn |= ♦  a. On the other hand, as
+     TSn has no opportunity to inﬁnitely often return to an ¬a-state, each initial path
+     in TSn is of the following form:
+
+                                        πi = sn tn . . . si (ti )ω
+
+     for some i. Due to the fact that
+
+                                trace(πi ) = ∅ { a } ∅ . . . ∅ ({ a })ω
+
+     it follows that trace(πi ) |= ♦  a. As this applies to any initial path of TSn , we have
+     TSn |= ♦  a.
+     By means of induction on n, it can be proven that TSn and TSn cannot be distin-
+     guished by any CTL formula of length at most n. That is to say, for all n ⩾ 0,
+
+            ∀CTL formula Φ with |Φ| ⩽ n : TSn |= Φ                   if and only if TSn |= Φ.
+
+     (The proof of this fact is left to the interested reader.)
+340                                                               Computation Tree Logic
+
+                           ∅              {a}                     ∅
+                           s               s                     s
+
+
+                                   (a)                            (b)
+
+                    Figure 6.10: Two transition systems for ∀ ∃♦ a.
+
+
+      The ﬁnal step of the proof is now as follows. Assume there is a CTL formula Φ that
+      is equivalent to ♦  a. Let n = |Φ| be the length of the formula Φ and
+
+                                   TS = TSn , TS = TSn .
+
+      On the one hand, it follows from TS |= ♦  a and TS |= ♦  a that
+
+                                     TS |= Φ and TS |= Φ.
+
+      On the other hand, it results from the fact that TSn and TSn cannot be distinguished
+      by a CTL formula (of length at most n) that Φ has the same truth-value under TS
+      and under TS . This yields a contradiction.
+
+ (b) We concentrate on the proof that there does not exist an equivalent formulation of
+     the CTL formula ∀ ∃♦ a in LTL. The fact that there do not exist equivalent LTL
+     formulations of the CTL formulae ∀♦ ∀ a and ∀♦ (a ∧ ∀ a) follows directly from
+     Lemmas 6.19 and 6.20 respectively, and Theorem 6.18. The proof for ∀ ∃♦ a is by
+     contraposition. Let ϕ be an LTL formula that is equivalent to ∀ ∃♦ a. Consider the
+     transition system TS depicted in Figure 6.10(a). As TS |= ∀ ∃♦ a, and ϕ ≡ ∀♦ ∃♦ a,
+     it follows that TS |= ϕ, and therefore
+
+                                   Traces(TS) ⊆ Words(ϕ).
+
+      Since π = sω is a path in TS, it follows that
+
+                     trace(π) = ∅ ∅ ∅ ∅ . . . ∈ Traces(TS) ⊆ Words(ϕ).
+
+      Now consider the transition system TS depicted in Figure 6.10(b). Note that TS is
+      part of transition system TS. The paths starting in s in TS are also paths starting
+      from s in TS, so we have s |= ϕ in TS and thus TS |= ϕ. However, s |= ∀ ∃♦ a,
+      since ∃♦ a is never valid along the only path sω , and thus TS |= ∀ ∃♦ a. This is a
+      contradiction.
+
