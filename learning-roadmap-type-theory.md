@@ -1,732 +1,808 @@
 # Learning Roadmap — Type Theory
 
-Type Theory is the ground floor of the whole project: it supplies the term/type
-representation the elaborator manipulates, the kernel's `isDefEq` judgment that
-decides when two terms are the same, and the surface language in which
-refinement contracts get expressed. This sequence starts from judgments and
-the Curry–Howard correspondence, builds up the dependent-type core
-(Π/Σ-types, equality, inductive families, universes), then turns to the two
-things the compiler actually needs built: an elaborator (bidirectional
-typing, metavariables, Miller-pattern unification) and a rewriting-based
-trusted kernel (λΠ-calculus modulo theory, in the Dedukti tradition). It
-closes with the semantic/foundational depth (categorical semantics, HoTT)
-and two adjacent threads (refinement types, automata-as-domains) that
-connect this area back to `automated-reasoning`, `sat-smt-csp`, and
-`static-analysis`.
+The `type-theory` Focus Area is the spine of the compiler project: it supplies the term/type representation, the kernel's `isDefEq`, the bidirectional elaborator with Miller-style metavariable unification, and the refinement-type surface language. The sequence below starts from computation and judgment forms, climbs through simple and polymorphic types into Martin-Löf dependent type theory (Π, Σ, identity, inductive families), then specializes into the mechanisms the compiler actually needs — definitional equality, bidirectional checking, pattern unification, Lean-style elaboration, refinement/subset types — and ends with semantic and foundational material (automata-based domains, categorical models, HoTT) that clarifies *why* the machinery is sound but is not on the critical path. Cross-area prerequisites (unification procedures, proof search, SAT/SMT) are referenced by name to the `automated-reasoning` and `sat-smt-csp` roadmaps rather than restated.
 
 ---
 
-## 1. Judgments, Contexts, and the Curry–Howard Correspondence (Core Topic)
+## 1. Computation, Lambda Calculus, and the Limits of Decidability (Core Topic)
 
 #### Pre-requisites
-None — this is the entry point of the whole Focus Area.
+None — entry point. Programming and compiler background is assumed.
 
 #### Why this topic is important
-Every later topic in this roadmap — typing rules, the elaborator, the
-trusted kernel — is a judgment form built out of the same primitive: a
-derivation object standing for a proof/program pair. Getting comfortable
-with "judgment as the shared ancestor of a type checker and a proof
-checker" now is what makes Topics 9–13 (bidirectional typing, elaboration,
-the λΠ-modulo kernel) legible later instead of feeling like unrelated
-machinery.
+Every later component (kernel, elaborator, abstract interpreter, CSP kernel) sits on a computation model whose termination, confluence and undecidability properties bound what it can promise. Church–Rosser is what `isDefEq` silently relies on when it normalizes and compares; Rice/halting are why your analyses must be sound-but-incomplete and why the CSP counterexample search is only semi-decidable. Later topics: 2, 3, 7, 15.
 
 #### Sources to Study
-1. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming (Thompson)]]
-   - [[The-Curry-Howard-Isomorphism-(Propositions-as-Types)]]
-   - [[Natural-Deduction-and-Predicate-Logic]]
-   - [[Contexts,-Derivability-and-Type-Uniqueness]]
-2. [[03_proofs_and_types_girard_1989/book-guidelines|Proofs and Types (Girard)]]
-   - [[Natural-Deduction]]
-   - [[The-Curry-Howard-Isomorphism]]
-3. [[01_programming_in_MLTT/book-guidelines|Programming in Martin-Löf's Type Theory (Nordström/Petersson/Smith)]]
-   - [[Propositions-as-Sets-(The-Curry-Howard-Correspondence)]]
-   - [[The-Semantics-of-Judgement-Forms]]
-   - [[General-Proof-Rules]]
-4. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types (Chlipala)]]
-   - [[The-Curry-Howard-Correspondence]]
+1. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages]]
+   - [[04_TAPL_Pierce_2002/The-Untyped-Lambda-Calculus|The Untyped Lambda-Calculus]]
+   - [[04_TAPL_Pierce_2002/Nameless-Representation-of-Terms|Nameless Representation of Terms]]
+2. [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/book-guidelines|Type Theory and Formal Proof]]
+   - [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/The-Untyped-Lambda-Calculus|The Untyped Lambda Calculus]]
+3. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming]]
+   - [[02_type_theory_functional_programming_thompson_1999/The-Lambda-Calculus|The Lambda Calculus]]
+4. [[10_boolos_burgess_computability_logic_2007/book-guidelines|Computability and Logic]]
+   - [[10_boolos_burgess_computability_logic_2007/Turing-and-Abacus-Computability|Turing and Abacus Computability]]
+   - [[10_boolos_burgess_computability_logic_2007/Recursive-Function-Theory|Recursive Function Theory]]
+   - [[10_boolos_burgess_computability_logic_2007/Uncomputability|Uncomputability]]
+5. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages]]
+   - [[07_practical_foundations_robert_harper_2012/Dynamic-Types-and-the-Untyped-Lambda-Calculus|Dynamic Types and the Untyped Lambda Calculus]]
+6. [[16_ENDERTON_Mathematical_Introduction_Logic/book-guidelines|A Mathematical Introduction to Logic]] (background)
+   - [[16_ENDERTON_Mathematical_Introduction_Logic/Representability-and-Recursive-Functions|Representability and Recursive Functions]]
 
 #### Key Concepts and Definitions
-1. Judgment $p:P$ and derivations built by rule application; discharge of assumptions vs. "alive" hypotheses.
-2. Natural deduction's introduction/elimination symmetry, and the deduction-to-λ-term interpretation (hypothesis→variable, ∧I→pair, ⇒I→abstraction).
-3. Primary equations (β, projection) vs. secondary equations (η, surjective pairing).
-4. A normal proof corresponds to a normal term independently — the basis for calling Curry–Howard a genuine isomorphism, not a mere bijection.
-5. Curry–Howard's "strain points": named vs. anonymous discharge, and where the correspondence stops being perfectly tree-shaped.
+1. $\beta$-reduction, redexes, normal forms; Church–Rosser (confluence) ⇒ at most one normal form.
+2. $\alpha$-conversion and capture-avoiding substitution; de Bruijn (nameless) representation as the implementation strategy for binders.
+3. Fixed-point combinators; Turing-completeness of the untyped calculus.
+4. Turing/abacus machines, general recursive functions; Church–Turing thesis.
+5. Halting problem, Rice's theorem, r.e. vs. recursive sets.
 
 #### Relevant Questions
-1. Why does Girard insist Curry–Howard is a true isomorphism, not just a bijection?
-2. What does it mean for a hypothesis to be "alive" vs. "discharged," and how does ⇒I show natural deduction is only "vaguely" tree-like?
-3. Why do the same four rules, read once as formula/proof and once as type/program, constitute the correspondence — and where does that reading show strain?
+1. Why does every untyped $\lambda$-term have a fixed point, and why is that both expressive power and a source of undecidability?
+2. What does Church–Rosser guarantee about outcomes regardless of reduction order, and why does a normalizing equality checker depend on it?
+3. In what precise sense does Rice's theorem rule out a sound *and* complete static analyzer for a Turing-complete language?
+4. What are the trade-offs between named, locally-nameless and de Bruijn representations for a Rust term type?
 
 ---
 
-## 2. The Lambda Calculus and Operational/Computational Semantics (Core Topic)
+## 2. Judgments, Inductive Definitions, Binding, and Substitution (Core Topic)
 
 #### Pre-requisites
-[[#1. Judgments, Contexts, and the Curry–Howard Correspondence (Core Topic)|Topic 1]] (judgments and typing-rule notation).
+1. Computation, Lambda Calculus, and the Limits of Decidability.
 
 #### Why this topic is important
-The elaborator's term representation and the kernel's reduction/defeq
-machinery are both built directly on top of the λ-calculus's substitution
-and β-reduction. Progress + preservation here is the same safety argument
-you'll later re-run, in a much more elaborate form, for the dependently
-typed kernel (Topics 5, 13).
+Judgment forms and rules are the shared ancestor of "a type checker" and "a proof checker": they are what your kernel implements and what rule induction proves things about. Hypothetical/general judgments give you contexts and weakening/substitution lemmas — the plumbing under both elaboration and Hoare-logic soundness. Type safety (progress + preservation) is the template for every soundness argument in the project. Later topics: 3–12.
 
 #### Sources to Study
-1. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages (Pierce)]]
-   - Untyped and simply-typed λ-calculus, operational semantics, and type-safety articles ([[Untyped-Lambda-Calculus]]-family; see the book's Topic List for the full 27-article set)
-2. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages (Harper)]]
-   - Function types and the λ-calculus, System T, PCF articles
+1. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages]]
+   - [[07_practical_foundations_robert_harper_2012/Syntactic-Objects-and-Binding|Syntactic Objects and Binding]]
+   - [[07_practical_foundations_robert_harper_2012/Inductive-Definitions-and-Rule-Induction|Inductive Definitions and Rule Induction]]
+   - [[07_practical_foundations_robert_harper_2012/Hypothetical-and-General-Judgments|Hypothetical and General Judgments]]
+   - [[07_practical_foundations_robert_harper_2012/Statics-And-Dynamics|Statics and Dynamics]]
+   - [[07_practical_foundations_robert_harper_2012/Type-Safety|Type Safety]]
+2. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages]]
+   - [[04_TAPL_Pierce_2002/Inductive-Definitions-and-Proof-Techniques|Inductive Definitions and Proof Techniques]]
+   - [[04_TAPL_Pierce_2002/Operational-Semantics|Operational Semantics]]
+   - [[04_TAPL_Pierce_2002/Type-Safety|Type Safety]]
+   - [[04_TAPL_Pierce_2002/Canonical-Forms-Lemmas|Canonical Forms Lemmas]]
+3. [[01_programming_in_MLTT/book-guidelines|Programming in Martin-Löf's Type Theory]]
+   - [[01_programming_in_MLTT/The-Theory-of-Expressions|The Theory of Expressions]]
+   - [[01_programming_in_MLTT/The-Semantics-of-Judgement-Forms|The Semantics of Judgement Forms]]
+4. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory]]
+   - [[84_type-theory-book_Daniel_Gratzer_2026/Judgments-and-the-Substitution-Calculus|Judgments and the Substitution Calculus]]
+5. [[16_ENDERTON_Mathematical_Introduction_Logic/book-guidelines|A Mathematical Introduction to Logic]]
+   - [[16_ENDERTON_Mathematical_Introduction_Logic/Induction-and-Recursion-on-Freely-Generated-Sets|Induction and Recursion on Freely Generated Sets]]
+6. [[46_Principles_of_Program_Analysis-Springer_2005/book-guidelines|Principles of Program Analysis]] — WHILE/FUN semantics (bridge to `static-analysis`)
 
 #### Key Concepts and Definitions
-1. Untyped λ-calculus: abstraction, application, capture-avoiding substitution, β-reduction.
-2. De Bruijn nameless representation and the shifting operation it requires.
-3. Church encodings and fixed-point (Y/Z) combinators for recursion without a primitive construct.
-4. Simply typed λ-calculus with contexts $\Gamma \vdash t : T$; typing rules T-Var/T-Abs/T-App.
-5. Inversion, uniqueness of types, weakening, permutation; canonical-forms lemma.
-6. Type safety = progress + preservation.
+1. Judgment, rule, derivation; inductive definition and rule induction.
+2. Hypothetical vs. general judgments; contexts, weakening, exchange, contraction, substitution lemma.
+3. Abstract binding trees; structural vs. transition (small-step) semantics; statics vs. dynamics.
+4. Progress and preservation ⇒ type safety; canonical forms.
+5. Explicit substitutions / the substitution calculus as the basis of dependent-type presentations.
 
 #### Relevant Questions
-1. Why must substitution avoid variable capture, and how do fixed-point combinators encode recursion without a primitive construct?
-2. Why does de Bruijn substitution need shifting that named substitution doesn't?
-3. How do progress and preservation together entail that a well-typed term never gets stuck?
+1. Why is the substitution lemma the load-bearing lemma of preservation, and where does variable capture bite when you implement it?
+2. How do a typing judgment $\Gamma \vdash e : \tau$ and a provability judgment $\Gamma \vdash A$ differ only in what is being tracked?
+3. What is the difference between proving safety via progress/preservation and via a logical-relations argument?
 
 ---
 
-## 3. Subtyping, Polymorphism, and System F (Core Topic)
+## 3. Simply Typed $\lambda$-Calculus, Curry–Howard, and Normalization (Core Topic)
 
 #### Pre-requisites
-[[#2. The Lambda Calculus and Operational/Computational Semantics (Core Topic)|Topic 2]].
+1. Judgments, Inductive Definitions, Binding, and Substitution.
 
 #### Why this topic is important
-System F's reducibility-candidates normalization proof and its
-operational reading of $\forall$ as a "plugging instruction" are the
-last simply-typed-world ideas before dependent types make everything
-context-relative. Subtyping's safety metatheory (progress/preservation
-under $<:$) is also the closest non-dependent analogue to the
-subsumption reasoning refinement-type checking will need in Topic 17.
+STLC is the smallest language where the type checker and proof checker coincide, and strong normalization is what makes definitional equality decidable — your kernel's termination guarantee. Natural deduction ↔ typed terms is the proof-term reconstruction story used by the theorem prover (see `automated-reasoning` roadmap). Later topics: 4, 5, 7.
 
 #### Sources to Study
-1. [[03_proofs_and_types_girard_1989/book-guidelines|Proofs and Types (Girard)]]
-   - [[System-F-and-Polymorphism]]
-   - [[Semantics-of-System-F]]
-2. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages (Pierce)]]
-   - Subtyping (+ metatheory/algorithms), [[Universal-Types-(System-F)]], bounded quantification articles
-3. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages (Harper)]]
-   - System F/polymorphism, subtyping articles
+1. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages]]
+   - [[04_TAPL_Pierce_2002/The-Simply-Typed-Lambda-Calculus|The Simply Typed Lambda-Calculus]]
+   - [[04_TAPL_Pierce_2002/The-Curry-Howard-Correspondence|The Curry-Howard Correspondence]]
+   - [[04_TAPL_Pierce_2002/Normalization|Normalization]]
+   - [[04_TAPL_Pierce_2002/Core-Language-Extensions|Core Language Extensions]]
+2. [[03_proofs_and_types_girard_1989/book-guidelines|Proofs and Types]]
+   - [[03_proofs_and_types_girard_1989/Natural-Deduction|Natural Deduction]]
+   - [[03_proofs_and_types_girard_1989/The-Curry-Howard-Isomorphism|The Curry-Howard Isomorphism]]
+   - [[03_proofs_and_types_girard_1989/Normalisation-Theorems|Normalisation Theorems]]
+   - [[03_proofs_and_types_girard_1989/Gödel's-System-T|Gödel's System T]]
+3. [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/book-guidelines|Type Theory and Formal Proof]]
+   - [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/The-Simply-Typed-Lambda-Calculus|The Simply Typed Lambda Calculus]]
+   - [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/The-Curry-Howard-Isomorphism|The Curry–Howard Isomorphism]]
+   - [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/Metatheory-of-Typed-Lambda-Calculi|Metatheory of Typed Lambda Calculi]]
+4. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages]]
+   - [[07_practical_foundations_robert_harper_2012/Function-Types-and-the-Lambda-Calculus|Function Types and the Lambda Calculus]]
+   - [[07_practical_foundations_robert_harper_2012/Godels-System-T-and-Total-Computation|Gödel's System T and Total Computation]]
+   - [[07_practical_foundations_robert_harper_2012/Plotkins-PCF-and-Partial-Computation|Plotkin's PCF and Partial Computation]]
+   - [[07_practical_foundations_robert_harper_2012/Product-Types|Product Types]]
+   - [[07_practical_foundations_robert_harper_2012/Sum-Types|Sum Types]]
+   - [[07_practical_foundations_robert_harper_2012/Propositions-as-Types|Propositions as Types]]
+5. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming]]
+   - [[02_type_theory_functional_programming_thompson_1999/Natural-Deduction-and-Predicate-Logic|Natural Deduction and Predicate Logic]]
+   - [[02_type_theory_functional_programming_thompson_1999/The-Curry-Howard-Isomorphism-(Propositions-as-Types)|The Curry-Howard Isomorphism]]
+   - [[02_type_theory_functional_programming_thompson_1999/Normalisation-and-Computational-Properties|Normalisation and Computational Properties]]
+6. [[60_Structural_Proof_Theory_Negri_Plato_2008/book-guidelines|Structural Proof Theory]]
+   - [[60_Structural_Proof_Theory_Negri_Plato_2008/The-Sequent-Calculus-Natural-Deduction-Isomorphism|The Sequent Calculus–Natural Deduction Isomorphism]]
 
 #### Key Concepts and Definitions
-1. System F types/terms: types as $(\wedge, \Rightarrow)$-formulas plus $\forall$; polymorphic quantification.
-2. Strong normalization for System F via reducibility candidates (not plain structural induction).
-3. Coherence-space denotational semantics.
-4. Subtyping judgment $t : T$ with structural subsumption; safety metatheory under $<:$.
-5. Bounded quantification, existential types for data abstraction.
-6. Higher-order polymorphism: type operators, kinding, System F$\omega$.
+1. STLC typing rules; $\beta\eta$-equality; type erasure.
+2. Curry–Howard: implication ↔ function type, conjunction ↔ product, disjunction ↔ sum, $\bot$ ↔ empty type.
+3. Weak vs. strong normalization; reducibility candidates / logical predicates.
+4. System T: primitive recursion at higher type; totality vs. PCF's partiality.
+5. Inversion principle and harmony of introduction/elimination rules.
 
 #### Relevant Questions
-1. Why does strong normalisation for F require a reducibility-candidate argument, not a simple structural induction?
-2. In what sense is a type a "plugging instruction" under the operational reading of System F?
-3. What does subtyping's progress+preservation proof need beyond simple typing's?
+1. Why can't a normalizing calculus be Turing-complete, and what does the compiler pay for the guarantee?
+2. How does the reducibility-candidate proof of strong normalization get around the circularity of induction on types?
+3. Why does the inversion principle say elimination rules are "justified" by introduction rules, and how does it shape rule design?
 
 ---
 
-## 4. Dependent Types: Π-Types, Σ-Types, and Type Families (Core Topic)
+## 4. Polymorphism, System F, and the $\lambda$-Cube (Core Topic)
 
 #### Pre-requisites
-[[#3. Subtyping, Polymorphism, and System F (Core Topic)|Topic 3]] (non-dependent quantification as a baseline to generalize from).
+1. Simply Typed $\lambda$-Calculus, Curry–Howard, and Normalization.
 
 #### Why this topic is important
-This is the surface language of the refinement-type compiler itself.
-Π and Σ are the type formers everything else in this roadmap (universes,
-elaboration, the λΠ-calculus-modulo kernel) is stated in terms of, and
-the explicit substitution calculus introduced here is exactly the
-plumbing the elaborator's context management will need.
+The $\lambda$-cube organizes the ways types and terms can depend on each other; $\lambda\Pi$ (types depending on terms) is the corner your language lives in, and the Calculus of Constructions is the top. System F also underlies higher-rank inference (topic 8) and the parametricity reasoning used for abstraction.
 
 #### Sources to Study
-1. [[01_programming_in_MLTT/book-guidelines|Programming in Martin-Löf's Type Theory (Nordström/Petersson/Smith)]]
-   - [[The-Cartesian-Product-of-a-Family-and-the-Universal-Quantifier]]
-   - [[Equality-Sets]]
-   - [[The-Cartesian-Product-of-Two-Sets-and-Conjunction]]
-   - [[Disjoint-Unions-and-the-Existential-Quantifier]]
-2. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory (Angiuli & Gratzer)]]
-   - [[Full-Spectrum-Dependent-Types]]
-   - [[Judgments-and-the-Substitution-Calculus]]
-   - [[Type-Connectives-via-Universal-Properties]]
-3. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming (Thompson)]]
-   - [[Quantifiers-and-Dependent-Types]]
-4. [[05_ATAPL_Pierce_2004/book-guidelines|Advanced Topics in Types and Programming Languages (ed. Pierce)]]
-   - [[Dependent-Types]]
+1. [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/book-guidelines|Type Theory and Formal Proof]]
+   - [[06_type_theory_and_formal_proof_nederpelt_geuvers_2014/The-Lambda-Cube-of-Type-Systems|The Lambda Cube of Type Systems]]
+2. [[03_proofs_and_types_girard_1989/book-guidelines|Proofs and Types]]
+   - [[03_proofs_and_types_girard_1989/System-F-and-Polymorphism|System F and Polymorphism]]
+   - [[03_proofs_and_types_girard_1989/Semantics-of-System-F|Semantics of System F]]
+3. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages]]
+   - [[04_TAPL_Pierce_2002/Universal-Types-(System-F)|Universal Types (System F)]]
+   - [[04_TAPL_Pierce_2002/Existential-Types|Existential Types]]
+   - [[04_TAPL_Pierce_2002/Type-Operators-and-Kinding|Type Operators and Kinding]]
+   - [[04_TAPL_Pierce_2002/Higher-Order-Polymorphism-(System-F-omega)|Higher-Order Polymorphism (System $F^\omega$)]]
+4. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages]]
+   - [[07_practical_foundations_robert_harper_2012/Polymorphism-and-System-F|Polymorphism and System F]]
+   - [[07_practical_foundations_robert_harper_2012/Data-Abstraction-and-Existential-Types|Data Abstraction and Existential Types]]
+   - [[07_practical_foundations_robert_harper_2012/Constructors-and-Kinds|Constructors and Kinds]]
+5. [[57_Categorical_Logic_Type_Theory_BART_JACOBS/book-guidelines|Categorical Logic and Type Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Polymorphic-Type-Theory|Polymorphic Type Theory]]
+6. [[05_ATAPL_Pierce_2004/book-guidelines|Advanced Topics in Types and Programming Languages]]
+   - [[05_ATAPL_Pierce_2004/Logical-Relations-and-Equivalence-Checking|Logical Relations and Equivalence Checking]]
+
+#### Additional external sources
+- Barendregt, *Lambda Calculi with Types* (1992) — the canonical PTS/λ-cube reference; Wadler, *Theorems for Free!* (1989) for parametricity.
 
 #### Key Concepts and Definitions
-1. $\Pi(A,B)$ as the dependent function set, canonical element $\lambda(b)$, elimination via `apply`/`funsplit`.
-2. Non-dependent product $A \times B$ as a special case of Σ; projections via `split`.
-3. Hypothetical judgments and context-relative typing $\Gamma \vdash A\ \mathrm{type}$.
-4. Explicit substitution calculus: weakening $\mathbf p$, variable $\mathbf q$, substitution extension $\gamma.a$.
-5. Π's "mapping-in" universal property (internalizing hypothetical judgment) vs. Σ's (internalizing pairs).
-6. Functional extensionality provable via $Eq$ but not via the intensional identity type $Id$.
+1. Impredicative universal quantification $\forall\alpha.\,T$; System $F\omega$ and kinds.
+2. The eight systems of the $\lambda$-cube; Pure Type Systems (sorts, axioms, rules).
+3. Existential types as abstract data types.
+4. Parametricity / relational interpretation of types.
 
 #### Relevant Questions
-1. Why is Π's generality essential for interpreting $\forall$ and dependent specifications?
-2. Why can $\langle \mathrm{fst}(z), \mathrm{snd}(z)\rangle =_{A\times B} z$ be proved propositionally but not judgementally?
-3. Why must Σ-types fail to behave as existential quantifiers under "propositions as some types"?
+1. Which cube edge does each of: polymorphism, type constructors, dependent types, add — and which combination does Lean's kernel land on?
+2. Why is type inference for System F undecidable, and what restriction recovers it?
+3. Why does impredicativity break naive set-theoretic models?
 
 ---
 
-## 5. Definitional Equality, Reduction, and Normalization (Core Topic)
+## 5. Martin-Löf Type Theory: Π, Σ, Identity, Universes (Core Topic)
 
 #### Pre-requisites
-[[#4. Dependent Types: Π-Types, Σ-Types, and Type Families (Core Topic)|Topic 4]].
+2. Judgments, Inductive Definitions, Binding, and Substitution; 3. STLC/Curry–Howard; 4. λ-cube.
 
 #### Why this topic is important
-This is the mechanism your elaborator's `isDefEq` will need — the exact
-question of when two terms in the trusted kernel count as "the same
-type." The undecidability result for extensional equality reflection is
-also the concrete reason the kernel design in Topic 13 has to commit to
-intensional equality plus controlled rewrite rules instead.
+This is the calculus your kernel implements: the four judgment forms, contexts, $\Pi$/$\Sigma$/identity/inductive type formers, and universe hierarchy. Refinement types are a restriction of $\Sigma$/subset types over this base; dependent contracts (`requires`/`ensures`) are $\Pi$-types over propositions. Everything from topics 6–12 assumes fluency here.
 
 #### Sources to Study
-1. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming (Thompson)]]
-   - [[Equality-in-Type-Theory]]
-   - [[Normalisation-and-Computational-Properties]]
-2. [[17_HofmannExtensionalIntensionalTypeTheory1995/book-guidelines|Extensional Concepts in Intensional Type Theory (Hofmann)]]
-   - Definitional vs. propositional equality; independence-of-UIP articles
+1. [[01_programming_in_MLTT/book-guidelines|Programming in Martin-Löf's Type Theory]]
+   - [[01_programming_in_MLTT/Propositions-as-Sets-(The-Curry-Howard-Correspondence)|Propositions as Sets]]
+   - [[01_programming_in_MLTT/General-Proof-Rules|General Proof Rules]]
+   - [[01_programming_in_MLTT/The-Cartesian-Product-of-a-Family-and-the-Universal-Quantifier|Cartesian Product of a Family & Universal Quantifier]]
+   - [[01_programming_in_MLTT/Disjoint-Unions-and-the-Existential-Quantifier|Disjoint Unions & Existential Quantifier]]
+   - [[01_programming_in_MLTT/Equality-Sets|Equality Sets]]
+   - [[01_programming_in_MLTT/The-Universe-of-Small-Sets|The Universe of Small Sets]]
+2. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming]]
+   - [[02_type_theory_functional_programming_thompson_1999/The-Formal-System-of-Type-Theory-(TT0)|The Formal System of Type Theory ($TT_0$)]]
+   - [[02_type_theory_functional_programming_thompson_1999/Quantifiers-and-Dependent-Types|Quantifiers and Dependent Types]]
+   - [[02_type_theory_functional_programming_thompson_1999/Contexts,-Derivability-and-Type-Uniqueness|Contexts, Derivability and Type Uniqueness]]
+   - [[02_type_theory_functional_programming_thompson_1999/Universes-and-Well-Founded-Types|Universes and Well-Founded Types]]
+3. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory]]
+   - [[84_type-theory-book_Daniel_Gratzer_2026/Full-Spectrum-Dependent-Types|Full-Spectrum Dependent Types]]
+   - [[84_type-theory-book_Daniel_Gratzer_2026/Type-Connectives-via-Universal-Properties|Type Connectives via Universal Properties]]
+   - [[84_type-theory-book_Daniel_Gratzer_2026/Metatheory-and-Implementation-of-Type-Theory|Metatheory and Implementation of Type Theory]]
+4. [[11_ulf_norell_thesis_2007/book-guidelines|Towards a Practical Programming Language Based on Dependent Type Theory]]
+   - [[11_ulf_norell_thesis_2007/Dependent-Type-Theory-Foundations|Dependent Type Theory Foundations]]
+5. [[05_ATAPL_Pierce_2004/book-guidelines|Advanced Topics in Types and Programming Languages]]
+   - [[05_ATAPL_Pierce_2004/Dependent-Types|Dependent Types]]
+6. [[04_TAPL_Pierce_2002/Dependent-Types|TAPL — Dependent Types]]
+7. [[07_practical_foundations_robert_harper_2012/Singleton-and-Dependent-Kinds|PFPL — Singleton and Dependent Kinds]]
+8. [[57_Categorical_Logic_Type_Theory_BART_JACOBS/book-guidelines|Categorical Logic and Type Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/First-Order-Dependent-Type-Theory|First Order Dependent Type Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Strength-of-Sum-and-Equality-Types|Strength of Sum and Equality Types]]
+9. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Universes-and-Axioms|Universes and Axioms]]
+
+#### Additional external sources
+- Martin-Löf, *Intuitionistic Type Theory* (Bibliopolis, 1984); Lean 4 kernel documentation (*Type Checking in Lean 4*, Carneiro) for the concrete kernel rule set and universe-level checks.
 
 #### Key Concepts and Definitions
-1. Computation rules vs. equivalence (extensionality) rules; convertibility $\leftrightarrow_{\beta\eta}$.
-2. Identity type $I(A,a,b)$ and its elimination operator $J$.
-3. Equality reflection rule (defines ETT) vs. intensional Id-types.
-4. ETT's definitional equality/typechecking is undecidable — two independent proofs (SK-combinator encoding; Hofmann's Turing-machine interpreter).
-5. Uniqueness of Identity Proofs (UIP) and Axiom K; the groupoid model refuting UIP.
+1. Four judgment forms: $\Gamma \vdash A\ \mathsf{type}$, $\Gamma \vdash a : A$, and the two equalities; well-formed contexts.
+2. $\Pi$-formation/intro/elim/$\beta$/$\eta$; $\Sigma$-types and projections; identity type with $J$.
+3. Universe hierarchies, cumulativity, Girard's paradox ($U:U$).
+4. Full-spectrum (non-uniform) dependency vs. refinement-style uniform dependency.
+5. Type uniqueness / subject reduction.
 
 #### Relevant Questions
-1. Why does `succ(n)` hold propositionally but not judgementally equal to `addone(n)`?
-2. Why is definitional equality in ETT undecidable, and what role does the equality-reflection rule play?
-3. Why can identity types not get a mapping-in universal property the way Eq-types can?
+1. Why do $\Sigma$-types fail to be existential quantifiers under "propositions as some types," and what does truncation/`Prop` add?
+2. What distinguishes uniform from full-spectrum dependency, and why does the refinement-type approach handle only the former?
+3. Which context-validity and substitution invariants must a Rust kernel enforce to keep the judgment forms well-scoped?
+4. Why does removing $U:U$ avoid Girard's paradox?
 
 ---
 
-## 6. Inductive Types, Pattern Matching, and Elimination Principles (Core Topic)
+## 6. Inductive Types, Inductive Families, and Dependent Pattern Matching (Core Topic)
 
 #### Pre-requisites
-[[#5. Definitional Equality, Reduction, and Normalization (Core Topic)|Topic 5]].
+5. Martin-Löf Type Theory.
 
 #### Why this topic is important
-Inductive families are how both program data and proof terms get
-represented in the elaborator, and the strict-positivity and
-guarded-recursion conditions here are exactly the admissibility checks a
-Rust kernel implementation has to enforce to stay sound. This is also
-where "pattern matching vs. eliminators" gets settled — directly
-relevant to how the compiler's surface syntax gets elaborated down to
-core terms.
+Inductive families (e.g. length-indexed vectors, well-scoped syntax) are the data-structure language of your compiler and the way refinement invariants ("sorted", "in-bounds") are carried by types. Recursors are the kernel's computation rules; dependent pattern matching is what the elaborator must compile into them. Later: 7, 11, 12, 15.
 
 #### Sources to Study
-1. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types (Chlipala)]]
-   - [[Inductive-Types]]
-   - [[Inductive-Predicates-and-Judgments]]
-   - [[Coinductive-Types-and-Infinite-Data]]
-2. [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/book-guidelines|Dependently Typed Functional Programs and their Proofs (McBride)]]
-   - [[Inductive-Datatypes-and-Their-Elimination]]
-   - [[Pattern-Matching-for-Dependent-Types]]
-   - [[Elimination-Rules-for-Refinement-Proof]]
-3. [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/book-guidelines|Dedukti: A Logical Framework based on the λΠ-Calculus Modulo Theory]]
-   - [[Inductive-Types-and-Universe-Hierarchies]]
+1. [[01_programming_in_MLTT/book-guidelines|Programming in Martin-Löf's Type Theory]]
+   - [[01_programming_in_MLTT/Natural-Numbers-and-Lists|Natural Numbers and Lists]]
+   - [[01_programming_in_MLTT/Well-Orderings-and-General-Trees|Well-Orderings and General Trees]]
+2. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming]]
+   - [[02_type_theory_functional_programming_thompson_1999/Base-Types-and-Data-Types|Base Types and Data Types]]
+   - [[02_type_theory_functional_programming_thompson_1999/Well-Founded-and-General-Recursion|Well-Founded and General Recursion]]
+3. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Inductive-Types|Inductive Types]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Inductive-Predicates-and-Judgments|Inductive Predicates and Judgments]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Dependent-Types-for-Program-Correctness|Dependent Types for Program Correctness]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Techniques-for-General-Recursion|Techniques for General Recursion]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Reasoning-About-Equality-Proofs|Reasoning About Equality Proofs]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Reasoning-About-Programming-Language-Syntax|Reasoning About Programming Language Syntax]]
+4. [[11_ulf_norell_thesis_2007/book-guidelines|Towards a Practical Programming Language Based on Dependent Type Theory]]
+   - [[11_ulf_norell_thesis_2007/Pattern-Matching-over-Inductive-Families|Pattern Matching over Inductive Families]]
+   - [[11_ulf_norell_thesis_2007/The-Agda-Language|The Agda Language]]
+5. [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/book-guidelines|Dependently Typed Functional Programs and their Proofs]]
+   - [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/Inductive-Datatypes-and-Their-Elimination|Inductive Datatypes and Their Elimination]]
+   - [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/Pattern-Matching-for-Dependent-Types|Pattern Matching for Dependent Types]]
+   - [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/Equality-and-Object-Level-Unification|Equality and Object-Level Unification]]
+6. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages]]
+   - [[07_practical_foundations_robert_harper_2012/Pattern-Matching|Pattern Matching]]
+   - [[07_practical_foundations_robert_harper_2012/Inductive-and-Coinductive-Types|Inductive and Coinductive Types]]
+   - [[07_practical_foundations_robert_harper_2012/Generic-Programming|Generic Programming]]
+7. [[14_homotopy_type_theory/book-guidelines|Homotopy Type Theory]]
+   - [[14_homotopy_type_theory/Inductive-Definitions-and-Initial-Algebras|Inductive Definitions and Initial Algebras]]
+   - [[14_homotopy_type_theory/W-Types-as-Well-Founded-Trees|W-Types as Well-Founded Trees]]
+
+#### Additional external sources
+- Dybjer, "Inductive Families" (1994); Cockx, Devriese & Piessens, "Unifiers as Equivalences" / "Pattern matching without K" (ICFP 2014); Lean 4 *Inductive Types* reference (nested/mutual, recursor generation).
 
 #### Key Concepts and Definitions
-1. Curry–Howard for inductive datatypes (True/False as unit/empty); strict positivity, and why naive HOAS breaks it.
-2. Auto-generated induction principle `T_ind`; why mutual/nested inductives need manual reconstruction.
-3. The four-part datatype schema — former, constructors, eliminator, ι-reduction — covering simple, parameterised, higher-order-recursive, and dependent-indexed families uniformly.
-4. Guarded fixpoint construction, and the Fibonacci counterexample it's needed to repair.
-5. Coquand's ALF admissibility conditions (no nesting, guarded recursion, unification-driven covering), and the conservativity theorem relating pattern matching to eliminators.
+1. Strict positivity; recursor/eliminator and its computation rules; motive.
+2. Inductive families: parameters vs. indices.
+3. Dependent pattern matching as unification of indices (with-abstraction, "green slime"); elaboration into eliminators.
+4. Structural vs. well-founded recursion; accessibility predicates.
+5. W-types as the general well-founded tree former.
 
 #### Relevant Questions
-1. Why must inductive definitions satisfy strict positivity?
-2. Why does the one-step eliminator fail for Burstall–Darlington-style Fibonacci, and how does the guarded-fixpoint construction repair it?
-3. What is Berry's majority-function counterexample, and why does it show that constructor-form exhaustive/disjoint patterns aren't sufficient for intensionally correct matching?
+1. Why is strict positivity required, and what inconsistency arises without it?
+2. How does dependent pattern matching reduce to index unification, and where does UIP/axiom K sneak in?
+3. How do you compile a case-tree with indexed families to recursor applications?
+4. When do you prefer well-founded recursion over structural recursion in a language with refinement contracts?
 
 ---
 
-## 7. Universes and Type Hierarchies (Core Topic)
+## 7. Definitional Equality, Conversion, and the Intensional/Extensional Divide (Core Topic)
 
 #### Pre-requisites
-[[#6. Inductive Types, Pattern Matching, and Elimination Principles (Core Topic)|Topic 6]].
+3. Normalization; 5. Martin-Löf Type Theory; 6. Inductive types.
 
 #### Why this topic is important
-A refinement-type compiler with a metaprogramming elaborator needs a
-principled universe hierarchy to stay consistent (Girard's paradox is
-not a theoretical curiosity — it's exactly the bug a "Type : Type"
-kernel shortcut reintroduces). The cumulativity/lifting design choices
-here directly shape how the kernel represents universe-polymorphic
-definitions.
+`isDefEq` *is* your kernel's core algorithm: normalization-by-evaluation or weak-head reduction plus $\eta$, proof irrelevance and unit-type rules. Deciding conversion is what makes type checking decidable; going extensional (equality reflection) trades that away — the design decision behind refinement-type "SMT-discharged equalities". Later: 8, 9, 10, 11.
 
 #### Sources to Study
-1. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types (Chlipala)]]
-   - [[Universes-and-Axioms]]
-2. [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/book-guidelines|Interoperability of Proof Systems (Thiré)]]
-   - [[Cumulative-Type-Systems-(CTS)]]
-   - [[Universo-Deciding-Universe-Level-Embeddings]]
-3. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming (Thompson)]]
-   - [[Universes-and-Well-Founded-Types]]
+1. [[17_HofmannExtensionalIntensionalTypeTheory1995/book-guidelines|Extensional Concepts in Intensional Type Theory]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/Definitional-Versus-Propositional-Equality|Definitional Versus Propositional Equality]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/Intensional-And-Extensional-Type-Theory|Intensional and Extensional Type Theory]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/The-Six-Extensional-Concepts|The Six Extensional Concepts]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/Independence-Of-Uniqueness-Of-Identity-Proofs|Independence of UIP]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/Intensional-Quotient-Types|Intensional Quotient Types]]
+2. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory]]
+   - [[84_type-theory-book_Daniel_Gratzer_2026/Extensionality-versus-Intensionality|Extensionality versus Intensionality]]
+   - [[84_type-theory-book_Daniel_Gratzer_2026/Metatheory-and-Implementation-of-Type-Theory|Metatheory and Implementation of Type Theory]]
+3. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming]]
+   - [[02_type_theory_functional_programming_thompson_1999/Equality-in-Type-Theory|Equality in Type Theory]]
+   - [[02_type_theory_functional_programming_thompson_1999/Quotient-and-Congruence-Types|Quotient and Congruence Types]]
+4. [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/book-guidelines|Elaboration in Dependent Type Theory]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Computational-Behavior-and-Reduction|Computational Behavior and Reduction]]
+5. [[01_programming_in_MLTT/Equality-Sets|Equality Sets]] (MLTT)
+6. [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/The-lambda-Pi-Calculus-Modulo|The λΠ-Calculus Modulo]] (conversion modulo rewriting; see topic 9)
+7. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Reasoning-About-Equality-Proofs|CPDT — Reasoning About Equality Proofs]]
+8. [[07_practical_foundations_robert_harper_2012/Equational-Reasoning|PFPL — Equational Reasoning]]
+9. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/book-guidelines|Principles of Abstract Interpretation]] — Type Systems as Abstract Interpretation (bridge to `static-analysis`)
+
+#### Additional external sources
+- Abel, Öhman & Vezzosi, "Decidability of Conversion for Type Theory in Type Theory" (POPL 2018); Coquand, "An algorithm for type-checking dependent types" (1996); Barras' thesis / Lean 4 kernel notes for defeq with $\eta$, proof irrelevance, lazy delta unfolding.
 
 #### Key Concepts and Definitions
-1. `Set`/`Type`/`Prop`/`Kind` sorts; Girard's paradox and why a type of all types is inconsistent.
-2. Universe hierarchy $U_0, U_1, \dots$ and cumulativity; universes à la Tarski (`El`) vs. à la Russell.
-3. Large elimination, and why it fails to be structurally recursive.
-4. The "multiple representation" problem under cumulativity, and explicit `lift` operators.
-5. Universe polymorphism/indexing (per-sort $U_s$, $e_s$) in a Pure Type System embedding.
+1. Definitional (judgmental) vs. propositional equality; conversion rule.
+2. $\beta$, $\eta$ (functions, pairs, unit), $\delta$ (unfolding), $\iota$ (recursor) and $\zeta$ reductions.
+3. Equality reflection ⇒ undecidable type checking; conservativity of extensional concepts (funext, UIP) over ITT.
+4. Normalization structure ⇒ decidability of judgmental equality; N-canonicity.
+5. Setoid, groupoid, syntactic models as consistency/independence arguments.
 
 #### Relevant Questions
-1. Why must a hierarchy of universes replace a single type of all types?
-2. Why can't cumulativity be implemented by simply identifying $U_i$ with $U_{i+1}$, and what failure does an explicit `lift` operator repair?
-3. Why does Girard's paradox arise from a "$U:U$" round-trip, and how does removing it avoid the paradox?
+1. Why does equality reflection make type-checking itself undecidable?
+2. What is preserved and lost when funext and UIP are postulated as axioms rather than derived?
+3. What is the concrete algorithmic difference between WHNF-based conversion and normalization-by-evaluation?
+4. How does a reducibility hint (lazy delta) system change `isDefEq` performance without changing its meaning?
 
 ---
 
-## 8. Intensional vs. Extensional Type Theory (Core Topic)
+## 8. Bidirectional Typing (Core Topic)
 
 #### Pre-requisites
-[[#5. Definitional Equality, Reduction, and Normalization (Core Topic)|Topic 5]], [[#7. Universes and Type Hierarchies (Core Topic)|Topic 7]].
+2. Judgments and rules; 4. Polymorphism; 5. MLTT.
 
 #### Why this topic is important
-This is the concrete design decision behind the whole kernel: an
-intensional theory (decidable typechecking) plus controlled extensions,
-versus an extensional one (undecidable). Hofmann's conservativity
-theorem is the theoretical justification for adding `Funext`/`UIP` as
-axioms without secretly changing what's provable — directly relevant to
-deciding what the Rust kernel's trusted core will and won't include.
+Bidirectional typing (inference $\Rightarrow$ / checking $\Leftarrow$) is how a dependent-type checker avoids full inference: it tells the elaborator where annotations are needed and how implicit arguments can be pushed inward. It is the skeleton of the elaborator and of refinement-type checking with intersection/property types. Later: 10, 11, 12.
 
 #### Sources to Study
-1. [[17_HofmannExtensionalIntensionalTypeTheory1995/book-guidelines|Extensional Concepts in Intensional Type Theory (Hofmann)]]
-   - Intensional/extensional TT, six extensional concepts, deliverables model, setoid model articles
-2. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory (Angiuli & Gratzer)]]
-   - [[Extensionality-versus-Intensionality]]
+1. [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/book-guidelines|Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Bidirectional-Typechecking-Foundations|Bidirectional Typechecking Foundations]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/The-Problem-of-Polymorphism-in-Bidirectional-Systems|The Problem of Polymorphism]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Declarative-Type-System|Declarative Type System]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Algorithmic-Contexts|Algorithmic Contexts]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Algorithmic-Subtyping-and-Instantiation|Algorithmic Subtyping and Instantiation]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Algorithmic-Typing|Algorithmic Typing]]
+   - [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Metatheory-of-the-Algorithm|Metatheory of the Algorithm]]
+2. [[32_Tridirectional_Typechecking_Dunfield_Pfenning/book-guidelines|Tridirectional Typechecking]]
+   - [[32_Tridirectional_Typechecking_Dunfield_Pfenning/Bidirectional-Typechecking-Design-Principles|Bidirectional Typechecking Design Principles]]
+   - [[32_Tridirectional_Typechecking_Dunfield_Pfenning/The-Core-Language-and-Its-Bidirectional-Typing|The Core Language and Its Bidirectional Typing]]
+   - [[32_Tridirectional_Typechecking_Dunfield_Pfenning/Contextual-Typing-Annotations|Contextual Typing Annotations]]
+3. [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/Bi-Directional-Type-Systems|Thiré — Bi-Directional Type Systems]]
+4. [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/Type-Inference-and-Type-Checking-Algorithms|Saillard — Type Inference and Type-Checking Algorithms]]
+5. [[04_TAPL_Pierce_2002/Type-Reconstruction|TAPL — Type Reconstruction]] (contrast: constraint-based inference; see topic 13)
+
+#### Additional external sources
+- Pierce & Turner, "Local Type Inference" (TOPLAS 2000); Dunfield & Krishnaswami, "Bidirectional Typing" survey (ACM CSUR 2021); Abel/Coquand-style NbE checkers for dependent bidirectional rules.
 
 #### Key Concepts and Definitions
-1. TTE's equality-reflection rule vs. TTI's eliminator-based Id-type ($J$).
-2. UIP: definable at Unit/Void/Id/ℕ/Σ but not at universes.
-3. Functional extensionality's non-derivability in ITT (strong-normalization argument), and Turner's `Ext` axiom.
-4. Hofmann's conservativity theorem: ITT + Funext + UIP ≡ ETT for inhabitation.
-5. The "deliverables" categorical model separating algorithm from correctness proof, vs. the refinement-type style of mixing them in one Σ-type.
-6. Proof irrelevance as derivable (not axiomatized) via the extensional unit-type trick.
-
-#### Relevant Questions
-1. What precisely does it mean for TTE to be "conservative" over TTI, and why does this justify treating extended-ITT as no less expressive?
-2. Why is it surprising that intensional quotient types are *not* conservative over pure ITT?
-3. What bookkeeping problem does the "deliverables" style solve compared with freely mixing specs and code inside Σ-types?
-
----
-
-## 9. Bidirectional and Tridirectional Type Checking (Core Topic)
-
-#### Pre-requisites
-[[#3. Subtyping, Polymorphism, and System F (Core Topic)|Topic 3]], [[#4. Dependent Types: Π-Types, Σ-Types, and Type Families (Core Topic)|Topic 4]].
-
-#### Why this topic is important
-This is the algorithmic shape the elaborator's type checker will take —
-check vs. synthesize as the two modes, with an application judgment
-handling higher-rank polymorphism. The "context extension" metatheoretic
-device (rigid vs. flexible information increase) is the direct model for
-how the elaborator's metavariable context evolves during unification
-(Topic 11).
-
-#### Sources to Study
-1. [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/book-guidelines|Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism (Dunfield & Krishnaswami)]]
-   - [[Bidirectional-Typechecking-Foundations]]
-   - [[Algorithmic-Contexts]]
-   - [[Algorithmic-Subtyping-and-Instantiation]]
-   - [[Metatheory-of-the-Algorithm]]
-2. [[32_Tridirectional_Typechecking_Dunfield_Pfenning/book-guidelines|Tridirectional Typechecking (Dunfield & Pfenning)]]
-   - [[Bidirectional-Typechecking-Design-Principles]]
-   - [[Indefinite-Property-Types-and-the-Third-Direction]]
-
-#### Key Concepts and Definitions
-1. Checking judgment $\Psi \vdash e \Leftarrow A$ vs. synthesis $\Psi \vdash e \Rightarrow A$.
+1. Synthesis ($\Rightarrow$) vs. checking ($\Leftarrow$); mode discipline; annotation rules.
 2. Application judgment $\Psi \vdash A \bullet e \Rightarrow\!\Rightarrow C$ for polymorphism.
-3. Ordered algorithmic contexts with existential variables $\hat\alpha$ (unsolved/solved), and "articulation" instantiation.
-4. Context extension $\Gamma \longrightarrow \Delta$ as the central metatheoretic device (rigid vs. flexible information increase).
-5. Soundness/completeness/decidability via a lexicographic termination measure.
-6. The tridirectional extension: a third "indefinite property" direction beyond check/synthesize.
+3. Ordered algorithmic contexts with existential variables; context extension as information increase.
+4. Subsumption; annotation-removal theorem; completeness w.r.t. a declarative system.
+5. Third direction for indefinite property types (tridirectional).
 
 #### Relevant Questions
-1. Why does the standard two-judgment formulation break under higher-rank polymorphism, motivating the application judgment?
-2. What problem does "articulation" solve, and why must new existentials be inserted immediately left of the solved one?
-3. Why is $\hat\alpha\mathrm{App}$ the only algorithmic rule without a declarative analogue?
+1. Why does two-judgment bidirectional typing break under polymorphism, motivating the application judgment?
+2. Why must existential variable declarations keep strict order in the context?
+3. How is a mode table for $\Pi$/$\Sigma$ introduction and elimination chosen, and what happens to `isDefEq` calls at mode switches?
+4. What does "annotation removal" tell the language designer about where to require type ascriptions?
 
 ---
 
-## 10. Metavariables, Elaboration, and Implicit Argument Resolution (Core Topic)
+## 9. Logical Frameworks and $\lambda\Pi$-Calculus Modulo Rewriting (Core Topic)
 
 #### Pre-requisites
-[[#9. Bidirectional and Tridirectional Type Checking (Core Topic)|Topic 9]].
+5. MLTT; 7. Definitional equality; 3. Normalization.
 
 #### Why this topic is important
-This is the elaborator itself — the component the compiler's whole
-meta-programming layer is built around. De Moura's constraint categories
-(pattern, quasi-pattern, flex-rigid, flex-flex) and guarded constants are
-close to a direct blueprint for the metavariable-unification engine the
-project needs, and Norell's thesis is the concrete "how do you actually
-implement this for a dependently typed language" companion.
+$\lambda\Pi$-modulo turns "definitional equality = $\beta$ plus a user-supplied rewrite system," which is a minimal, trusted-kernel architecture: a small checker whose theories are data. It is the cleanest model of a proof-producing kernel with an extensible conversion relation (relevant to plugging arithmetic/decision-procedure results into `isDefEq`). Cross-reference: rewriting and proof certificates in `automated-reasoning`.
 
 #### Sources to Study
-1. [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/book-guidelines|Elaboration in Dependent Type Theory (de Moura et al.)]]
-   - [[The-Elaboration-Task]]
-   - [[Higher-Order-Unification]]
-   - [[Type-Classes-and-Class-Inference]]
-   - [[Overloading-and-Coercions]]
-2. [[11_ulf_norell_thesis_2007/book-guidelines|Towards a Practical Programming Language Based on Dependent Type Theory (Norell)]]
-   - [[Metavariables-and-Implicit-Arguments]]
-   - [[Pattern-Matching-over-Inductive-Families]]
+1. [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/book-guidelines|Dedukti: a Logical Framework based on the λΠ-Calculus Modulo Theory]]
+   - [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/Lambda-Pi-Calculus-and-Its-Typing-Judgments|The λΠ-Calculus and Its Typing Judgments]]
+   - [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/The-Lambda-Pi-Calculus-Modulo-Theory|The λΠ-Calculus Modulo Theory]]
+   - [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/Decidability-via-Effective-Subsystems|Decidability via Effective Subsystems]]
+   - [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/Simple-Type-Theory-and-Pure-Type-Systems|Simple Type Theory and Pure Type Systems]]
+   - [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/Inductive-Types-and-Universe-Hierarchies|Inductive Types and Universe Hierarchies]]
+2. [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/book-guidelines|Typechecking in the λΠ-Calculus Modulo]]
+   - [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/Abstract-Rewriting-and-Confluence-Theory|Abstract Rewriting and Confluence Theory]]
+   - [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/Subject-Reduction-Product-Compatibility-and-Uniqueness-of-Types|Subject Reduction, Product Compatibility, Uniqueness of Types]]
+   - [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/Well-Typedness-of-Rewrite-Rules|Well-Typedness of Rewrite Rules]]
+   - [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/Rewriting-Modulo-beta-and-Higher-Order-Rewrite-Systems|Rewriting Modulo β and HORS]]
+   - [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/Non-Left-Linear-Rewriting-and-Weak-Typing|Non-Left-Linear Rewriting and Weak Typing]]
+3. [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/book-guidelines|Interoperability between proof systems using Dedukti]]
+   - [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/Cumulative-Type-Systems-(CTS)|Cumulative Type Systems]]
+   - [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/Encoding-CTS-Into-LambdaPi-Calculus-Modulo-Theory|Encoding CTS into λΠ-modulo]]
+   - [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/Dedukti-An-Implementation-of-Lambda-Pi-calculus-Modulo-Theory|Dedukti Implementation]]
+   - [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/STT-A-Constructive-Higher-Order-Logic|STT∀]]
+4. [[88_LAMBDA_PI_GRIENENBERGER_2025/book-guidelines|Combining Computational Theories]]
+   - [[88_LAMBDA_PI_GRIENENBERGER_2025/Deduction-Modulo-Theory|Deduction Modulo Theory]]
+   - [[88_LAMBDA_PI_GRIENENBERGER_2025/Pure-Type-Systems|Pure Type Systems]]
+   - [[88_LAMBDA_PI_GRIENENBERGER_2025/Modularity-of-Type-Theories|Modularity of Type Theories]]
+
+#### Key Concepts and Definitions
+1. $\lambda\Pi$-calculus: dependent products only; judgments as a logical-framework encoding of object theories.
+2. Rewrite rules $\ell \hookrightarrow r$ integrated into conversion: $\equiv_{\beta\mathcal R}$.
+3. Confluence + subject reduction ⇒ decidable type checking (with termination of $\mathcal R$ as an extra assumption for decidability).
+4. Higher-order rewriting/pattern-LHS restriction; non-left-linear rules and weak typing.
+5. Deduction modulo: computation vs. deduction split.
+
+#### Relevant Questions
+1. Which conditions on $\mathcal R$ are needed for subject reduction, and which additionally for decidability of conversion?
+2. Why are higher-order pattern LHSs the tractable class for rewriting modulo $\beta$ (compare topic 10)?
+3. What does the trusted base of a Dedukti-style checker consist of, compared with a monolithic kernel like Lean's?
+
+---
+
+## 10. Metavariables and Higher-Order Pattern Unification (Core Topic)
+
+#### Pre-requisites
+5. MLTT; 7. Definitional equality; 8. Bidirectional typing. Also the `automated-reasoning` topic on first-order and higher-order unification.
+
+#### Why this topic is important
+This is the mechanism behind implicit-argument resolution: `?m x y = t` problems whose decidable, most-general fragment is Miller's pattern fragment. Getting metavariable contexts, pruning, occurs check and $\eta$ right for $\Pi$/$\Sigma$/unit is the elaborator's unifier, verbatim. Later: 11.
+
+#### Sources to Study
+1. [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/book-guidelines|Extensions to Miller's Pattern Unification for Dependent Types and Records]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/The-lambda-Pi-Sigma-Calculus-with-Meta-Variables|The λΠΣ-Calculus with Meta-Variables]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Higher-Order-Pattern-Unification|Higher-Order Pattern Unification]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Constraint-Based-Unification-as-an-Inference-System|Constraint-Based Unification as an Inference System]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Pruning-and-the-Occurs-Check|Pruning and the Occurs Check]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Inverting-Substitutions|Inverting Substitutions]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Type-Isomorphisms-for-Dependent-Records|Type Isomorphisms for Dependent Records]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Extension-to-the-Unit-and-Singleton-Types|Extension to the Unit and Singleton Types]]
+   - [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/Correctness-of-the-Unification-Algorithm|Correctness of the Unification Algorithm]]
+2. [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/book-guidelines|Type Inference, Haskell and Dependent Types]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Contextual-Problem-Solving|Contextual Problem-Solving]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Miller-Pattern-Unification|Miller Pattern Unification]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/The-Evidence-Language|The Evidence Language]]
+3. [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/book-guidelines|Dependently Typed Functional Programs and their Proofs]]
+   - [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/The-OLEG-Type-Theory-of-Holes|The OLEG Type Theory of Holes]]
+   - [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/A-Structurally-Recursive-Unification-Algorithm|A Structurally Recursive Unification Algorithm]]
+4. [[11_ulf_norell_thesis_2007/book-guidelines|Norell thesis]]
+   - [[11_ulf_norell_thesis_2007/Metavariables-and-Implicit-Arguments|Metavariables and Implicit Arguments]]
+5. [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/book-guidelines|Elaboration in Dependent Type Theory]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Higher-Order-Unification|Higher-Order Unification]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/The-Constraint-Solving-Procedure|The Constraint Solving Procedure]]
+6. [[08_programming_HOL_dale_miller_2012/book-guidelines|Programming with Higher-Order Logic]]
+   - [[08_programming_HOL_dale_miller_2012/First-Order-Unification|First-Order Unification]]
+   - [[08_programming_HOL_dale_miller_2012/Higher-Order-Unification|Higher-Order Unification]]
+   - [[08_programming_HOL_dale_miller_2012/Lambda-Tree-Syntax-and-Computation-over-Binders|λ-Tree Syntax]]
+7. [[04_TAPL_Pierce_2002/Type-Reconstruction|TAPL — Type Reconstruction]] (first-order unification in HM)
 
 #### Additional external sources
-- de Moura, Kong, Avigad, van Doorn, von Raumer, *"The Lean 4 Theorem Prover and Programming Language"* (CADE 2021) — the elaborator/kernel architecture this roadmap's design language ("elaborator resolving implicit arguments via metavariable unification") is directly modeled on; not covered in `vaults/` since it postdates the 2015 elaboration paper above.
+- Miller, "A Logic Programming Language with Lambda-Abstraction, Function Variables, and Simple Unification" (1991); Abel & Pientka, "Higher-Order Dynamic Pattern Unification for Dependent Types and Records" (TLCA 2011) is the direct predecessor of source 1.
 
 #### Key Concepts and Definitions
-1. Elaboration as passing from quasi-formal to fully precise terms.
-2. Higher-order unification and Miller patterns as the tractable fragment.
-3. Six unification-constraint categories: delta, pattern, quasi-pattern, flex-rigid, flex-flex, recursor.
-4. Priority-queue constraint solving with nonchronological backtracking; Huet-style imitation/projection for flex-rigid.
-5. Guarded constants (Norell) — the mechanism preventing ill-typed intermediate terms during dependent elaboration.
-6. Type class inference as backward-chaining, Prolog-like search.
+1. Metavariable as closure / contextual object $u[\sigma]$; meta-context vs. object context.
+2. Miller pattern: $?m\ x_1 \ldots x_n$ with distinct bound variables; most-general unifier is unique.
+3. Pruning, occurs check; rigid vs. strongly rigid occurrences.
+4. Hereditary substitution vs. substitute-then-normalize.
+5. $\eta$ for $\Sigma$/unit and its effect on free-variable invariants; constraint postponement ("dynamic" patterns).
 
 #### Relevant Questions
-1. Why is inferring the motive in `subst e H` genuinely higher-order (and inherently ambiguous)?
-2. How does nonchronological backtracking avoid re-exploring the search space after failure?
-3. Why is it unsafe in dependent types to allow ill-typed intermediate terms, and how does the `coerce`/Ω example show the danger concretely?
+1. Why is the pattern fragment decidable while full higher-order unification is not?
+2. Why do practical systems need a *dynamic* pattern fragment rather than rejecting non-pattern constraints?
+3. How does a Σ-type unification problem reduce to Π-only problems?
+4. Why can metavariables of singleton type always be solved "on the spot"?
 
 ---
 
-## 11. Unification: First-Order to Higher-Order and Miller Patterns (Core Topic)
+## 11. Elaboration: Implicit Arguments, Coercions, and Type Classes (Core Topic)
 
 #### Pre-requisites
-[[#10. Metavariables, Elaboration, and Implicit Argument Resolution (Core Topic)|Topic 10]]. Intersects with `automated-reasoning`'s unification-algorithm topics — see [[learning-roadmap-automated-reasoning|↪ focused roadmap]] if generated.
+8. Bidirectional typing; 10. Pattern unification; 7. Definitional equality; 6. Inductive families.
 
 #### Why this topic is important
-This is the metavariable unifier by name — the exact algorithm the
-project's elaborator needs, "in the spirit of Miller's pattern
-unification." The pattern condition's uniqueness-of-mgu guarantee is
-what makes the whole approach tractable instead of full (undecidable)
-higher-order unification.
+The elaborator is the compiler's front half: it turns surface syntax with holes and implicit arguments into kernel terms, using bidirectional traversal plus a constraint solver. This roadmap topic maps directly onto Lean's elaborator architecture (preprocessing, constraint generation, postponement, backtracking). It is also where refinement-inference constraints get generated. See `automated-reasoning` (proof reconstruction) and `sat-smt-csp` (constraint solving).
 
 #### Sources to Study
-1. [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/book-guidelines|Type Inference in Context (Gundry)]]
-   - [[Miller-Pattern-Unification]]
-   - [[Contextual-Problem-Solving]]
-2. [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/book-guidelines|Dependently Typed Functional Programs and their Proofs (McBride)]]
-   - [[A-Structurally-Recursive-Unification-Algorithm]]
-   - [[Equality-and-Object-Level-Unification]]
-3. [[70_Extensions_to_Miller_Pattern_Unification_For_Dependent_Types/book-guidelines|Extensions to Miller's Pattern Unification for Dependent Types (Abel & Pientka)]] — no generated article yet
-   - λΠΣ-calculus with meta-variables; type isomorphisms for dependent records
+1. [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/book-guidelines|Elaboration in Dependent Type Theory]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/The-Elaboration-Task|The Elaboration Task]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/The-Preprocessing-Phase|The Preprocessing Phase]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Term-Representation-and-Core-Data-Structures|Term Representation and Core Data Structures]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Constraints-and-Justifications|Constraints and Justifications]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/The-Constraint-Simplification-Procedure|The Constraint Simplification Procedure]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Type-Classes-and-Class-Inference|Type Classes and Class Inference]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Overloading-and-Coercions|Overloading and Coercions]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Performance-and-Implementation-Optimizations|Performance and Implementation Optimizations]]
+   - [[29_Elaboration_in_Dependent_Type_Theory_De_Moura_2015/Tactics-and-Proof-Structuring|Tactics and Proof Structuring]]
+2. [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/book-guidelines|Type Inference, Haskell and Dependent Types]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Elaboration-into-Explicit-Calculi|Elaboration into Explicit Calculi]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Hindley-Milner-Type-Inference-Reconstructed|Hindley-Milner Type Inference Reconstructed]]
+3. [[11_ulf_norell_thesis_2007/book-guidelines|Norell thesis]]
+   - [[11_ulf_norell_thesis_2007/Module-Systems-for-Dependently-Typed-Languages|Module Systems for Dependently Typed Languages]]
+   - [[11_ulf_norell_thesis_2007/Connecting-Type-Theory-to-First-Order-Automation|Connecting Type Theory to First-Order Automation]]
+4. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/The-Ltac-Tactic-Language|The Ltac Tactic Language]]
+   - [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Proof-by-Reflection|Proof by Reflection]]
+5. [[85_Dependently_Typed_Functional_Programs_and_their_Proofs_McBride_2000/Implementation-and-Reflection|McBride — Implementation and Reflection]]
+6. [[40_A_Framework_for_Modular_Extensible_Equivalence-Preserving_Compilation_Dustin_Jammer_2020/book-guidelines|Pyrosome]] — Proof Automation and Elaboration (compiler-correctness angle)
 
 #### Additional external sources
-- D. Miller, *"A Logic Programming Language with Lambda-Abstraction, Function Variables, and Simple Unification"* (JLC 1991) — the original pattern-unification paper the whole thread is named after; worth reading directly rather than only through the two dependent-type-specific extensions above.
+- Ullrich & de Moura, "The Lean 4 Theorem Prover and Programming Language" (CADE 2021); Ziliani & Sozeau, "A Unification Algorithm for Coq Featuring Universe Polymorphism and Overloading" (ICFP 2015); Asperti et al., "A Bi-Directional Refinement Algorithm for the Calculus of (Co)Inductive Constructions" (LMCS 2012).
 
 #### Key Concepts and Definitions
-1. Constructor-form first-order unification transition rules (identity, coalescence, substitution, conflict, injectivity, cycle) with a lexicographic termination measure.
-2. Auto-derived "no confusion"/"no cycle" theorems per datatype.
-3. John Major equality $\simeq$ for telescopic equations.
-4. Miller's pattern condition (a metavariable applied only to distinct bound variables) guaranteeing a unique most general unifier.
-5. Twin variables $\hat x : S \ddagger T$ for provably-but-not-definitionally-equal types; pruning and metavariable simplification.
-6. Open termination question for full-spectrum pattern unification.
+1. Elaboration as partial-term ⇒ kernel-term with metavariables; postponed vs. eager constraints.
+2. Constraints with justifications; non-chronological backtracking.
+3. Huet-style imitation/projection case splits for non-pattern problems.
+4. Reducibility annotations (irreducible/semireducible/reducible) — elaborator-only.
+5. Type classes as backward-chaining logic programming; coercion insertion.
 
 #### Relevant Questions
-1. Why does Miller's pattern condition guarantee a *unique* most general unifier?
-2. What problem do twin variables solve that ordinary binding cannot?
-3. Why does a naïve inductive "no-cycle" proof fail for asymmetric cycles, and what strengthening repairs it?
+1. What is the division of labor between preprocessing and constraint solving, and why is it "slightly too simplistic"?
+2. Why is inferring the motive in `subst e H` genuinely higher-order, and what makes its solution ambiguous?
+3. How does non-chronological backtracking with justifications save work after a failure?
+4. Where should refinement-predicate constraints be emitted: during elaboration or in a separate pass after kernel checking?
 
 ---
 
-## 12. Equational Theories, Rewriting, and Compiler/Equality-Saturation Correctness (Core Topic)
+## 12. Refinement, Subset, and Property Types (Core Topic)
 
 #### Pre-requisites
-[[#5. Definitional Equality, Reduction, and Normalization (Core Topic)|Topic 5]].
+5. MLTT; 7. Definitional equality (extensional concepts); 8. Bidirectional typing; 11. Elaboration. Depends on `sat-smt-csp` (SMT discharge) for automation.
 
 #### Why this topic is important
-This is where "definitional equality" becomes an engineering problem:
-how do you decide term equivalence efficiently and prove a compilation
-pass preserves meaning? Pyrosome's `Preserving` predicate is a direct
-template for structuring correctness proofs of the compiler's own
-lowering passes, and egglog's unification of Datalog-style lattice
-reasoning with e-graph congruence closure is relevant to how the kernel
-might implement rewrite-rule-driven definitional equality (Topic 13).
+This *is* the surface language: $\{x : A \mid \varphi(x)\}$ with dependent-subtyping contracts. The theory tells you what the subset type costs (loss of proof irrelevance / canonicity problems, quotient difficulties), how to keep the extensional flavor decidable (deliverables/setoid models), and how bidirectional refinement checking with intersection and union types works.
 
 #### Sources to Study
-1. [[39_Equality-Saturation-RossThesis2012/book-guidelines|Equality Saturation (Ross Tate's thesis lineage)]]
-   - [[Converting-Between-Imperative-Code-and-PEGs]]
-   - [[Domain-Independent-Applications-of-Generalization]]
-2. [[40_A_Framework_for_Modular_Extensible_Equivalence-Preserving_Compilation_Dustin_Jammer_2020/book-guidelines|A Framework for Modular, Extensible, Equivalence-Preserving Compilation (Pyrosome)]] — no generated article yet
-   - `Preserving` predicate; language specs as equational theories; compilers as finite maps; STLC→CPS→closures case study
-3. [[71_Unifying_Datalog_and_Equality_Saturation/book-guidelines|Unifying Datalog and Equality Saturation (egglog)]] — no generated article yet
-   - Fixpoint reasoning frameworks; the egglog language model; formal semantics
-
-#### Key Concepts and Definitions
-1. `Preserving(L_t, cmp, L_s)` reducing compiler verification to one obligation per syntactic form/equation.
-2. Language specifications as generalized algebraic theories; equivalence preservation vs. contextual equivalence (and where the former's blind spots are).
-3. Compiler-extension/codomain-embedding modularity theorems.
-4. E-graphs/e-classes and congruence closure.
-5. egglog: unifying Datalog's `:merge`-based lattice reasoning with equality saturation's `union`/congruence via one functional-database mechanism.
-6. The rebuilding operator restoring functional-dependency validity after non-monotone union steps.
-
-#### Relevant Questions
-1. Why can `Preserving` obligations for disjoint language extensions be proved independently?
-2. Why does equivalence preservation deliberately not imply contextual-equivalence preservation, and why is that a feature rather than a gap?
-3. How does replacing "relation as set" with "function as map with `:merge`" let egglog subsume both Datalog and equality saturation with one mechanism?
-
----
-
-## 13. The λΠ-Calculus Modulo Theory and Rewriting-Based Kernels (Core Topic)
-
-#### Pre-requisites
-[[#8. Intensional vs. Extensional Type Theory (Core Topic)|Topic 8]], [[#12. Equational Theories, Rewriting, and Compiler/Equality-Saturation Correctness (Core Topic)|Topic 12]].
-
-#### Why this topic is important
-This is the single closest match in the whole vault to a "trusted
-kernel with a custom theorem prover" — Dedukti's λΠ-calculus modulo
-theory is exactly a minimal dependent type checker whose definitional
-equality is extended by user-supplied rewrite rules, with confluence and
-subject reduction established as the soundness conditions. This is the
-strongest candidate architecture for the project's own kernel.
-
-#### Sources to Study
-1. [[87_Typechecking_in_the_lambda-Pi-Calculus_Modulo_Theory_Saillard_2015/book-guidelines|Typechecking in the λΠ-Calculus Modulo Theory (Saillard)]]
-   - [[Abstract-Rewriting-and-Confluence-Theory]]
-   - [[The-lambda-Pi-Calculus-Modulo]]
-   - [[Subject-Reduction-Product-Compatibility-and-Uniqueness-of-Types]]
-   - [[Well-Typedness-of-Rewrite-Rules]]
-   - [[Type-Inference-and-Type-Checking-Algorithms]]
-2. [[89_Dedukti_Logical_Framework_based_LambdaPI_Calculus_Modulo_Theory_2024/book-guidelines|Dedukti: A Logical Framework based on the λΠ-Calculus Modulo Theory]]
-   - [[Lambda-Pi-Calculus-and-Its-Typing-Judgments]]
-   - [[The-Lambda-Pi-Calculus-Modulo-Theory]]
-   - [[Decidability-via-Effective-Subsystems]]
-   - [[The-Dedukti-System-and-Concrete-Syntax]]
-3. [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/book-guidelines|Interoperability of Proof Systems (Thiré)]]
-   - [[The-λΠ-Calculus-Modulo-Theory]]
-   - [[Dedukti-An-Implementation-of-Lambda-Pi-calculus-Modulo-Theory]]
-
-#### Key Concepts and Definitions
-1. Eight typing rules of plain λΠ-calculus ($Type$/$Kind$, dependent product).
-2. Global rewrite rules $l \longrightarrow_\Delta r$ changing definitional equality; subject reduction from well-typed rewrite rules + product compatibility.
-3. Confluence proved independent of (and before) termination — reversed from the usual textbook order.
-4. Miller's pattern fragment used again here, for decidable higher-order rewriting/matching.
-5. Static vs. definable symbols; guards for well-typedness Dedukti can't verify statically.
-6. The "most general typing substitution" $\tau$ fixing naive-rule rejection problems.
-7. Effectiveness Theorem: confluent + terminating ⇒ decidable typing.
-
-#### Relevant Questions
-1. Why must confluence be established before termination/well-typedness assumptions here, against the usual order?
-2. Walk through the `Tail` example — why does the naive rule reject it, and what does $\tau$ buy?
-3. Why does λ-abstraction in a rewrite LHS break ordinary first-order confluence, and how does Miller's pattern fragment restore decidability?
-
----
-
-## 14. Pure Type Systems and Generalized Type-Theoretic Frameworks (Core Topic)
-
-#### Pre-requisites
-[[#13. The λΠ-Calculus Modulo Theory and Rewriting-Based Kernels (Core Topic)|Topic 13]].
-
-#### Why this topic is important
-This is the abstraction layer above a single fixed calculus — useful if
-the compiler's type theory needs to be parameterized (e.g. different
-universe/sort structures for different subsystems) rather than hardcoded.
-The ecumenical-systems idea (mixing constructive/classical connectives at
-the connective level) is also directly relevant to a theorem prover that
-needs both a constructive core and classical reasoning for some
-verification-condition discharge.
-
-#### Sources to Study
-1. [[88_LAMBDA_PI_GRIENENBERGER_2025/book-guidelines|Combining Computational Theories (Grienenberger)]]
-   - [[Pure-Type-Systems]]
-   - [[Theory-U-and-Ecumenical-Fragments]]
-   - [[Modularity-of-Type-Theories]]
-2. [[86_Interoperability_proof_systems_LambdaPI_calculus_modulo_theory_Thire_2021/book-guidelines|Interoperability of Proof Systems (Thiré)]]
-   - [[Cumulative-Type-Systems-(CTS)]]
-   - [[Interoperability-Between-Type-Systems]]
-   - [[Well-Structured-Derivation-Trees]]
-
-#### Key Concepts and Definitions
-1. PTS specification $(S, A, R)$ embedded via per-sort universes $U_s/e_s$ and per-rule product formers $\pi_{s_1 s_2}$.
-2. Cumulative Type Systems (CTS) generalizing PTS with subtyping; well-structured derivation trees; bi-directional CTS presentations.
-3. Ecumenical systems mixing constructive/classical connectives at the connective (not proof) level.
-4. Modularity of type theories via theory fragmentation.
-5. Embedding theorems: preservation of computation/typing, conservativity/adequacy, equivalence of provability.
-
-#### Relevant Questions
-1. Why is a separate $U_s$/$e_s$ pair needed per sort in the PTS embedding?
-2. Why does attaching classicality to connectives (not proofs) let constructive/classical reasoning coexist safely?
-3. What does "modularity of type theories" via fragmentation buy over one monolithic specification?
-
----
-
-## 15. Categorical and Denotational Semantics of Type Theory (Core Topic)
-
-#### Pre-requisites
-[[#4. Dependent Types: Π-Types, Σ-Types, and Type Families (Core Topic)|Topic 4]], [[#8. Intensional vs. Extensional Type Theory (Core Topic)|Topic 8]].
-
-#### Why this topic is important
-This is the soundness argument underneath everything else: exhibiting a
-model is what justifies trusting the kernel's rules are consistent.
-The fibred treatment of equality/quantifiers as adjoints is also the
-cleanest way to see why Topic 17's refinement/subset types and Topic 4's
-Σ-types are secretly the same construction wearing different logical
-clothes.
-
-#### Sources to Study
-1. [[57_Categorical_Logic_Type_Theory_BART_JACOBS/book-guidelines|Categorical Logic and Type Theory (Jacobs)]]
-   - Fibred category theory, indexed categories, functorial (Lawvere) semantics articles
-2. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory (Angiuli & Gratzer)]]
-   - [[Categorical-Semantics-of-Type-Theory]]
-3. [[48_From_Categories_Homotopy_Theory_Cambridge_Birgit_Richter_2020/book-guidelines|From Categories to Homotopy Theory (Richter)]] — general category-theory background (limits/colimits, Yoneda, adjunctions), cited here for prerequisite machinery rather than type-theoretic content directly.
-
-#### Key Concepts and Definitions
-1. Classifying category $\mathfrak C(\Sigma)$ (contexts as objects, term-tuples as morphisms) with finite products.
-2. Lawvere functorial semantics: models as product-preserving functors; the generic model as the identity functor.
-3. The fibred account of exponents as simple products in a simple fibration.
-4. Equality as a left adjoint to a contraction functor, unifying reflexivity/symmetry/transitivity/replacement into one rule.
-5. Regular/coherent/first-order fibrations classifying increasingly rich predicate logics.
-6. Categories with families as the semantic backbone of the explicit substitution calculus (cross-reference Topic 4).
-7. Grothendieck-universe set models establishing ETT's consistency.
-
-#### Relevant Questions
-1. Why is presenting exponents as *simple products in a fibration* categorically preferable to assuming product types outright?
-2. Why does presenting equality as a left adjoint unify the four equality rules into one, and what role does Beck–Chevalley play?
-3. Why does exhibiting any nontrivial model suffice for consistency, while canonicity needs a special gluing model?
-
----
-
-## 16. Homotopy Type Theory and Univalent Foundations (Core Topic)
-
-#### Pre-requisites
-[[#8. Intensional vs. Extensional Type Theory (Core Topic)|Topic 8]], [[#15. Categorical and Denotational Semantics of Type Theory (Core Topic)|Topic 15]].
-
-#### Why this topic is important
-Lower priority for the compiler's near-term goals than Topics 9–13, but
-directly relevant to how far the identity-type story from Topic 5 can be
-pushed, and to understanding cubical type theory as the modern answer to
-the canonicity/univalence tension that a Rust kernel implementation
-would eventually have to make a design decision about if equality types
-grow richer than plain intensional Id.
-
-#### Sources to Study
-1. [[14_homotopy_type_theory/book-guidelines|Homotopy Type Theory: Univalent Foundations of Mathematics]]
-   - Type formers, identity types, univalence axiom, higher inductive types articles
-2. [[84_type-theory-book_Daniel_Gratzer_2026/book-guidelines|Principles of Dependent Type Theory (Angiuli & Gratzer)]]
-   - [[Cubical-Type-Theory]]
-   - [[Univalent-Foundations-and-Homotopy-Type-Theory]]
-
-#### Key Concepts and Definitions
-1. Univalence axiom: `idtoequiv` is an equivalence.
-2. Homotopy levels ($\mathrm{IsOfHLevel}$, n-types, h-sets).
-3. Higher inductive types (circle $S^1$, suspensions, set truncation); propositional truncation recovering ∃/∨.
-4. Tension between axiomatic univalence and canonicity, resolved by cubical type theory's Path type over a judgmental interval structure.
-5. Homogeneous composition (`hcomp`) and the Glue/V-type mechanism computing univalence.
-
-#### Relevant Questions
-1. Why does univalence specifically require `idtoequiv` to be an *equivalence* rather than merely admitting an inverse map?
-2. In what precise sense does cubical type theory's Path type resolve the canonicity/univalence tension that axiomatic HoTT cannot?
-3. Why must higher inductive types like the circle exist to reach types of no finite homotopy level?
-
----
-
-## 17. Refinement Types and Dependent Predicate Logic for Program Correctness (Core Topic)
-
-#### Pre-requisites
-[[#4. Dependent Types: Π-Types, Σ-Types, and Type Families (Core Topic)|Topic 4]], [[#15. Categorical and Denotational Semantics of Type Theory (Core Topic)|Topic 15]]. Intersects heavily with `automated-reasoning` (Hoare logic, weakest preconditions) — see [[learning-roadmap-automated-reasoning|↪ focused roadmap]] if generated.
-
-#### Why this topic is important
-This is the refinement-type surface language itself — the project's
-stated goal is constraint-based inference for exactly this kind of type.
-The subset/quotient-type duality (both adjoints to the same functor
-`Eq`) gives a principled way to think about what a refinement predicate
-"means" formally, rather than treating it as an informal annotation
-bolted onto the type system.
-
-#### Sources to Study
-1. [[57_Categorical_Logic_Type_Theory_BART_JACOBS/book-guidelines|Categorical Logic and Type Theory (Jacobs)]]
-   - Subset/quotient types, dependent predicate logic articles
-2. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/book-guidelines|Certified Programming with Dependent Types (Chlipala)]]
-   - [[Dependent-Types-for-Program-Correctness]]
+1. [[01_programming_in_MLTT/book-guidelines|Programming in Martin-Löf's Type Theory]]
+   - [[01_programming_in_MLTT/Subsets-and-the-Subset-Theory|Subsets and the Subset Theory]]
+   - [[01_programming_in_MLTT/Programming-as-Program-Derivation|Programming as Program Derivation]]
+   - [[01_programming_in_MLTT/Specification-of-Abstract-Data-Types|Specification of Abstract Data Types]]
+2. [[02_type_theory_functional_programming_thompson_1999/book-guidelines|Type Theory and Functional Programming]]
+   - [[02_type_theory_functional_programming_thompson_1999/The-Subset-Type-and-Its-Difficulties|The Subset Type and Its Difficulties]]
+   - [[02_type_theory_functional_programming_thompson_1999/Specification-in-Type-Theory|Specification in Type Theory]]
+   - [[02_type_theory_functional_programming_thompson_1999/Strengthened-and-Polymorphic-Rules|Strengthened and Polymorphic Rules]]
+3. [[17_HofmannExtensionalIntensionalTypeTheory1995/book-guidelines|Extensional Concepts in Intensional Type Theory]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/The-Deliverables-Model|The Deliverables Model]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/Applications-Of-Extensional-Concepts|Applications of Extensional Concepts]]
+4. [[32_Tridirectional_Typechecking_Dunfield_Pfenning/book-guidelines|Tridirectional Typechecking]]
+   - [[32_Tridirectional_Typechecking_Dunfield_Pfenning/Definite-Property-Types|Definite Property Types]]
+   - [[32_Tridirectional_Typechecking_Dunfield_Pfenning/Indefinite-Property-Types-and-the-Third-Direction|Indefinite Property Types and the Third Direction]]
+   - [[32_Tridirectional_Typechecking_Dunfield_Pfenning/Related-Work-on-Refinement-Intersection-and-Union-Types|Related Work on Refinement, Intersection and Union Types]]
+5. [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Subset-Types-and-Quotient-Types|Jacobs — Subset Types and Quotient Types]]
+6. [[04_TAPL_Pierce_2002/Subtyping|TAPL — Subtyping]] and Metatheory and Algorithms for Subtyping (TAPL, no article yet)
+7. [[84_type-theory-book_Daniel_Gratzer_2026/Full-Spectrum-Dependent-Types|Gratzer — Full-Spectrum Dependent Types]] (refinement vs. full dependency)
+8. [[28_An_Introduction_Separation_Logic_Reynolds_Copenhagen_2008/book-guidelines|Introduction to Separation Logic]]
+   - [[28_An_Introduction_Separation_Logic_Reynolds_Copenhagen_2008/Abstract-Data-Types-Via-Inductive-Predicates|Abstract Data Types via Inductive Predicates]] (bridge to `static-analysis`)
 
 #### Additional external sources
-- P. Rondon, M. Kawaguchi, R. Jhala, *"Liquid Types"* (PLDI 2008), and the LiquidHaskell line of work — the closest concrete precedent for "constraint-based inference for refinement types" as stated in the project goals; nothing in `vaults/` currently covers refinement-type *inference* specifically (as opposed to refinement-type *checking*), so this is a genuine gap worth adding to `sources/`.
+Not covered by an on-hand book — **gap**: Rondon, Kawaguchi & Jhala, "Liquid Types" (PLDI 2008); Freeman & Pfenning, "Refinement Types for ML" (PLDI 1991); Vazou et al., "Refinement Types for Haskell" (ICFP 2014) and the Liquid Haskell tutorial; Xi & Pfenning, "Dependent Types in Practical Programming" (POPL 1999); Ou et al., "Dynamic Typing with Dependent Types". Also F*/Dijkstra monads (Swamy et al. 2016) for Hoare-style dependent contracts.
 
 #### Key Concepts and Definitions
-1. Subset types $\{x{:}\sigma \mid \varphi\}$ as a right adjoint to the terminal-object functor ("has subsets").
-2. Quotient types $\sigma/R$ as a left adjoint to equality ("has quotients") — the categorical duality with subset types.
-3. ∃/∀ as left/right adjoints to weakening, requiring Beck–Chevalley for arbitrary reindexing.
-4. Regular/coherent/first-order fibrations and logoses; unique choice and "very strong equality."
-5. Coq's `sig`/`sumbool`/`sumor` families and proof erasure during extraction; the `hasType` determinism lemma feeding certified type-checkers.
+1. Subset type $\{x:A \mid P\}$; propositional vs. computational content (proof irrelevance).
+2. Dependent subtyping $\{x:A\mid P\} <: \{x:A\mid Q\}$ generating verification conditions $P \Rightarrow Q$.
+3. Deliverables / Σ-with-proof separation vs. subset types; quotient/setoid types.
+4. Intersection, union, and property (refinement) types; contextual annotations.
+5. Hoare triples as dependent function types over pre/postconditions.
 
 #### Relevant Questions
-1. Why must ∃/∀ be adjoints to *weakening* specifically, and what extra hypothesis extends this to arbitrary reindexing?
-2. Why are subset types and quotient types "secretly dual" constructions on the same functor `Eq`?
-3. Why does the same predecessor function extract to identical OCaml code across increasingly precise Coq types?
+1. What breaks (canonicity, decidable equality of terms) when proofs are hidden inside subset types?
+2. How does a subtyping check between refinements become an SMT/CSP query, and what must the type-theory side ensure about the query's context?
+3. Why do union/indefinite property types require a third bidirectional direction?
+4. What is the precise relation between $\{x{:}A\mid P\}$, $\Sigma x{:}A.\,P$ and a Hoare-style contract?
 
 ---
 
-## 18. Tree and Symbolic Automata as Structural Foundations for Typed Data (Core Topic)
+## 13. Type Inference and Constraint Generation (Core Topic)
 
 #### Pre-requisites
-[[#6. Inductive Types, Pattern Matching, and Elimination Principles (Core Topic)|Topic 6]].
+2. Judgments; 3. STLC; 4. Polymorphism; 8. Bidirectional typing; 10. Unification.
 
 #### Why this topic is important
-Lower priority, included because the project's CSP kernel is explicitly
-meant to represent abstract data structures as automata/DFA-based
-domains — this topic is where the type-theoretic side of that idea
-(recognizable tree languages as a semantics for inductively defined
-term structures) meets its `sat-smt-csp` payoff. See the
-`sat-smt-csp` focused roadmap for the CSP-domain-propagation side of
-this same material.
+Constraint-based inference for refinement types starts from Hindley–Milner: generate equality constraints, solve by unification, generalize. The same generate-then-solve architecture is what emits refinement constraints (Horn clauses) for the SAT/SMT/CHC backend.
 
 #### Sources to Study
-1. [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/book-guidelines|Tree Automata Techniques and Applications (Comon et al.)]]
-   - [[Terms-Trees-and-Contexts]]
-   - [[Recognizable-Tree-Languages-and-Finite-Tree-Automata]]
-   - [[Regular-Tree-Grammars-and-Expressions]]
-2. [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/book-guidelines|The Power of Symbolic Automata and Transducers (D'Antoni)]] — no generated article yet
-   - Symbolic finite automata (s-FA) and their variants; effective Boolean algebras
+1. [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/book-guidelines|Type Inference, Haskell and Dependent Types]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Hindley-Milner-Type-Inference-Reconstructed|Hindley-Milner Type Inference Reconstructed]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Unification-for-Units-of-Measure|Unification for Units of Measure]]
+   - [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Dependent-Types-in-Haskell|Dependent Types in Haskell]]
+2. [[04_TAPL_Pierce_2002/Type-Reconstruction|TAPL — Type Reconstruction]]; [[04_TAPL_Pierce_2002/ML-Implementation-Techniques|ML Implementation Techniques]]
+3. [[05_ATAPL_Pierce_2004/ML-Type-Inference|ATAPL — ML Type Inference]]
+4. [[46_Principles_of_Program_Analysis-Springer_2005/Type-and-Effect-Systems|Principles of Program Analysis — Type and Effect Systems]] (bridge to `static-analysis`)
+5. [[31_Bidirectional_Type_Checking_for_High_Rang_Polymorphism_Dunfield_Krishnaswami/Related-Approaches-to-Higher-Rank-Type-Inference|Related Approaches to Higher-Rank Type Inference]]
+6. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/book-guidelines|Principles of Abstract Interpretation]] — Type Systems as Abstract Interpretation
+
+#### Additional external sources
+- Pottier & Rémy, "The Essence of ML Type Inference" (ATTAPL ch. 10, in [[05_ATAPL_Pierce_2004/book-guidelines|ATAPL]] scope for HM(X)); Vytiniotis et al., "OutsideIn(X)" (JFP 2011).
 
 #### Key Concepts and Definitions
-1. NFTA/DFTA over ranked alphabets; determinization via subset construction (bottom-up cost-free, top-down strictly weaker).
-2. Myhill–Nerode theorem for trees (finite-index congruence ⟺ recognizable); pumping lemma for non-recognizability proofs.
-3. Regular tree grammars ⟺ recognizability (Kleene's theorem for trees).
-4. IO vs. OI derivation strategies for context-free tree languages.
-5. Effective Boolean algebras and symbolic finite automata (s-FA) generalizing classic automata to infinite/structured alphabets.
-6. Minterm-based reduction and the "predicate space explosion" as a second complexity axis beyond state-space blowup.
+1. Principal types; let-generalization; constraint generation vs. on-the-fly unification.
+2. HM(X): constraints over a constraint domain $X$.
+3. Type-and-effect systems as annotated types with constraint solving.
+4. Levels/ranks for efficient generalization.
 
 #### Relevant Questions
-1. Why does nondeterminism cost nothing for bottom-up tree automata but strictly reduce top-down expressive power?
-2. Why does determinizing a symbolic finite automaton introduce a predicate-space explosion beyond the classic state-space one?
-3. Why does the IO/OI distinction vanish exactly when a grammar is linear?
+1. Why does let-polymorphism need generalization side conditions, and how does this interact with metavariable scopes?
+2. How does HM(X) let refinement predicates become the constraint domain?
+3. When is inference undecidable (System F, dependent types), and how does bidirectionality restore decidability?
 
 ---
 
-## 19. Propositions-as-Types Beyond Sequential Programs: Session Types (Core Topic)
+## 14. Recursion, Fixed Points, and Recursive/Coinductive Types (Core Topic)
 
 #### Pre-requisites
-[[#1. Judgments, Contexts, and the Curry–Howard Correspondence (Core Topic)|Topic 1]].
+1. Computation; 3. Normalization; 6. Inductive types.
 
 #### Why this topic is important
-Lowest priority in this Focus Area — the project's goals don't currently
-call for a concurrency/session-typed component. Kept in the roadmap
-because it's the most rigorous extension of Curry–Howard on hand (linear
-logic ⟷ session fidelity) and worth knowing about if the compiler's
-verification-condition language ever needs to reason about concurrent or
-resource-sensitive protocols.
+Fixed points appear three ways in this project: recursive/coinductive types in the language, termination checking for recursive definitions in the kernel, and least/greatest fixpoints as the semantics of loop invariants in `static-analysis` and Horn-clause solving. This topic is the shared vocabulary.
 
 #### Sources to Study
-1. [[22_wadler_2012_propositions_as_sessions/book-guidelines|Propositions as Sessions (Wadler)]]
-   - [[The-Curry-Howard-Correspondence-for-Concurrency]]
-   - [[GV-a-Session-Typed-Functional-Language]]
-2. [[72_Domain-Aware_Session_Types_Caires_Perez_Pfenning_Toninho_2019/book-guidelines|Domain-Aware Session Types (Caires, Pérez, Pfenning, Toninho)]]
-   - [[Session-Types-via-the-Curry-Howard-Correspondence]]
-   - [[Hybrid-Linear-Logic-and-Domain-Aware-Types]]
+1. [[04_TAPL_Pierce_2002/book-guidelines|Types and Programming Languages]]
+   - [[04_TAPL_Pierce_2002/Recursive-Types|Recursive Types]]
+   - [[04_TAPL_Pierce_2002/Coinduction-and-Infinite-Types|Coinduction and Infinite Types]]
+2. [[07_practical_foundations_robert_harper_2012/book-guidelines|Practical Foundations for Programming Languages]]
+   - [[07_practical_foundations_robert_harper_2012/Recursive-Types|Recursive Types]]
+   - [[07_practical_foundations_robert_harper_2012/Inductive-and-Coinductive-Types|Inductive and Coinductive Types]]
+3. [[37_Certified_Programming_with_Dependent_Types_Adam_Chlipala_2019/Coinductive-Types-and-Infinite-Data|CPDT — Coinductive Types and Infinite Data]]
+4. [[18_JW_Lloyd_Foundations_logic_programming_1987/book-guidelines|Foundations of Logic Programming]]
+   - Fixpoint Theory (no article yet — see book-guidelines)
+5. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/book-guidelines|Principles of Abstract Interpretation]]
+   - Fixpoint Theory; Deductive, Inductive and Coinductive Definitions (no article yet — see book-guidelines)
+6. [[27_The_B_Book_Abrial_2005/book-guidelines|The B-Book]] — Fixpoint Construction and Induction
+7. [[13_introduction_bisimulation_coinduction_sangiorgi/book-guidelines|Introduction to Bisimulation and Coinduction]] (untagged for this area; relevant only for the coinduction theory)
+8. [[46_Principles_of_Program_Analysis-Springer_2005/book-guidelines|Principles of Program Analysis]] — Induction and Coinduction
 
 #### Key Concepts and Definitions
-1. πDILL (dual intuitionistic linear logic) and CP (classical linear-logic process calculus, one-sided sequents).
-2. The session-typed "twist": reusing the same channel name across hypothesis/conclusion, vs. the pairing interpretation's fresh names.
-3. Cut elimination as communication; commuting conversions as the aspect prior translations missed.
-4. Deadlock freedom as the concurrent analogue of termination.
-5. GV as a race/deadlock-free linear functional language with session types.
-6. Domain-aware extension: hybrid linear logic, modal worlds as domains, adding session fidelity plus global progress under domain migration.
+1. Knaster–Tarski: least and greatest fixed points of monotone operators.
+2. Iso- vs. equi-recursive types; unfolding.
+3. Guardedness (productivity) vs. structural decrease.
+4. Coinduction principle / bisimulation as proof technique.
 
 #### Relevant Questions
-1. In what sense do prior process-calculus translations from linear logic fall short of full Curry–Howard, and what does Caires–Pfenning's twist fix?
-2. Why does letting cut elimination directly specify CP's reduction rules matter?
-3. Why is domain information (e.g. "resides in domain AmazonUS") inexpressible in prior session-type frameworks?
+1. Why is a recursive type $\mu X.\,T$ unsound as a proposition unless $X$ occurs positively?
+2. How does guardedness relate to termination checking in the kernel?
+3. How do Kleene iteration and Tarski's theorem connect type-level fixpoints to invariant computation?
+
+---
+
+## 15. Symbolic and Tree Automata as Type/Domain Machinery (Core Topic)
+
+#### Pre-requisites
+1. Computation; 14. Fixed points/recursive types; 6. Inductive types (terms as trees).
+
+#### Why this topic is important
+Your CSP kernel represents abstract data structures as automata/grammar-shaped domains; symbolic automata (automata over an effective Boolean algebra of predicates) are the bridge between refinement predicates and regular-language domains, and tree automata treat inductive data as regular tree languages. Cross-reference: `sat-smt-csp` (automata domains), `static-analysis`.
+
+#### Sources to Study
+1. [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/book-guidelines|The Power of Symbolic Automata and Transducers]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Effective-Boolean-Algebras|Effective Boolean Algebras]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Symbolic-Finite-Automata|Symbolic Finite Automata]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Minterms-and-Alphabet-Equivalence-Classes|Minterms and Alphabet Equivalence Classes]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Symbolic-Finite-Transducers|Symbolic Finite Transducers]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Variants-of-Symbolic-Automata|Variants of Symbolic Automata]]
+2. [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/book-guidelines|Tree Automata Techniques and Applications]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Terms-Trees-and-Contexts|Terms, Trees, and Contexts]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Recognizable-Tree-Languages-and-Finite-Tree-Automata|Recognizable Tree Languages and Finite Tree Automata]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Regular-Tree-Grammars-and-Expressions|Regular Tree Grammars and Expressions]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Tree-Transducers|Tree Transducers]]
+3. [[92_Pushdown_Automata_Inclusion_Problems_NguyenVanTang/book-guidelines|Pushdown Automata Inclusion Problems]]
+   - [[92_Pushdown_Automata_Inclusion_Problems_NguyenVanTang/Pushdown-Automata-Foundations|Pushdown Automata Foundations]]
+   - [[92_Pushdown_Automata_Inclusion_Problems_NguyenVanTang/Visibly-Pushdown-Automata|Visibly Pushdown Automata]]
+4. [[20_AUTOMATA_TRANSDUCERS_Loris_DAntoni_thesis/book-guidelines|D'Antoni thesis — Automata and Transducers]] (untagged for this area; related background)
+
+#### Key Concepts and Definitions
+1. Effective Boolean algebra $\mathcal A=(\mathcal D,\Psi,[\![\cdot]\!],\bot,\top,\vee,\wedge,\neg)$ and symbolic finite automata.
+2. Minterm construction; determinization/minimization over predicates.
+3. Regular tree languages, tree automata, closure and decidability properties.
+4. Visibly pushdown languages as a determinizable context-free class.
+
+#### Relevant Questions
+1. What does the underlying theory need to provide (decidable satisfiability, model generation) for symbolic automata algorithms to work?
+2. How do minterms trade alphabet size for exponential blowup?
+3. Which inductive data invariants are regular tree languages, and which need pushdown/visibly-pushdown models?
+
+---
+
+## 16. Categorical Semantics and Models of Type Theory (Optional Core)
+
+#### Pre-requisites
+5. MLTT; 7. Definitional equality; 4. Polymorphism. Basic category theory is developed inline below.
+
+#### Why this topic is important
+Categorical models (categories with families, fibrations, toposes) justify the kernel's rules — soundness/consistency — and explain why substitution must be stable in every rule. Not on the implementation critical path; read after the kernel is working when you need to justify new type formers (e.g. refinement or linear features).
+
+#### Sources to Study
+1. [[57_Categorical_Logic_Type_Theory_BART_JACOBS/book-guidelines|Categorical Logic and Type Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Simple-Type-Theory|Simple Type Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Fibred-Category-Theory|Fibred Category Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Indexed-Categories-and-the-Grothendieck-Construction|Indexed Categories and the Grothendieck Construction]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Full-Higher-Order-Dependent-Type-Theory|Full Higher Order Dependent Type Theory]]
+   - [[57_Categorical_Logic_Type_Theory_BART_JACOBS/Realizability-Models-Omega-Sets-and-PERs|Realizability Models]]
+2. [[17_HofmannExtensionalIntensionalTypeTheory1995/book-guidelines|Extensional Concepts in Intensional Type Theory]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/Categorical-Semantics-Of-Dependent-Type-Theory|Categorical Semantics of Dependent Type Theory]]
+   - [[17_HofmannExtensionalIntensionalTypeTheory1995/The-Method-Of-Syntactic-Models|The Method of Syntactic Models]]
+3. [[84_type-theory-book_Daniel_Gratzer_2026/Categorical-Semantics-of-Type-Theory|Gratzer — Categorical Semantics of Type Theory]]
+4. [[61_notes_on_category_theory_2024/book-guidelines|Notes on Category Theory]] and [[48_From_Categories_Homotopy_Theory_Cambridge_Birgit_Richter_2020/book-guidelines|From Categories to Homotopy Theory]] — prerequisites/background (no articles on this area's topics yet where marked in guidelines)
+5. [[80_topoi-the-categorical-analysis-of-logic-Goldblatt/book-guidelines|Topoi: The Categorical Analysis of Logic]]
+6. [[03_proofs_and_types_girard_1989/Coherence-Space-Semantics|Girard — Coherence Space Semantics]]
+7. [[93_Impredicativity_in_Linear_Dependent_Type_Theory_Speight_Weide_2026/book-guidelines|Impredicativity in Linear Dependent Type Theory]]
+   - [[93_Impredicativity_in_Linear_Dependent_Type_Theory_Speight_Weide_2026/Comprehension-Categories-and-Fibrations|Comprehension Categories and Fibrations]]
+   - [[93_Impredicativity_in_Linear_Dependent_Type_Theory_Speight_Weide_2026/Realizability-Models-via-Assemblies|Realizability Models via Assemblies]]
+
+#### Additional external sources
+- Dybjer, "Internal Type Theory" (categories with families); Hofmann, "Syntax and Semantics of Dependent Types" (1997); Awodey, *Category Theory*.
+
+#### Key Concepts and Definitions
+1. Categories with families / comprehension categories: types as fibres over contexts, substitution as reindexing.
+2. Fibrations and indexed categories; Grothendieck construction.
+3. Realizability (ω-sets, PERs, assemblies) as models of impredicative theories.
+4. Stability under substitution as a semantic requirement.
+
+#### Relevant Questions
+1. Why must every semantic type former be stable under substitution, and how does this constrain kernel rules?
+2. What does the groupoid model show about UIP that a purely syntactic argument cannot?
+3. Why are realizability models the standard route to consistency of impredicative theories?
+
+---
+
+## 17. Substructural, Linear, and Session Types (Optional / Extension)
+
+#### Pre-requisites
+3. Curry–Howard/Normalization; 5. MLTT (for the dependent-linear material). Cross-reference: linear logic and focused sequent calculus in `automated-reasoning`.
+
+#### Why this topic is important
+Linear resources model ownership/heaps in a Rust-shaped language and connect to separation logic for `static-analysis`. Session types give Curry–Howard for concurrency; linear dependent type theory is the frontier for combining these with dependent contracts. This topic is optional for the first compiler iteration.
+
+#### Sources to Study
+1. [[22_wadler_2012_propositions_as_sessions/book-guidelines|Propositions as Sessions]]
+   - [[22_wadler_2012_propositions_as_sessions/The-Curry-Howard-Correspondence-for-Concurrency|The Curry-Howard Correspondence for Concurrency]]
+   - [[22_wadler_2012_propositions_as_sessions/GV-a-Session-Typed-Functional-Language|GV: a Session-Typed Functional Language]]
+   - [[22_wadler_2012_propositions_as_sessions/Polymorphism-in-CP|Polymorphism in CP]]
+2. [[72_Domain-Aware_Session_Types_Caires_Perez_Pfenning_Toninho_2019/book-guidelines|Domain-Aware Session Types]]
+   - [[72_Domain-Aware_Session_Types_Caires_Perez_Pfenning_Toninho_2019/Session-Types-via-the-Curry-Howard-Correspondence|Session Types via Curry–Howard]]
+   - [[72_Domain-Aware_Session_Types_Caires_Perez_Pfenning_Toninho_2019/Hybrid-Linear-Logic-and-Domain-Aware-Types|Hybrid Linear Logic and Domain-Aware Types]]
+3. [[93_Impredicativity_in_Linear_Dependent_Type_Theory_Speight_Weide_2026/Linear-Dependent-Type-Theory|Linear Dependent Type Theory]]
+4. [[05_ATAPL_Pierce_2004/Substructural-Type-Systems|ATAPL — Substructural Type Systems]]
+5. [[03_proofs_and_types_girard_1989/Linear-Logic|Girard — Linear Logic]]
+6. [[28_An_Introduction_Separation_Logic_Reynolds_Copenhagen_2008/book-guidelines|Introduction to Separation Logic]] (bridge to `static-analysis`)
+
+#### Key Concepts and Definitions
+1. Structural rules (weakening, contraction, exchange) and their removal; linear/affine/relevant types.
+2. Session types as linear propositions; cut ↔ communication.
+3. Linear dependent types: how dependency interacts with resource usage.
+
+#### Relevant Questions
+1. Where do linearity restrictions enter the substitution lemma?
+2. How does the "propositions as sessions" reading treat cut elimination as communication?
+3. What obstacles arise when combining linearity with dependency (usage in types vs. terms)?
+
+---
+
+## 18. Univalence, HoTT, Cubical and Two-Level Type Theory (Optional / Foundations)
+
+#### Pre-requisites
+5. MLTT; 7. Intensional/extensional equality; 16. Categorical semantics helpful.
+
+#### Why this topic is important
+Not required for the compiler as scoped, but HoTT explains what identity types *are* (paths), why UIP is independent, how quotients and higher inductive types can be added computationally (cubical), and what two-level type theory buys for metatheory and semi-simplicial constructions. Read it to understand design choices such as `Prop` vs. `Type`, not to implement them.
+
+#### Sources to Study
+1. [[14_homotopy_type_theory/book-guidelines|Homotopy Type Theory]]
+   - [[14_homotopy_type_theory/Type-Theory-as-a-Foundational-System|Type Theory as a Foundational System]]
+   - [[14_homotopy_type_theory/Identity-Types-and-Path-Structure|Identity Types and Path Structure]]
+   - [[14_homotopy_type_theory/Type-Families-as-Fibrations-with-Transport|Type Families as Fibrations with Transport]]
+   - [[14_homotopy_type_theory/The-Univalence-Axiom-and-Its-Consequences|The Univalence Axiom]]
+   - [[14_homotopy_type_theory/Higher-Inductive-Types|Higher Inductive Types]]
+   - [[14_homotopy_type_theory/Homotopy-n-Types-and-Truncation-Levels|Homotopy n-Types and Truncation Levels]]
+   - [[14_homotopy_type_theory/Formal-Metatheory|Formal Metatheory]]
+2. [[84_type-theory-book_Daniel_Gratzer_2026/Cubical-Type-Theory|Gratzer — Cubical Type Theory]] and [[84_type-theory-book_Daniel_Gratzer_2026/Univalent-Foundations-and-Homotopy-Type-Theory|Univalent Foundations and HoTT]]
+3. [[91_Two-Level_Type_Theory_Annekov_Capriotti_Kraus_2026/book-guidelines|Two-Level Type Theory and Applications]]
+   - [[91_Two-Level_Type_Theory_Annekov_Capriotti_Kraus_2026/Two-Level-Type-Theory-(2LTT)-Foundations|2LTT Foundations]]
+   - [[91_Two-Level_Type_Theory_Annekov_Capriotti_Kraus_2026/Fibrancy-and-Cofibrancy|Fibrancy and Cofibrancy]]
+4. [[30_A_HoTT_Approach_to_Computational_Effects_Wells_2019/book-guidelines|A HoTT Approach to Computational Effects]]
+   - [[30_A_HoTT_Approach_to_Computational_Effects_Wells_2019/Foundations-of-Homotopy-Type-Theory|Foundations of HoTT]]
+   - [[30_A_HoTT_Approach_to_Computational_Effects_Wells_2019/A-Type-Theoretic-Model-of-Actions-and-Effects|A Type-Theoretic Model of Actions and Effects]]
+5. [[48_From_Categories_Homotopy_Theory_Cambridge_Birgit_Richter_2020/book-guidelines|From Categories to Homotopy Theory]] (background)
+
+#### Key Concepts and Definitions
+1. Identity types as paths; transport; equivalences.
+2. Univalence: $(A = B) \simeq (A \simeq B)$; consequences (funext).
+3. Homotopy levels, propositional truncation, higher inductive types.
+4. Cubical type theory: interval, Kan operations; canonicity with univalence.
+5. 2LTT: outer (strict) and inner (fibrant) levels.
+
+#### Relevant Questions
+1. Why must $\mathsf{idtoequiv}$ be an equivalence, and what fails with mere inverse-existence?
+2. How does cubical type theory reconcile univalence with canonicity?
+3. What role does the strict outer level of 2LTT play in metatheory that is impossible in plain HoTT?
+
+---
+
+## Summary of gaps
+
+Topics with thin or no on-hand coverage where external sources are recommended (see each topic's "Additional external sources"): **12. Refinement types proper** (Liquid Types, Freeman–Pfenning, Xi–Pfenning; F\*), **7. Conversion algorithms** (NbE / Abel et al., Coquand), **13. Constraint-based HM(X) inference** (Pottier–Rémy), **4. System F/λ-cube canonical references** (Barendregt), and **5.** a kernel-level Lean 4 reference (Carneiro). Pruned as out-of-area despite a stray tag: [[63_Rings_Fields_Vector_Spaces_Sethuraman/book-guidelines|Rings, Fields, and Vector Spaces]] (abstract algebra, not on the type-theory critical path).

@@ -1,694 +1,683 @@
 # Learning Roadmap — SAT/SMT/CSP
 
-This is the decision-procedure backbone of the compiler: the CSP kernel that
-searches for concrete counterexamples (bug *presence*), the SMT-style
-decision procedures that discharge verification conditions, and the
-constraint-propagation machinery that the CSP kernel shares with the
-abstract-interpretation pass. The sequence starts from propositional
-satisfiability and its complexity limits, builds up through CDCL, proof
-certification, and pseudo-Boolean/cutting-planes reasoning, moves into
-first-order decidable theories and their combination (Nelson–Oppen/SMT),
-then pivots to constraint satisfaction proper — propagation, search, the
-algebraic complexity theory, and soft/continuous extensions — before closing
-with the three areas where this Focus Area is thickest with `static-analysis`
-and `automated-reasoning`: abstract-interpretation/CP unification, CEGAR and
-Constrained-Horn-Clause solving, and abduction/interpolation-based invariant
-generation.
+The `sat-smt-csp` Focus Area builds the *search* half of the verifier: a CSP kernel that looks for concrete counterexamples (proving bug **presence**) using domain/lattice propagation over integers, non-linear constraints and automata-shaped domains, plus the SAT/SMT backend that discharges verification conditions. The sequence starts from propositional SAT (encodings, CDCL, proofs), extends to richer logics and SMT, then turns to CSP proper — modelling, consistency, propagation, search, propagator engineering — before the specialized material the project needs (abstract-domain-based solving, integer/non-linear/continuous constraints, tractability theory, automata domains) and finally the CEGAR/CHC/symbolic-execution loop that connects the solver to the abstract interpreter. Prerequisites in other areas are cross-referenced to [[learning-roadmap-type-theory|type-theory]], [[learning-roadmap-automated-reasoning|automated-reasoning]] and [[learning-roadmap-static-analysis|static-analysis]].
 
 ---
 
-## 1. Propositional Logic, CNF, and Classical SAT Algorithms (Core Topic)
+## 1. Propositional Logic, CNF, and Encodings (Core Topic)
 
 #### Pre-requisites
-None — this is the entry point of the whole Focus Area.
+Discrete mathematics; [[learning-roadmap-automated-reasoning|automated-reasoning]] topic 1 (classical logic) is the companion.
 
 #### Why this topic is important
-Every later layer (CDCL, pseudo-Boolean solving, SMT, CSP propagation) is
-built on the same substrate: formulas in conjunctive normal form and the
-Davis–Putnam/DPLL search-and-inference loop. The Tseitin/definitional-CNF
-transformation here is exactly the encoding step the CSP kernel will need
-whenever it hands a candidate counterexample obligation to a SAT/SMT
-backend.
-
-#### Sources to Study
-1. [[15_handbook_logic_automated_reasoning_harrison_2009/book-guidelines|Handbook of Practical Logic and Automated Reasoning (Harrison)]]
-   - [[Foundations-of-Symbolic-Logic-in-OCaml]]
-   - [[Propositional-Logic]]
-   - [[Propositional-Satisfiability-Algorithms]]
-2. [[25_Handbook_Satisfiability_Armin_Biere_2021/book-guidelines|Handbook of Satisfiability (Biere, Heule, van Maaren, Walsh, eds.)]]
-   - [[History-and-Foundations-of-Satisfiability]]
-   - [[CNF-Encodings]]
-   - [[Complete-Search-Algorithms-for-SAT]]
-3. [[16_ENDERTON_Mathematical_Introduction_Logic/book-guidelines|A Mathematical Introduction to Logic (Enderton)]]
-   - [[Sentential-Propositional-Logic]]
-   - [[Switching-Circuits]]
-
-#### Key Concepts and Definitions
-1. Negation/disjunctive/conjunctive normal form, and the Tseitin definitional-CNF transformation, which introduces one auxiliary variable per subformula to get a linear-size, *equisatisfiable* (not logically equivalent) CNF.
-2. The Davis–Putnam procedure (unit propagation, pure-literal rule, resolution) and its refinement into DPLL (splitting rather than resolution-based elimination).
-3. Resolution as a refutation-complete proof system for CNF; width–size trade-offs (Ben-Sasson–Wigderson) that already hint at why plain DPLL/resolution is exponential on hard families (pigeonhole, Tseitin formulas).
-
-#### Relevant Questions
-1. Why does exploiting equisatisfiability (Tseitin) rather than insisting on logical equivalence avoid the exponential blowup that naive CNF conversion or NNF-then-distribute DNF/CNF conversion incurs?
-2. DP, DPLL, and Stålmarck's method all decide propositional satisfiability via different core mechanisms (resolution, splitting+unit-propagation, dilemma+saturation) — what does each exploit to avoid exhaustive valuation enumeration?
-3. Why is a resolution *width* lower bound already enough to prove a resolution *size* lower bound, and what does this predict about the ceiling on naive DPLL/CDCL performance for structured hard formulas?
-
----
-
-## 2. Computability and the Boundary of Decidability (Core Topic)
-
-#### Pre-requisites
-[[#1. Propositional Logic, CNF, and Classical SAT Algorithms (Core Topic)|Topic 1]] (contrast: propositional SAT is NP-complete but *decidable*; first-order/arithmetic validity is not even that).
-
-#### Why this topic is important
-The CSP kernel and the theorem prover both live inside a hard boundary: SAT
-is decidable-but-intractable, first-order validity is undecidable, and even
-restricted arithmetic fragments split sharply into decidable (Presburger,
-i.e. linear integer arithmetic without multiplication) and undecidable
-(once multiplication or general divisibility is added) — this is exactly
-the line the refinement-type contract language and its non-linear
-constraint handling will have to respect.
-
-#### Sources to Study
-1. [[10_boolos_burgess_computability_logic_2007/book-guidelines|Computability and Logic (Boolos, Burgess, Jeffrey)]]
-   - [[Turing-and-Abacus-Computability]]
-   - [[Recursive-Function-Theory]]
-   - [[Recursive-Semirecursive-and-Arithmetical-Sets-and-Relations]]
-   - [[Arithmetization-of-Syntax-and-Representability]]
-   - [[Decidable-Fragments-of-Arithmetic]]
-   - [[Nonstandard-Models-of-Arithmetic]]
-   - [[Definability-in-Arithmetic-and-Forcing]]
-2. [[16_ENDERTON_Mathematical_Introduction_Logic/book-guidelines|A Mathematical Introduction to Logic (Enderton)]]
-   - [[Weak-Fragments-of-Number-Theory]]
-   - [[Representability-and-Recursive-Functions]]
-
-#### Key Concepts and Definitions
-1. Turing/abacus/recursive computability as three independently-motivated, provably equivalent formalizations of "effectively computable" (Church/Turing's thesis).
-2. The arithmetical hierarchy (recursive, semirecursive/r.e., arithmetically definable) and Kleene's complementation principle — the general shape every later undecidability result (halting problem, Church's theorem, Gödel) instantiates.
-3. Presburger arithmetic (linear arithmetic, no multiplication) is decidable via quantifier elimination; adding multiplication (or general divisibility predicates) makes the theory undecidable — the precise dividing line an SMT-style linear-arithmetic theory solver must stay on the right side of.
-
-#### Relevant Questions
-1. Why does "effectively computable" require three independent formalizations (Turing machines, abacus machines, recursive functions) rather than one, and why does their agreement count as evidence rather than proof for Church's thesis?
-2. What exactly separates Presburger arithmetic's decidability from the undecidability of full arithmetic, and why is quantifier elimination the mechanism that makes that boundary constructive rather than merely a complexity-class statement?
-3. How does the arithmetical hierarchy give a graded notion of "how undecidable" a set is, and why does that graded structure matter more to a solver-builder than the flat decidable/undecidable dichotomy?
-
----
-
-## 3. Conflict-Driven Clause Learning (CDCL) and Modern SAT Architecture (Core Topic)
-
-#### Pre-requisites
-[[#1. Propositional Logic, CNF, and Classical SAT Algorithms (Core Topic)|Topic 1]].
-
-#### Why this topic is important
-CDCL is "the sole reason" (per the Handbook of Satisfiability) SAT scaled
-from hundreds to millions of variables, and it is the direct ancestor of
-every practical technique the CSP kernel and any embedded SMT backend will
-actually run: the implication graph, non-chronological backtracking, and
-conflict-driven learned clauses generalize almost unchanged into the
-pseudo-Boolean (Topic 4) and lazy-clause-generation CSP (Topic 9) settings.
+SAT is the substrate of everything downstream: bounded checks, CHC/BMC back-ends and Boolean structure inside SMT. How a verification condition is *encoded* (Tseitin, cardinality, arithmetic-to-bits) determines whether the solver succeeds. Later: 2–6, 16–17.
 
 #### Sources to Study
 1. [[25_Handbook_Satisfiability_Armin_Biere_2021/book-guidelines|Handbook of Satisfiability]]
-   - [[Conflict-Driven-Clause-Learning]]
-2. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/book-guidelines|Pseudo-Boolean Reasoning and Compilation (Wallon)]]
-   - [[Practical-SAT-Solving-and-the-CDCL-Architecture]]
-   - [[Guiding-the-Search-in-CDCL-SAT-Solvers]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/History-and-Foundations-of-Satisfiability|History and Foundations of Satisfiability]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/CNF-Encodings|CNF Encodings]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Non-Clausal-and-Circuit-Based-Satisfiability|Non-Clausal and Circuit-Based Satisfiability]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Worst-Case-Complexity-and-Tractability|Worst-Case Complexity and Tractability]]
+2. [[16_ENDERTON_Mathematical_Introduction_Logic/book-guidelines|A Mathematical Introduction to Logic]]
+   - [[16_ENDERTON_Mathematical_Introduction_Logic/Sentential-Propositional-Logic|Sentential (Propositional) Logic]]
+   - [[16_ENDERTON_Mathematical_Introduction_Logic/Sentential-Connectives-and-Their-Completeness|Sentential Connectives and Their Completeness]]
+   - [[16_ENDERTON_Mathematical_Introduction_Logic/Compactness-for-Sentential-Logic|Compactness for Sentential Logic]]
+   - [[16_ENDERTON_Mathematical_Introduction_Logic/Switching-Circuits|Switching Circuits]]
+3. [[15_handbook_logic_automated_reasoning_harrison_2009/Propositional-Logic|Harrison — Propositional Logic]]
+4. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Propositional-Logic-Foundations|Wallon — Propositional Logic Foundations]]
+5. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Computational-Complexity-Preliminaries|Wallon — Computational Complexity Preliminaries]]
 
 #### Key Concepts and Definitions
-1. The implication graph (decisions, unit-propagated variables, antecedents, decision levels) and the conflict vertex $\bot$ produced when a clause is falsified.
-2. Conflict analysis: tracing antecedents FIFO from $\bot$ back to a single current-decision-level literal yields an *asserting* learned clause, enabling non-chronological backjumping.
-3. Branching heuristics (VSIDS-style activity scores), watched-literal data structures for efficient unit propagation, and restart/clause-deletion policies as the remaining engineering levers.
+1. CNF/DNF, satisfiability, Boolean functions; Tseitin (equisatisfiable, linear-size) vs. naive distribution.
+2. Cardinality/arithmetic encodings (sequential counter, totalizer, adders).
+3. NP-completeness of SAT; tractable classes (2-SAT, Horn, XOR).
+4. Compactness ⇒ finite approximations of infinite theories.
 
 #### Relevant Questions
-1. Why is the antecedent of a variable defined only for unit-propagated variables (never decisions), and how does that asymmetry drive the recursive decision-level computation used during conflict analysis?
-2. Why does conflict analysis terminate with an asserting clause containing exactly one current-decision-level literal, and what would break if it stopped earlier or later in the trace?
-3. CDCL's underlying proof system is plain resolution, yet CDCL vastly outperforms naive Davis–Putnam resolution in practice — what does this say about the relative contribution of search (branching/restarts/clause activity) versus the proof system itself?
+1. Why is a Tseitin encoding equisatisfiable rather than equivalent, and what does that imply for model extraction?
+2. How do you encode a bounded-integer constraint so unit propagation does most of the work?
+3. Which tractable classes appear in verification conditions in practice?
 
 ---
 
-## 4. Proof Complexity, Certification, and Pseudo-Boolean/Cutting-Planes Reasoning (Core Topic)
+## 2. Complete SAT Search: DPLL, CDCL, Heuristics, Preprocessing (Core Topic)
 
 #### Pre-requisites
-[[#3. Conflict-Driven Clause Learning (CDCL) and Modern SAT Architecture (Core Topic)|Topic 3]].
+1. Propositional logic and CNF.
 
 #### Why this topic is important
-This is the theory that explains *why* a given CDCL/pseudo-Boolean search
-can or cannot find a short refutation, and it supplies the proof-producing
-discipline (RUP/DRAT-style checkable certificates) the theorem prover's
-trusted kernel needs if the CSP kernel's counterexample search is to
-produce a checkable certificate rather than a black-box "no" answer.
+CDCL is the engine inside every modern SMT/CHC/PB solver; it is also the archetype for the CSP kernel's conflict analysis and learning. Understanding watched literals, 1-UIP learning, restarts and phase saving lets you build (or embed) a competitive Rust core. Later: 3, 4, 6, 9.
 
 #### Sources to Study
 1. [[25_Handbook_Satisfiability_Armin_Biere_2021/book-guidelines|Handbook of Satisfiability]]
-   - [[Proof-Complexity]]
-   - [[Proofs-of-Unsatisfiability]]
-   - [[Worst-Case-Complexity-and-Tractability]]
-   - [[Symmetry-Minimal-Unsatisfiability-and-Autarkies]]
-2. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/book-guidelines|Pseudo-Boolean Reasoning and Compilation (Wallon)]]
-   - [[The-Cutting-Planes-Proof-System]]
-   - [[Pseudo-Boolean-Solving-via-Cutting-Planes]]
-   - [[Irrelevant-Literals-in-Pseudo-Boolean-Constraint-Learning]]
-   - [[Weakening-Strategies-for-Pseudo-Boolean-Solvers]]
-   - [[Adapting-CDCL-Strategies-to-Pseudo-Boolean-Solving]]
-   - [[Knowledge-Compilation]]
-   - [[Succinctness-and-Tractability-of-Pseudo-Boolean-Languages]]
-
-#### Key Concepts and Definitions
-1. Proof systems as poly-time-checkable predicates satisfying soundness and completeness; polynomial simulation between systems (resolution ⊆ cutting planes ⊆ extended resolution in known-power terms).
-2. Pseudo-Boolean constraints $\sum_i\alpha_i\ell_i \ge \delta$ generalize CNF clauses; the cutting-planes proof system (addition, multiplication, division/rounding) strictly generalizes resolution and can be exponentially more succinct, at the cost of introducing "irrelevant literals" during learned-constraint derivation that must be weakened away.
-3. RUP (reverse unit propagation) clauses as exactly the property CDCL-learned clauses satisfy — the mechanism that lets a proof be hint-free (DRAT-style) yet still efficiently checkable.
-
-#### Relevant Questions
-1. Why does a resolution width lower bound (Ben-Sasson–Wigderson) translate into a size lower bound, and why does this explain why extended resolution/cutting-planes can be exponentially stronger?
-2. Why can cutting-planes-style pseudo-Boolean inference introduce "irrelevant literals" that plain resolution never would, and why does removing them (weakening) trade constraint strength against constraint size?
-3. Why is "satisfiability preservation" the most general notion of clause/constraint redundancy but unusable directly as a checkable proof system, and how does a syntactic criterion like RUP restore efficient checkability while still matching what CDCL/PB solvers actually learn?
-
----
-
-## 5. Look-Ahead, Local Search, and the Statistical Physics of Random SAT (Core Topic)
-
-#### Pre-requisites
-[[#3. Conflict-Driven Clause Learning (CDCL) and Modern SAT Architecture (Core Topic)|Topic 3]].
-
-#### Why this topic is important
-CDCL is not universally dominant: look-ahead solvers win on low-density/
-small-diameter instances, and local search gives fast *satisfying*
-witnesses (useful for the CSP kernel's "prove bug presence" mode) at the
-cost of never proving unsatisfiability. Knowing which architecture fits
-which instance shape is a direct design input for the CSP kernel's own
-search-strategy selection.
-
-#### Sources to Study
-1. [[25_Handbook_Satisfiability_Armin_Biere_2021/book-guidelines|Handbook of Satisfiability]]
-   - [[Look-Ahead-Solving]]
-   - [[Stochastic-Local-Search-for-SAT]]
-   - [[Branching-Heuristic-Theory]]
-   - [[Random-Satisfiability-and-Phase-Transitions]]
-   - [[Runtime-Variation-and-Solver-Engineering]]
-   - [[Statistical-Physics-of-Random-Constraint-Satisfaction]]
-2. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming (Rossi, van Beek, Walsh, eds.)]]
-   - [[Local-Search-Methods]]
-
-#### Key Concepts and Definitions
-1. Density (clause/variable ratio) vs. diameter (resolution-graph locality) as the axis separating where look-ahead (low density, small diameter) beats CDCL (large diameter, local clusters) and vice versa.
-2. Stochastic local search: GSAT (greedy descent, plateaus rather than true traps), WalkSAT (focus on a random *unsatisfied* clause, then a freebie/noise/greedy move) — one-sided error, cannot prove UNSAT.
-3. The satisfiability threshold conjecture for random $k$-SAT, backdoor sets, and heavy-tailed runtime distributions as the theoretical basis for randomized restarts.
-
-#### Relevant Questions
-1. Why does high formula density penalize look-ahead (via propagation cost) while large diameter penalizes CDCL (via locality of learned clauses) specifically?
-2. Why does a heavy-tailed runtime distribution (rather than mere high variance) directly justify restarts as an algorithmic exploit rather than a discretionary tuning knob?
-3. What does the gap between the best known upper bound on the satisfiability threshold and the largest density any known efficient algorithm actually solves ("the algorithmic barrier") suggest about hardness that isn't captured by the threshold itself?
-
----
-
-## 6. First-Order Decision Procedures and Quantifier Elimination (Core Topic)
-
-#### Pre-requisites
-[[#2. Computability and the Boundary of Decidability (Core Topic)|Topic 2]], [[#1. Propositional Logic, CNF, and Classical SAT Algorithms (Core Topic)|Topic 1]].
-
-#### Why this topic is important
-This is the direct ancestor of the theory solvers an SMT backend needs for
-the refinement-type contract language's arithmetic and array reasoning:
-Presburger arithmetic, linear/nonlinear real arithmetic, and algebraic
-decision procedures (Gröbner bases) are exactly the decidable fragments a
-verification-condition discharge engine dispatches to.
-
-#### Sources to Study
-1. [[15_handbook_logic_automated_reasoning_harrison_2009/book-guidelines|Handbook of Practical Logic and Automated Reasoning (Harrison)]]
-   - [[First-Order-Logic-Syntax-and-Semantics]]
-   - [[Automated-First-Order-Theorem-Proving]]
-   - [[Decidable-Theories-and-Quantifier-Elimination]]
-   - [[Algebraic-Decision-Procedures]]
-2. [[10_boolos_burgess_computability_logic_2007/book-guidelines|Computability and Logic]]
-   - [[Decidable-Fragments-of-Arithmetic]]
-3. [[16_ENDERTON_Mathematical_Introduction_Logic/book-guidelines|A Mathematical Introduction to Logic]]
-   - [[Weak-Fragments-of-Number-Theory]]
-
-#### Key Concepts and Definitions
-1. Skolemization, Herbrand's theorem, and the ground-instance-enumeration lineage (Gilmore → Davis–Putnam → Prawitz/tableaux → resolution → model elimination) as successive attacks on the same "explosion of ground instances."
-2. Quantifier elimination as an algorithmic route to decidability: Cooper's algorithm for Presburger arithmetic, cylindrical algebraic decomposition / Tarski–Seidenberg for real closed fields, and quantifier elimination for algebraically closed fields via the Fundamental Theorem of Algebra.
-3. Gröbner bases and Buchberger's algorithm as a rewriting/completion procedure deciding polynomial ideal membership, used both for algebraic word problems and (via Rabinowitsch's trick) as a fast alternative to real quantifier elimination for algebraic identities.
-
-#### Relevant Questions
-1. Why do the AE (∀*∃*) prefix fragment and Presburger arithmetic both admit decidability, yet only the AE fragment gets it "for free" from Herbrand's theorem while Presburger genuinely needs an infinite family of divisibility predicates and a dedicated elimination algorithm?
-2. Wu's method and Tarski/Seidenberg real quantifier elimination both decide geometric theorems — in what sense is Wu's triangularization a genuinely weaker (sufficient, not necessary non-degeneracy) notion of proof, and why does that weakness buy efficiency?
-3. Why does Newman's lemma (termination + local confluence ⇒ confluence) let Knuth–Bendix-style completion (and, in the algebraic setting, Buchberger's algorithm via S-polynomials) get away with checking only finitely many critical/overlap pairs?
-
----
-
-## 7. Equality Reasoning, Term Rewriting, and Congruence Closure (Core Topic)
-
-#### Pre-requisites
-[[#6. First-Order Decision Procedures and Quantifier Elimination (Core Topic)|Topic 6]].
-
-#### Why this topic is important
-Congruence closure is the decision procedure for the ground equality
-fragment every SMT solver's core relies on, and rewriting/completion is the
-same machinery the elaborator's definitional-equality checker (`isDefEq`)
-needs — this topic is the direct bridge between the `type-theory` unifier
-and the `sat-smt-csp` decision-procedure stack.
-
-#### Sources to Study
-1. [[15_handbook_logic_automated_reasoning_harrison_2009/book-guidelines|Handbook of Practical Logic and Automated Reasoning (Harrison)]]
-   - [[Equality-Reasoning]]
-2. [[39_Equality-Saturation-RossThesis2012/book-guidelines|Equality Saturation: Using Equational Reasoning to Optimize Imperative Functions (Tate)]]
-   - [[Equality-Saturation]]
-   - [[The-Peggy-Implementation]]
-   - [[Loop-and-Branch-Optimizations-Discovered-by-Saturation]]
-
-#### Key Concepts and Definitions
-1. Congruence closure of a ground equation set, decided via union-find with a predecessor function; Ackermann's reduction eliminating function symbols in favor of new variables, reducing further to propositional tautology checking.
-2. Termination orderings (lexicographic path order), confluence/local confluence (Newman's lemma), and Knuth–Bendix completion turning an equation set into a canonical (terminating, confluent) rewrite system via critical-pair analysis.
-3. Equality saturation: rather than destructively rewriting, add equalities monotonically to an e-graph until saturation, representing exponentially many equal programs at once and eliminating the phase-ordering problem that plagues sequential rewrite-based optimizers.
-
-#### Relevant Questions
-1. What is the essential difference between congruence closure (deciding ground equational validity) and paramodulation (a general first-order-with-equality inference rule), and why does the latter need functional-reflexivity axioms or restrictions (e.g. no paramodulation into variables) to stay refutation-complete?
-2. Why does treating optimizations as *additive* equality analyses (equality saturation) rather than destructive rewrites eliminate the phase-ordering problem that ordinary term-rewriting-based compiler optimization suffers from?
-3. In what sense is Newman's lemma the same mathematical fact underlying both Knuth–Bendix completion (Topic 6) and equality saturation's confluence/uniqueness-of-normal-form guarantees?
-
----
-
-## 8. Combining Decision Procedures: Nelson–Oppen, Shostak, and SMT (Core Topic)
-
-#### Pre-requisites
-[[#6. First-Order Decision Procedures and Quantifier Elimination (Core Topic)|Topic 6]], [[#7. Equality Reasoning, Term Rewriting, and Congruence Closure (Core Topic)|Topic 7]].
-
-#### Why this topic is important
-No single decidable theory covers a real refinement-type contract language
-(it needs linear arithmetic, uninterpreted functions, and often arrays or
-bit-vectors together); this topic is exactly the theory of how to combine
-independently-sound, independently-complete decision procedures into one
-SMT engine without re-deriving soundness from scratch.
-
-#### Sources to Study
-1. [[15_handbook_logic_automated_reasoning_harrison_2009/book-guidelines|Handbook of Practical Logic and Automated Reasoning (Harrison)]]
-   - [[Combining-Decision-Procedures]]
-2. [[25_Handbook_Satisfiability_Armin_Biere_2021/book-guidelines|Handbook of Satisfiability]]
-   - [[SAT-Techniques-for-Richer-Logics]]
-3. [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/book-guidelines|Modular Constraint Solver Cooperation via Abstract Interpretation (Talbot, Monfroy, Truchet)]]
-   - [[Relation-to-Other-Cooperation-Frameworks]]
-
-#### Key Concepts and Definitions
-1. Craig's interpolation theorem, proved constructively via propositional interpolation lifted through Herbrand's theorem and Skolemization — the technical engine behind theory combination and (later) interpolation-based invariant generation (Topic 18).
-2. The Nelson–Oppen combination method: theories with disjoint signatures, purification/homogenization of "alien" subterms, and (for efficiency) the stably-infinite and convex conditions that avoid enumerating all possible equalities between shared variables.
-3. Shostak's method (canonizer + solver) as a more efficient, less general alternative to Nelson–Oppen; the lazy vs. eager architectural split in modern SMT, and Nelson–Oppen recast as a *reduced product* of abstract domains under abstract interpretation.
-
-#### Relevant Questions
-1. Why does convexity fail for both linear integer arithmetic and real arithmetic with multiplication, and what does the resulting need for case-splitting cost Nelson–Oppen in practice?
-2. In what sense is Nelson–Oppen theory combination a special case of the reduced-product construction from abstract interpretation (Topic 14), and what does that reframing buy over treating SMT combination as sui generis?
-3. Why does Shostak's method trade generality for efficiency compared to Nelson–Oppen, and under what conditions on the component theories does that trade actually pay off?
-
----
-
-## 9. Constraint Satisfaction Foundations: Representation, Local Consistency, and Propagation (Core Topic)
-
-#### Pre-requisites
-[[#1. Propositional Logic, CNF, and Classical SAT Algorithms (Core Topic)|Topic 1]] (propagation is the CSP analogue of unit propagation).
-
-#### Why this topic is important
-This is the direct foundation of the project's CSP kernel: a CSP as
-$\langle X,D,C\rangle$, arc/path/$k$-consistency, and the propagator model
-(contracting, sound, monotone functions on domains, iterated to a least
-fixpoint) is exactly the abstraction the kernel's domain/lattice
-propagation over integer, non-linear, and automaton-shaped domains needs to
-be built on.
-
-#### Sources to Study
-1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
-   - [[Foundations-and-History-of-Constraint-Satisfaction]]
-   - [[Constraint-Propagation-and-Local-Consistency]]
-2. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/book-guidelines|Abstract Domains in Constraint Programming (Pelleau)]]
-   - [[Constraint-Satisfaction-Problem-Foundations]]
-   - [[Consistency-and-Propagation-in-Constraint-Programming]]
-3. [[42_Constraint Propagation_Guido_Tack_PhD_2009/book-guidelines|Constraint Propagation: Models, Techniques, Implementation (Tack)]]
-   - [[Constraint-Satisfaction-and-Propagation-Based-Solving]]
-   - [[The-Denotational-and-Operational-Model-of-Constraint-Propagation]]
-   - [[Propagation-Strength-and-Domain-Approximations]]
-   - [[Efficient-Propagator-Scheduling]]
-   - [[Implementation-Architecture-of-a-Propagation-Kernel]]
-
-#### Key Concepts and Definitions
-1. CSP $P=\langle X,D,C\rangle$; (generalized) arc consistency, path/$k$-consistency, and the observation that local consistency with non-empty domains does not guarantee a global solution — inference alone is never enough.
-2. Propagators as contracting, sound, monotone functions on domains; the induced constraint of a propagator; propagation as iteration to a mutual least fixpoint, formalized via a preorder of domain "tightenings."
-3. Propagation *strength* as a graded notion (domain completeness vs. bounds(Z)/bounds(D)/bounds(R)/range consistency) — a strictly weaker-but-cheaper consistency can occasionally be *more* expensive to decide than full arc consistency, so strength and tractability are not monotonically linked.
-
-#### Relevant Questions
-1. Why does achieving arc or path consistency with non-empty domains not by itself guarantee a globally consistent solution, and what does this imply about the limits of inference alone versus search?
-2. Why can bound(Z) consistency sometimes be exponentially *harder* to decide than full arc consistency despite being a nominally "weaker" notion, and what does this say about when weakening a consistency level is actually a useful compromise?
-3. What does formalizing propagation as iteration to a "mutual fixpoint" of monotone propagators buy over an ad hoc propagation-loop implementation — specifically for proving termination and confluence?
-
----
-
-## 10. Backtracking Search, Global Constraints, and Symmetry Breaking (Core Topic)
-
-#### Pre-requisites
-[[#9. Constraint Satisfaction Foundations: Representation, Local Consistency, and Propagation (Core Topic)|Topic 9]].
-
-#### Why this topic is important
-This is where propagation (Topic 9) meets search: backjumping and nogood
-recording are the CSP analogue of CDCL's implication-graph learning
-(Topic 3), and global constraints (`alldifferent`, `regular`, `cumulative`)
-are exactly the abstract-data-structure/automaton-shaped domains the CSP
-kernel needs for reasoning about complex program invariants rather than
-just scalar bounds.
-
-#### Sources to Study
-1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
-   - [[Backtracking-Search]]
-   - [[Global-Constraints]]
-   - [[Symmetry-in-Constraint-Programming]]
-2. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/book-guidelines|Abstract Domains in Constraint Programming (Pelleau)]]
-   - [[Exploration-and-Search-in-Constraint-Programming]]
-
-#### Key Concepts and Definitions
-1. Conflict-directed backjumping (CBJ) and jumpback nogoods as the CSP-search analogue of CDCL's asserting clauses; maintaining arc consistency (MAC) during search versus forward checking versus DPLL-style unit propagation — three points on the same propagation/search trade-off curve.
-2. Global constraints as filtering algorithms exploiting graph/matching/flow theory: `alldifferent` via maximum-cardinality matching (Régin), the `regular` constraint via a layered DFA-transition digraph — the direct precedent for automaton/DFA-shaped abstract domains.
-3. Symmetry-breaking as a group-theoretic problem: lex-leader constraints, and dynamic methods (SBDS, SBDD) that add symmetry-breaking information only conditionally, respecting the search heuristic rather than statically ruling out branches.
-
-#### Relevant Questions
-1. Why are CBJ and MC$_k$-CBJ (constraint-propagation-augmented conflict-directed backjumping at different consistency levels $k$) incomparable — each exponentially better than the other on some instances — despite CBJ seeming like a strict improvement over chronological backtracking?
-2. How does Régin's matching-based `alldifferent` filtering (edges in a matching, on even alternating paths, or on even alternating circuits) generalize to the `regular` constraint's DFA-digraph filtering, and what is the common structural principle?
-3. Why must dynamic symmetry-breaking methods (SBDS/SBDD) add symmetry-related pruning *conditionally* rather than statically ruling out symmetric branches outright?
-
----
-
-## 11. The Algebraic Theory of CSP: Polymorphisms, Dichotomy, and Structural Tractability (Core Topic)
-
-#### Pre-requisites
-[[#10. Backtracking Search, Global Constraints, and Symmetry Breaking (Core Topic)|Topic 10]].
-
-#### Why this topic is important
-This is the theoretical ceiling on what the CSP kernel can hope to solve in
-polynomial time: the complexity of $\mathrm{CSP}(\Gamma)$ over a fixed
-constraint language depends *only* on the language's polymorphisms, and
-graph-theoretic structural parameters (treewidth, hypertree width) give an
-orthogonal, instance-shape-based route to tractability independent of the
-constraint language itself.
-
-#### Sources to Study
-1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
-   - [[Tractability-and-Computational-Complexity-of-CSPs]]
-2. [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/book-guidelines|The Constraint Satisfaction Problem: Complexity and Approximability (Krokhin & Živný, eds.)]]
-   - [[The-Algebraic-Approach-to-CSP]]
-   - [[Absorption-Theory]]
-   - [[CSP-over-Infinite-and-Numeric-Domains]]
-   - [[Hybrid-Tractability]]
-   - [[Backdoor-Sets-and-Fixed-Parameter-Tractability]]
-   - [[Digraph-CSP]]
-   - [[Approximation-Algorithms-for-CSP]]
-   - [[Quantified-CSP]]
-
-#### Key Concepts and Definitions
-1. Relational clones, polymorphisms, and the Galois connection $\langle\Gamma\rangle = Inv(Pol(\Gamma))$: tractability/NP-completeness of a constraint language is entirely a property of its polymorphism algebra, not of any particular relation in it.
-2. Sufficient tractability conditions from specific polymorphism shapes: semilattice operations (tractable via arc consistency alone), near-unanimity operations (tractable because $k$-consistency = global consistency), Mal'tsev operations (tractable via generalized Gaussian elimination) — and the Bulatov–Jeavons–Krokhin dichotomy conjecture these instantiate.
-3. Structural tractability orthogonal to the algebraic route: induced width/treewidth bounding inference-algorithm (bucket-elimination) complexity exactly, versus hypertree width as a strictly more general (arity-sensitive) tractable class.
-
-#### Relevant Questions
-1. Why does reducing tractability classification to relational clones, then to polymorphisms, make the classification problem more tractable rather than merely relabeling it?
-2. What is the intuitive reason a near-unanimity polymorphism of arity $k$ guarantees that enforcing $k$-consistency achieves *global* consistency, while a semilattice or Mal'tsev polymorphism achieves tractability by an entirely different mechanism?
-3. What kind of problem instance separates treewidth from hypertree width (bounded hypertree width but unbounded treewidth), and why does this matter for choosing which structural parameter to exploit in the CSP kernel's own solver?
-
----
-
-## 12. Soft Constraints, Modelling, and Constraint Logic Programming (Core Topic)
-
-#### Pre-requisites
-[[#9. Constraint Satisfaction Foundations: Representation, Local Consistency, and Propagation (Core Topic)|Topic 9]].
-
-#### Why this topic is important
-Refinement-type checking is rarely a pure satisfy/fail problem — the
-CSP kernel needs graded, over-constrained reasoning (soft constraints) for
-ranking candidate counterexamples or repairs, and the modelling-choice
-lessons here (auxiliary variables, implied constraints, channelling between
-viewpoints) apply directly to how the compiler should encode Hoare/Horn
-verification conditions as CSPs in the first place.
-
-#### Sources to Study
-1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
-   - [[Soft-Constraints-and-Preferences]]
-   - [[Modelling-Constraint-Satisfaction-Problems]]
-   - [[Constraint-Logic-Programming]]
-   - [[Integration-of-Constraint-Programming-and-Operations-Research]]
-2. [[18_JW_Lloyd_Foundations_logic_programming_1987/book-guidelines|Foundations of Logic Programming (Lloyd)]]
-   - [[SLD-Resolution]]
-   - [[Integrity-Constraint-Checking]]
-
-#### Key Concepts and Definitions
-1. The c-semiring and valued-CSP frameworks as dual, equally-expressive generalizations of hard constraints to graded preferences; fuzzy constraints as the unique idempotent ($\min$-combination) case, uniquely well-behaved under local consistency.
-2. The CLP($C$) scheme (Jaffar–Lassez): operational, algebraic, and (fixpoint) logical semantics of a constraint logic program, unifying SLD-resolution-style logic programming with constraint solving.
-3. Modelling craft: auxiliary variables, implied (redundant) constraints, and channelling constraints between multiple viewpoints frequently *improve* propagation-based search despite adding variables/constraints — directly contradicting "minimize the model" folklore.
-
-#### Relevant Questions
-1. Why does the min-operator's idempotency make fuzzy constraints uniquely well-behaved (equivalence-preserving local consistency, decomposition into classical CSPs via $\alpha$-cuts) compared to non-idempotent frameworks like weighted CSP?
-2. Why can adding more variables/constraints to a CSP model (auxiliary variables, redundant viewpoints, implied constraints) reduce total search effort, and under what condition does one viewpoint's own constraints become entirely propagation-redundant with another's?
-3. How does the CLP schema's separation of operational/algebraic/logical semantics let a naive disjunctive constraint definition and a highly optimized propagator-based one carry the *same* declarative meaning — and why is this simultaneously a strength (modularity) and a weakness (no way to compare models for efficiency)?
-
----
-
-## 13. Continuous, Interval, and Nonlinear Constraint Solving (Core Topic)
-
-#### Pre-requisites
-[[#9. Constraint Satisfaction Foundations: Representation, Local Consistency, and Propagation (Core Topic)|Topic 9]], [[#6. First-Order Decision Procedures and Quantifier Elimination (Core Topic)|Topic 6]] (real quantifier elimination as the exact-decision-procedure baseline this topic trades against).
-
-#### Why this topic is important
-The stated CSP kernel goal explicitly includes handling integer *and*
-non-linear equations, not just Boolean/finite-domain constraints — interval
-arithmetic, the octagon abstract domain, and spatial branch-and-bound are
-the concrete techniques for over-approximating and searching continuous
-constraint spaces without paying quantifier-elimination's doubly-exponential
-worst case.
-
-#### Sources to Study
-1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
-   - [[Continuous-and-Interval-Constraints]]
-2. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/book-guidelines|Abstract Domains in Constraint Programming (Pelleau)]]
-   - [[The-Octagon-Abstract-Domain]]
-   - [[Octagonal-Constraint-Solving]]
-3. [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/book-guidelines|Reformulation and Convex Relaxation Techniques for Global Optimization (Liberti)]]
-   - Convexity and Function/Set Classification; Spatial Branch-and-Bound (sBB) Algorithms; Convex and Linear Relaxation Techniques; Reduction Constraints for Sparse Bilinear Programs (topic-list entries — no generated article yet)
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Complete-Search-Algorithms-for-SAT|Complete Search Algorithms for SAT]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Conflict-Driven-Clause-Learning|Conflict-Driven Clause Learning]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Branching-Heuristic-Theory|Branching Heuristic Theory]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Look-Ahead-Solving|Look-Ahead Solving]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Preprocessing-and-Inprocessing|Preprocessing and Inprocessing]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Runtime-Variation-and-Solver-Engineering|Runtime Variation and Solver Engineering]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Symmetry-Minimal-Unsatisfiability-and-Autarkies|Symmetry, Minimal Unsatisfiability and Autarkies]]
+2. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/book-guidelines|Pseudo-Boolean Reasoning and Compilation]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Practical-SAT-Solving-and-the-CDCL-Architecture|Practical SAT Solving and the CDCL Architecture]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Guiding-the-Search-in-CDCL-SAT-Solvers|Guiding the Search in CDCL SAT Solvers]]
+3. [[15_handbook_logic_automated_reasoning_harrison_2009/Propositional-Satisfiability-Algorithms|Harrison — Propositional Satisfiability Algorithms]]
+4. [[18_JW_Lloyd_Foundations_logic_programming_1987/SLD-Resolution|Lloyd — SLD-Resolution]] (resolution and search, background)
 
 #### Additional external sources
-For the spatial branch-and-bound / MINLP material, Liberti's thesis and
-Grimstad's B-spline-surrogate thesis ([[59_Grimstad_Global_Spline_Optimization/book-guidelines|Daily Production Optimization for Subsea Production Systems]]) are applied/engineering-flavored rather than foundational; a
-standard reference such as Belotti et al.'s survey on mixed-integer
-nonlinear programming would round out the theoretical picture if deeper
-non-linear CSP solving becomes load-bearing for the compiler's contract
-language.
+- Marques-Silva & Sakallah, "GRASP" (1996); Moskewicz et al., "Chaff" (DAC 2001); Eén & Sörensson, "An Extensible SAT-solver" (MiniSat, 2003); Biere's CaDiCaL/Kissat system descriptions for modern engineering.
 
 #### Key Concepts and Definitions
-1. Interval arithmetic and hull/box/bound consistency as the continuous-domain analogue of arc consistency; the HC4-Revise propagation algorithm.
-2. The octagon abstract domain: octagonal constraints $\pm x_i \pm x_j \le c$, represented via difference-bound matrices and closed under intersection by a modified Floyd–Warshall algorithm — a concrete instance of a "richer-than-box" abstract domain usable as a CSP domain representation.
-3. Spatial branch-and-bound (sBB): region selection, convex/linear relaxation (McCormick envelopes for bilinear terms, $\alpha$BB for general nonconvex terms) as lower-bounding steps, and bounds tightening — the generic algorithmic skeleton for globally solving non-convex NLPs/MINLPs.
+1. DPLL: unit propagation, pure literal, branching; CDCL: implication graph, 1-UIP learned clause, non-chronological backjumping.
+2. Two-watched-literal scheme; VSIDS/VMTF; restarts; phase saving; clause deletion (LBD).
+3. Preprocessing/inprocessing: bounded variable elimination, subsumption, failed-literal probing.
+4. Look-ahead vs. look-back solvers.
 
 #### Relevant Questions
-1. Why does the octagon domain's closure algorithm reduce to a modified Floyd–Warshall shortest-path computation, and what does that reveal about the relationship between difference-bound-matrix domains and graph algorithms generally?
-2. McCormick envelopes and $\alpha$BB underestimation both produce convex relaxations of nonconvex terms — what is the structural difference between a *bilinear-term* relaxation and a *general nonconvex-term* relaxation that explains why one needs a diagonal-shift parameter ($\alpha$) and the other does not?
-3. Given real quantifier elimination's doubly-exponential worst case (Topic 6), what accuracy/completeness is actually given up by using interval/octagon propagation or sBB relaxation instead — and under what circumstances would falling back to exact QE be worth the cost?
+1. Why does 1-UIP learning give a clause that is asserting after a backjump?
+2. What does preprocessing gain, and why must model reconstruction be tracked?
+3. Where do CDCL techniques transfer to a CSP kernel with integer variables (lazy clause generation)?
 
 ---
 
-## 14. Abstract Interpretation as a Unifying Theory for Constraint Solver Cooperation (Core Topic)
+## 3. Proofs of Unsatisfiability and Proof Complexity (Core Topic)
 
 #### Pre-requisites
-[[#9. Constraint Satisfaction Foundations: Representation, Local Consistency, and Propagation (Core Topic)|Topic 9]], [[#13. Continuous, Interval, and Nonlinear Constraint Solving (Core Topic)|Topic 13]]; also draws on Galois connections and fixpoint theory from the `static-analysis` Focus Area (see [[learning-roadmap-static-analysis|↪ focused roadmap]], Topics 2–3).
+2. CDCL; [[learning-roadmap-automated-reasoning|automated-reasoning]] topic 15 (SAT proof systems) is the deeper treatment.
 
 #### Why this topic is important
-This is the topic that most directly fuses `sat-smt-csp` with
-`static-analysis`: the thesis (Pelleau, Talbot) is that CP's propagation-
-and-search and AI's Galois-connection-based abstraction are *the same
-mathematical framework* — which is exactly the architecture the project
-needs, since the CSP kernel (proving bug presence) and the abstract
-interpreter (proving bug absence) must share a domain/lattice vocabulary
-rather than being built as two unrelated engines.
+Untrusted solver results must be certifiable by the trusted kernel; proof formats and lower bounds tell you which encodings are hopeless (pigeonhole) and when stronger systems (cutting planes) are worth using.
 
 #### Sources to Study
-1. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/book-guidelines|Abstract Domains in Constraint Programming (Pelleau)]]
-   - [[Links-Between-Abstract-Interpretation-and-Constraint-Programming]]
-   - [[Unified-Abstract-Domains-for-Constraint-Programming]]
-   - [[Abstract-Interpretation-Reformulation-of-Constraint-Programming]]
-   - [[The-AbSolute-Solver]]
-2. [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/book-guidelines|Modular Constraint Solver Cooperation via Abstract Interpretation (Talbot, Monfroy, Truchet)]]
-   - [[Abstract-Interpretation-as-a-Foundation-for-Constraint-Solving]]
-   - [[Abstract-Domains-For-Constraint-Programming]]
-   - [[Domain-Transformers]]
-   - [[Interval-Propagators-Completion-IPC]]
-   - [[Delayed-Product-DP]]
-   - [[Shared-Product-and-Modular-Composition]]
+1. [[25_Handbook_Satisfiability_Armin_Biere_2021/Proof-Complexity|Handbook of Satisfiability — Proof Complexity]]
+2. [[25_Handbook_Satisfiability_Armin_Biere_2021/Proofs-of-Unsatisfiability|Handbook of Satisfiability — Proofs of Unsatisfiability]]
+3. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/The-Cutting-Planes-Proof-System|Wallon — The Cutting Planes Proof System]]
+4. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Communication-Complexity-and-Lower-Bounds-on-Compilation|Wallon — Communication Complexity and Lower Bounds on Compilation]]
+5. [[15_handbook_logic_automated_reasoning_harrison_2009/Limits-of-Automated-Reasoning|Harrison — Limits of Automated Reasoning]] (via [[learning-roadmap-automated-reasoning|automated-reasoning]])
 
 #### Key Concepts and Definitions
-1. Consistency (in CP) recast as a form of *narrowing* (in AI); a CSP's domain representation (boxes, octagons) recast directly as an AI abstract domain with a Galois connection to the concrete solution set — the "unified abstract domain for CP" that generalizes both fields' solving processes into one algorithm.
-2. Domain transformers as functors building new abstract domains from existing ones: the *direct product* (no information exchange between components) versus *interval propagators completion* (lets domains exchange bound constraints) versus the *delayed product* (defers handing a constraint to a specialized domain until variables are sufficiently instantiated, inspired by delayed goals in logic programming).
-3. The *shared product*: combining domain transformers that share underlying abstract domains without duplicating state, via projection/join functions and Knaster–Tarski fixpoint merging — the mechanism that keeps modular composition sound.
+1. Resolution refutations; width/size lower bounds; pigeonhole principle.
+2. Clausal proof formats (RUP/DRAT); proof checking.
+3. Cutting planes as a stronger proof system.
 
 #### Relevant Questions
-1. In what precise sense does recasting a CSP's own consistency-enforcement as narrowing (rather than as a bespoke CP notion) let the "unified abstract solving algorithm" recover classical CP solvers as one instance among many?
-2. Why does the direct product of abstract domains fail to let components exchange information, and how does interval propagators completion (IPC) fix this while remaining sound over an over-approximating product?
-3. What does the delayed product's borrowing from logic-programming "delayed goals" buy operationally — i.e., why is deferring a constraint's transfer to a specialized domain until partial instantiation better than either an immediate or a never transfer?
+1. What makes a proof format cheap to check yet cheap to produce?
+2. For which encodings is exponential resolution proof size unavoidable?
+3. When should a solver switch to pseudo-Boolean reasoning?
 
 ---
 
-## 15. CEGAR, Model Checking, and Constrained Horn Clause Solving (Core Topic)
+## 4. Pseudo-Boolean, Cardinality, MaxSAT, QBF and Richer Logics (Core Topic)
 
 #### Pre-requisites
-[[#8. Combining Decision Procedures: Nelson–Oppen, Shostak, and SMT (Core Topic)|Topic 8]], [[#14. Abstract Interpretation as a Unifying Theory for Constraint Solver Cooperation (Core Topic)|Topic 14]].
+2. CDCL; 3. Proof complexity (helpful).
 
 #### Why this topic is important
-This is where the compiler's two halves meet operationally: CEGAR is the
-loop that lets an over-approximating abstract-interpretation pass and a
-concrete SMT/CSP counterexample search refine each other, and CHC-SAT
-solving is precisely the verification-condition formalism the automated
-invariant generator (Hoare/Horn contracts) will target — this topic and
-`static-analysis`'s CEGAR/model-checking topics should be read together.
+Linear integer constraints over Boolean variables are the natural target for bounded-integer verification conditions and for optimization/soft-constraint search. QBF handles $\forall\exists$ alternation relevant to quantified refinement predicates; MaxSAT/model counting provide optimization and quantitative analyses.
 
 #### Sources to Study
-1. [[55_MinkowskiSum_Domain_Dissertation_Marius-Greitschus_2018/book-guidelines|New Techniques for Abstraction Refinement (Greitschus)]]
-   - [[Counterexample-Guided-Abstraction-Refinement-(CEGAR)]]
-   - [[Abstract-Interpretation]]
-   - [[Path-Programs-and-Loop-Invariants]]
-   - [[ULTIMATE-and-ULTIMATE-TAIPAN]]
-2. [[67_Principles_of_Model_Checking_2008/book-guidelines|Principles of Model Checking (Baier & Katoen)]]
-   - [[Model-Checking-Fundamentals]]
-   - [[Automata-over-Finite-and-Infinite-Words]]
-   - [[Automata-Based-LTL-Model-Checking]]
-   - [[Symbolic-Model-Checking-with-Binary-Decision-Diagrams]]
-   - [[Markov-Decision-Processes]]
-3. [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/book-guidelines|ADCL: Acceleration Driven Clause Learning for Constrained Horn Clauses (Frohn & Giesl)]]
-   - [[Constrained-Horn-Clauses-(CHCs)]]
-   - [[Loop-Acceleration]]
-   - [[The-ADCL-Calculus]]
-   - [[Related-Approaches-to-CHC-SAT-and-Loop-Summarization]]
+1. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/book-guidelines|Pseudo-Boolean Reasoning and Compilation]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Pseudo-Boolean-and-Cardinality-Constraints|Pseudo-Boolean and Cardinality Constraints]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Pseudo-Boolean-Solving-via-Cutting-Planes|Pseudo-Boolean Solving via Cutting Planes]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Resolution-Based-Pseudo-Boolean-Solving|Resolution-Based Pseudo-Boolean Solving]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Adapting-CDCL-Strategies-to-Pseudo-Boolean-Solving|Adapting CDCL Strategies to Pseudo-Boolean Solving]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Irrelevant-Literals-in-Pseudo-Boolean-Constraint-Learning|Irrelevant Literals in Pseudo-Boolean Constraint Learning]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Weakening-Strategies-for-Pseudo-Boolean-Solvers|Weakening Strategies for Pseudo-Boolean Solvers]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Experimental-Evaluation-of-Pseudo-Boolean-Solvers|Experimental Evaluation of Pseudo-Boolean Solvers]]
+2. [[25_Handbook_Satisfiability_Armin_Biere_2021/book-guidelines|Handbook of Satisfiability]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Pseudo-Boolean-and-Cardinality-Constraints|Pseudo-Boolean and Cardinality Constraints]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Maximum-Satisfiability|Maximum Satisfiability]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Quantified-Boolean-Formulas|Quantified Boolean Formulas]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Model-Counting|Model Counting]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Stochastic-Boolean-Satisfiability|Stochastic Boolean Satisfiability]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/SAT-Techniques-for-Richer-Logics|SAT Techniques for Richer Logics]]
+   - [[25_Handbook_Satisfiability_Armin_Biere_2021/Combinatorial-Applications-of-SAT|Combinatorial Applications of SAT]]
+3. [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Quantified-CSP|CSP Complexity — Quantified CSP]]
 
 #### Key Concepts and Definitions
-1. The CEGAR loop: abstract, model-check, and — on a spurious counterexample — refine the abstraction; classical CEGAR (SMT-based loop unwinding) lacks termination guarantees, motivating trace-abstraction-plus-abstract-interpretation hybrids (ULTIMATE TAIPAN) that are guaranteed to find loop invariants from path programs.
-2. Constrained Horn Clauses (CHCs) as the standard verification-condition formalism: facts, rules, queries; CHC-SAT as "does a model exist" versus proof search for a conditional empty clause.
-3. Loop acceleration inside a resolution calculus (ADCL): computing the $N$-fold closure of a recursive derivation in one step (over decidable acceleration classes — difference bounds, octagons, VASS) rather than unrolling thousands of ordinary resolution steps — sound and refutationally complete, though not terminating in general.
+1. Pseudo-Boolean constraint $\sum a_i \ell_i \ge k$; cardinality as special case; slack-based propagation.
+2. Cutting-planes derivation rules (addition, division, saturation) and weakening.
+3. MaxSAT (core-guided, model-improving); #SAT; QBF ($\forall\exists$ solving, expansion/CEGAR).
 
 #### Relevant Questions
-1. Why do classical SMT-based CEGAR loops lack termination guarantees, and what specifically does combining abstract-interpretation fixpoints with SMT-based trace analysis (ULTIMATE TAIPAN) add to guarantee loop-invariant discovery?
-2. How does the CHC resolution calculus's redundancy relation (blocking clauses) interact with loop acceleration to keep the search space from re-deriving already-subsumed facts, and why is completeness preserved despite this pruning?
-3. What decidable classes of transition relations (difference bounds, octagons, vector addition systems with states) admit closed-form $N$-fold acceleration, and why does the CSP kernel's own domain choices (octagons already appear in Topic 13) matter for which loops ADCL-style acceleration can actually close in one step?
+1. Why is a linear-constraint learner stronger than clause learning, and what breaks (overflow, coefficient growth)?
+2. How does QBF CEGAR structurally resemble the verification CEGAR loop of topic 17?
+3. When is MaxSAT the right encoding for soft properties?
 
 ---
 
-## 16. Automata-Based and Symbolic Domains for Verification and Constraint Solving (Core Topic)
+## 5. Local Search, Random SAT, and Solver Behaviour (Optional / Extension)
 
 #### Pre-requisites
-[[#10. Backtracking Search, Global Constraints, and Symmetry Breaking (Core Topic)|Topic 10]] (the `regular` global constraint is the entry point into this topic).
+2. CDCL.
 
 #### Why this topic is important
-This is the direct source material for the CSP kernel's requirement to
-represent abstract data structures as complex domains "like automata
-grammars (DFA)" — tree automata and symbolic (predicate-labeled) automata
-are the two concrete formalisms for reasoning about unbounded/infinite-
-alphabet structured domains that finite-domain CSP propagation alone cannot
-express.
+Incomplete search finds satisfying assignments quickly on satisfiable instances — exactly the counterexample-finding mode of the CSP kernel. Phase-transition and runtime-variation results guide portfolio/restart design.
 
 #### Sources to Study
-1. [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/book-guidelines|Tree Automata Techniques and Applications (Comon et al.)]]
-   - [[Automata-with-Constraints]]
-   - [[Tree-Set-Automata-and-Set-Constraints]]
-   - [[Alternating-Tree-Automata]]
-2. [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/book-guidelines|The Power of Symbolic Automata and Transducers (D'Antoni & Veanes)]]
-   - [[Effective-Boolean-Algebras]]
-   - [[Symbolic-Finite-Automata]]
-   - [[Minterms-and-Alphabet-Equivalence-Classes]]
-   - [[Parametric-Complexity-of-Symbolic-Algorithms]]
-   - [[Variants-of-Symbolic-Automata]]
-   - [[Symbolic-Automata-in-Practice]]
-   - [[Symbolic-Finite-Transducers]]
+1. [[25_Handbook_Satisfiability_Armin_Biere_2021/Stochastic-Local-Search-for-SAT|Handbook of Satisfiability — Stochastic Local Search for SAT]]
+2. [[25_Handbook_Satisfiability_Armin_Biere_2021/Random-Satisfiability-and-Phase-Transitions|Random Satisfiability and Phase Transitions]]
+3. [[25_Handbook_Satisfiability_Armin_Biere_2021/Statistical-Physics-of-Random-Constraint-Satisfaction|Statistical Physics of Random Constraint Satisfaction]]
+4. [[25_Handbook_Satisfiability_Armin_Biere_2021/Runtime-Variation-and-Solver-Engineering|Runtime Variation and Solver Engineering]]
+5. [[24_Handbook_Constraint_Programming_Elsevier_2006/Local-Search-Methods|Handbook of CP — Local Search Methods]]
+6. [[24_Handbook_Constraint_Programming_Elsevier_2006/Randomness-and-Phase-Transitions|Handbook of CP — Randomness and Phase Transitions]]
 
 #### Key Concepts and Definitions
-1. Tree automata with equality/disequality constraints between subtrees, needed for non-linear pattern recognition; emptiness becomes undecidable for the fully general constrained class, forcing restricted subclasses (reduction automata, bounded equality depth) to keep decision procedures effective.
-2. Alternating tree automata: positive Boolean transition formulas enable complementation without determinization, and correspond directly to Horn clauses / definite set constraints — a structural bridge to CHC-solving (Topic 15).
-3. Symbolic (predicate-labeled) finite automata over an *effective Boolean algebra*: complexity now depends jointly on state-space size and alphabet-theory (predicate satisfiability) cost; minterms as maximal satisfiable predicate combinations compile an s-FA down to a classic automaton at the cost of potential predicate-space explosion.
+1. WalkSAT/probSAT; noise; restarts; plateau moves.
+2. Satisfiability threshold ($\approx 4.26$ for random 3-SAT); heavy-tailed run times.
+3. Portfolio and restart strategies.
 
 #### Relevant Questions
-1. Why does allowing equality/disequality constraints between sibling subtrees push emptiness from decidable to undecidable in the general case, and what structural restriction (bounded equality depth, reduction automata) recovers decidability?
-2. How does the correspondence between alternating tree automata and Horn clauses / definite set constraints let CHC-style verification-condition solving borrow automata-theoretic decision procedures?
-3. Why does complexity in the symbolic-automata setting depend on *both* the state/transition count and the alphabet theory's satisfiability cost, and how does the minterm construction trade one against the other?
+1. When does local search beat CDCL for counterexample discovery?
+2. What does the phase transition say about benchmark selection for your solver?
 
 ---
 
-## 17. Reachability Analysis for Hybrid and Continuous Dynamical Systems (Core Topic)
+## 6. Decision Procedures, Theories, and SMT (Core Topic)
 
 #### Pre-requisites
-[[#13. Continuous, Interval, and Nonlinear Constraint Solving (Core Topic)|Topic 13]], [[#14. Abstract Interpretation as a Unifying Theory for Constraint Solver Cooperation (Core Topic)|Topic 14]].
+1–2. SAT/CDCL; [[learning-roadmap-automated-reasoning|automated-reasoning]] topics 5, 9, 14 (decidable fragments, equality reasoning, theory combination).
 
 #### Why this topic is important
-This is the specialized, geometry-heavy corner of the CSP kernel's brief —
-proving absence/presence of bugs for programs whose invariants involve
-continuous or hybrid (discrete+continuous) dynamics needs reachable-set
-over-approximation techniques (template polyhedra, zonotopes, barrier
-certificates) that generalize the octagon/interval domains from Topic 13 to
-genuinely non-convex or time-evolving state spaces.
+Verification conditions live in theories (linear/integer arithmetic, uninterpreted functions, arrays, bit-vectors). SMT = CDCL + theory solvers (DPLL(T)) + combination; it is the solver backend feeding VC discharge, and the reference architecture for embedding a CSP kernel as one more theory solver. **This is the thinnest area in the vault: no dedicated SMT book is on hand.**
 
 #### Sources to Study
-1. [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/book-guidelines|Verification and Control of Hybrid Systems: A Symbolic Approach (Tabuada)]]
-   - [[Timed-Automata-and-Quotient-Based-Abstraction]]
-   - [[Order-Minimal-Structures-and-Definability]]
-   - [[Barrier-Certificates-and-Reachable-Set-Computation]]
-   - [[Exact-Symbolic-Models-for-Control]]
-2. [[74_Reachability_Analysis_Bernstein expansion_2012/book-guidelines|Reachability Analysis for Polynomial Dynamical Systems Using the Bernstein Expansion (Dang & Testylier)]]
-   - [[Template-Polyhedra-as-an-Abstract-Domain]]
-   - [[The-Bernstein-Expansion-of-Polynomials]]
-   - [[Computing-Affine-Bound-Functions-from-Bernstein-Coefficients]]
-   - [[The-Reachable-Set-Computation-Algorithm]]
-3. [[78_Reachability_Analysis_Linear_Systems_with_Uncertain_Parameters_Polynomial_Zonotopes_Huang_2024/book-guidelines|Reachability Analysis for Linear Systems with Uncertain Parameters using Polynomial Zonotopes (Huang, Luo, Bak, Sun)]]
-   - [[Polynomial-Zonotopes-as-a-Set-Representation]]
-   - [[Multi-Affine-Zonotope-Optimization]]
+1. [[15_handbook_logic_automated_reasoning_harrison_2009/book-guidelines|Handbook of Practical Logic and Automated Reasoning]]
+   - [[15_handbook_logic_automated_reasoning_harrison_2009/Decidable-Theories-and-Quantifier-Elimination|Decidable Theories and Quantifier Elimination]]
+   - [[15_handbook_logic_automated_reasoning_harrison_2009/Equality-Reasoning|Equality Reasoning]]
+   - [[15_handbook_logic_automated_reasoning_harrison_2009/Combining-Decision-Procedures|Combining Decision Procedures]]
+   - [[15_handbook_logic_automated_reasoning_harrison_2009/Algebraic-Decision-Procedures|Algebraic Decision Procedures]]
+2. [[25_Handbook_Satisfiability_Armin_Biere_2021/SAT-Techniques-for-Richer-Logics|Handbook of Satisfiability — SAT Techniques for Richer Logics]]
+3. [[10_boolos_burgess_computability_logic_2007/book-guidelines|Computability and Logic]]
+   - [[10_boolos_burgess_computability_logic_2007/Decidable-Fragments-of-Arithmetic|Decidable Fragments of Arithmetic]]
+   - [[10_boolos_burgess_computability_logic_2007/Nonstandard-Models-of-Arithmetic|Nonstandard Models of Arithmetic]]
+   - [[10_boolos_burgess_computability_logic_2007/Definability-in-Arithmetic-and-Forcing|Definability in Arithmetic and Forcing]]
+   - [[10_boolos_burgess_computability_logic_2007/Recursive-Semirecursive-and-Arithmetical-Sets-and-Relations|Recursive, Semirecursive, and Arithmetical Sets and Relations]]
+   - [[10_boolos_burgess_computability_logic_2007/Arithmetization-of-Syntax-and-Representability|Arithmetization of Syntax and Representability]]
+   - [[10_boolos_burgess_computability_logic_2007/Recursive-Function-Theory|Recursive Function Theory]]
+4. [[16_ENDERTON_Mathematical_Introduction_Logic/Models-of-Theories|Enderton — Models of Theories]], [[16_ENDERTON_Mathematical_Introduction_Logic/Weak-Fragments-of-Number-Theory|Weak Fragments of Number Theory]]
+5. [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/Order-Minimal-Structures-and-Definability|Tabuada — Order-Minimal Structures and Definability]] (decidability of real arithmetic / o-minimality)
+6. [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Unification-for-Units-of-Measure|Gundry — Unification for Units of Measure]] (a small equational-theory solver, as a worked example)
+7. [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Tree-Set-Automata-and-Set-Constraints|TATA — Tree Set Automata and Set Constraints]]
+
+#### Additional external sources
+Not covered by an on-hand book — **gap**: Kroening & Strichman, *Decision Procedures: An Algorithmic Point of View* (Springer); Bradley & Manna, *The Calculus of Computation*; Nieuwenhuis, Oliveras & Tinelli, "Solving SAT and SAT Modulo Theories: From an Abstract Davis–Putnam–Logemann–Loveland Procedure to DPLL(T)" (JACM 2006); de Moura & Bjørner, "Z3: An Efficient SMT Solver" (TACAS 2008); Barrett et al., "Satisfiability Modulo Theories" (Handbook of Satisfiability ch. 26 — not in the on-hand copy's tagged chapters); Dutertre & de Moura, "A Fast Linear-Arithmetic Solver for DPLL(T)" (CAV 2006); Nelson & Oppen (1979); Jovanović & de Moura, NLSat (IJCAR 2012); Kremer/Ábrahám on CAD-based non-linear real arithmetic.
 
 #### Key Concepts and Definitions
-1. Template polyhedra (fixed-shape convex over-approximations) combined with the Bernstein expansion of a polynomial map: control points from the Bernstein basis give affine lower/upper bound functions per polynomial component, reducing per-step polynomial optimization to linear programming.
-2. Polynomial zonotopes (center plus dependent/independent generators with an exponent structure) as a *non-convex* set representation that preserves dependencies between homogeneous and particular solutions across time steps — where a standard (convex) zonotope would over-approximate via a convex hull and lose precision.
-3. Barrier certificates as a direct, Lyapunov-like safety proof (no explicit reachable-set computation needed), found via sum-of-squares search for a polynomial certificate.
+1. First-order theory $T$; $T$-satisfiability of quantifier-free formulas; decidable fragments (LIA, LRA, EUF, arrays, bit-vectors, NRA).
+2. DPLL(T): Boolean skeleton + theory solver + explanations (T-lemmas).
+3. Nelson–Oppen combination (stably infinite, convex); congruence closure for EUF; simplex for LRA.
+4. Non-linear arithmetic: CAD, incremental linearization, NLSat.
+5. Quantifier elimination and its cost.
 
 #### Relevant Questions
-1. Why does using the Bernstein basis (rather than the power basis) let per-step polynomial-image computation reduce to a linear program, and what is lost in tightness compared to solving the polynomial optimization exactly?
-2. What specifically does a polynomial zonotope preserve that a standard (linear/convex) zonotope discards, and why does that extra structure matter for accuracy across multiple composed time steps rather than just at a single step?
-3. How does a barrier certificate's Lyapunov-like argument let a safety property be proved *without* ever computing an explicit reachable set, and what is the corresponding cost (e.g., restriction to polynomial dynamics, reliance on sum-of-squares solvability)?
+1. What must a theory solver provide to a DPLL(T) core (propagation, conflict explanation, backtracking)?
+2. Why is non-linear integer arithmetic undecidable while non-linear real arithmetic is decidable, and what does the CSP kernel do in the undecidable case?
+3. How can the CSP kernel's propagators be wrapped as a theory solver, and what conflict explanations must they return?
 
 ---
 
-## 18. Abduction, Craig Interpolation, and Clause/Invariant Generation (Core Topic)
+## 7. CSP Foundations: Modelling, Formalism, and Complexity (Core Topic)
 
 #### Pre-requisites
-[[#7. Equality Reasoning, Term Rewriting, and Congruence Closure (Core Topic)|Topic 7]], [[#8. Combining Decision Procedures: Nelson–Oppen, Shostak, and SMT (Core Topic)|Topic 8]].
+1. Propositional logic (helpful); basic complexity.
 
 #### Why this topic is important
-This is the closing topic tying the whole area back to the project's
-verification goal directly: bi-abduction is precisely the mechanism for
-automatically inferring a procedure's Hoare-triple precondition/postcondition
-(its "footprint") compositionally, Craig interpolation is the standard route
-from a refutation to an inductive invariant, and $\theta$-subsumption /
-clause generalization is the same generality-ordering machinery refinement-
-type inference needs when generalizing a discovered constraint into a
-reusable contract.
+The counterexample search is a CSP: variables are program inputs/states, constraints are guards and negated invariants. Modelling choices (variables, domains, global constraints) decide tractability; this topic is the vocabulary and complexity baseline for topics 8–15.
 
 #### Sources to Study
-1. [[38_Compositional_Shape_Analysis_by_means_of_Bi-Abduction_Calcagno/book-guidelines|Compositional Shape Analysis by means of Bi-Abduction (Calcagno, Distefano, O'Hearn, Yang)]]
-   - [[Abductive-Inference]]
-   - [[Bi-Abduction]]
-   - [[Proof-Systems-and-Algorithms-for-Abduction]]
-   - [[Quality-and-Ordering-of-Abduction-Solutions]]
-   - [[Compositional-Program-Analysis-Algorithms]]
-   - [[Soundness-and-Semantic-Models]]
-2. [[10_boolos_burgess_computability_logic_2007/book-guidelines|Computability and Logic]]
-   - [[Interpolation-and-Definability]]
-3. [[09_proof_theory_logic_programming_dale_miller_2025/book-guidelines|Proof Theory and Logic Programming: Computation as Proof Search (Miller)]]
-   - [[Specifying-Computations-with-Multisets-and-Automata]]
-4. [[76_ThetaSubsumption_article/book-guidelines|Inductive Logic Programming At 30: A New Introduction (Cropper & Dumančić)]]
-   - [[Generality-and-Theta-Subsumption]]
-   - [[Search-Methods-Over-the-Hypothesis-Space]]
-   - [[Representative-ILP-Systems]]
+1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Foundations-and-History-of-Constraint-Satisfaction|Foundations and History of Constraint Satisfaction]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Modelling-Constraint-Satisfaction-Problems|Modelling Constraint Satisfaction Problems]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Tractability-and-Computational-Complexity-of-CSPs|Tractability and Computational Complexity of CSPs]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Soft-Constraints-and-Preferences|Soft Constraints and Preferences]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Temporal-Constraint-Satisfaction|Temporal Constraint Satisfaction]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Constraints-over-Structured-Domains|Constraints over Structured Domains]]
+2. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Constraint-Satisfaction-Problem-Foundations|Pelleau et al. — Constraint Satisfaction Problem Foundations]]
+3. [[42_Constraint Propagation_Guido_Tack_PhD_2009/Constraint-Satisfaction-and-Propagation-Based-Solving|Tack — Constraint Satisfaction and Propagation-Based Solving]]
+4. [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/book-guidelines|The Constraint Satisfaction Problem: Complexity and Approximability]] (theoretical view; see topic 13)
+5. [[16_ENDERTON_Mathematical_Introduction_Logic/Models-of-Theories|Enderton — Models of Theories]] (CSP as model-finding)
 
 #### Key Concepts and Definitions
-1. Bi-abduction: given $\Delta$ and $H$, jointly infer an anti-frame and a frame satisfying $\Delta * ?\mathrm{anti\text{-}frame} \vdash H * ?\mathrm{frame}$ — letting each procedure's precondition/postcondition be inferred independently of its callers, the mechanism behind compositional (whole-codebase-scaling) shape analysis.
-2. The Craig interpolation theorem (if $A\Rightarrow C$, an interpolant $B$ exists using only symbols common to $A,C$, with $A\Rightarrow B\Rightarrow C$) as the standard bridge from a resolution/SMT refutation to a candidate inductive loop invariant, and as the technical engine behind both Robinson's joint consistency theorem and Beth's definability theorem.
-3. $\theta$-subsumption (Plotkin's syntactic generality order over clauses) as a decidable proxy for the (undecidable) semantic entailment order; least general generalization (LGG) and refinement operators as the concrete generalization/specialization moves a clause-learning search performs — directly analogous to generalizing an inferred constraint into a reusable contract.
+1. CSP $(X, D, C)$; solution, consistency, optimization variant (COP); CSP as homomorphism/model finding.
+2. Modelling: variable/value choice, redundant constraints, channeling.
+3. Complexity: NP-completeness, tractable classes (tree-structured, bounded width).
+4. Soft/valued constraints, temporal constraints (difference constraints).
 
 #### Relevant Questions
-1. Why is bi-abduction framed as an *inverse* to the frame-rule problem, and how does jointly searching for an anti-frame and a frame let heap-manipulating procedure verification become compositional (independent of the call graph) rather than whole-program?
-2. Why must the interpolant in Craig's theorem be restricted to symbols common to both $A$ and $C$, and what does this restriction cost in the degenerate cases (e.g. when identity is needed but present in neither $A$ nor $C$ syntactically)?
-3. Why is $\theta$-subsumption decidable while semantic clause entailment is not, and what generalization/specialization search does this decidable syntactic proxy actually license — including where it under- or over-generalizes relative to true entailment?
+1. How does a program guard/negated postcondition map into a CSP, and which modelling choices affect propagation strength?
+2. What structural conditions (tree-width, acyclicity) make a generated CSP tractable?
+3. How does CSP relate to SAT/SMT (same problem, different representation of domains)?
 
 ---
+
+## 8. Local Consistency and Constraint Propagation (Core Topic)
+
+#### Pre-requisites
+7. CSP foundations; [[learning-roadmap-static-analysis|static-analysis]] topic 2 (fixpoints and lattices).
+
+#### Why this topic is important
+Domain propagation is *the* mechanism of the CSP kernel: propagators prune domains to a fixpoint (arc/bounds/path consistency). Formulated as monotone operators on a domain lattice, propagation is chaotic iteration — the same object as abstract interpretation (topic 11).
+
+#### Sources to Study
+1. [[24_Handbook_Constraint_Programming_Elsevier_2006/Constraint-Propagation-and-Local-Consistency|Handbook of CP — Constraint Propagation and Local Consistency]]
+2. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Consistency-and-Propagation-in-Constraint-Programming|Pelleau et al. — Consistency and Propagation in Constraint Programming]]
+3. [[42_Constraint Propagation_Guido_Tack_PhD_2009/book-guidelines|Constraint Propagation — Models, Techniques, Implementation (Tack)]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/The-Denotational-and-Operational-Model-of-Constraint-Propagation|The Denotational and Operational Model of Constraint Propagation]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Propagation-Strength-and-Domain-Approximations|Propagation Strength and Domain Approximations]]
+4. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Number-Theoretic-and-Interval-Abstract-Domains|Cousot — Number-Theoretic and Interval Abstract Domains]]
+5. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Graph-Theory-and-Path-Problems|Cousot — Graph Theory and Path Problems]]
+6. [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Abstract-Domains-For-Constraint-Programming|Talbot — Abstract Domains for Constraint Programming]]
+
+#### Additional external sources
+- Mackworth (1977) on arc consistency; Bessière, "Constraint Propagation" (Handbook of CP ch. 3 — on-hand as the chapter above); Apt, *Principles of Constraint Programming* (CUP 2003) for the chaotic-iteration formulation.
+
+#### Key Concepts and Definitions
+1. Arc consistency (AC-3/AC-2001), bounds consistency, path consistency, $k$-consistency.
+2. Propagator: monotone, contracting, idempotent (optionally) function on domains; propagation as fixpoint computation.
+3. Propagation strength and domain approximations (bounds vs. sets vs. holes).
+4. Denotational (fixpoint) vs. operational (scheduling) models.
+
+#### Relevant Questions
+1. When does local consistency imply global consistency, and what does it cost to enforce?
+2. In what sense is propagation-to-fixpoint the greatest fixpoint of a family of propagators?
+3. How do bounds-consistent integer propagators relate to the interval abstract domain?
+
+---
+
+## 9. Search, Global Constraints, and Symmetry (Core Topic)
+
+#### Pre-requisites
+8. Propagation; 2. CDCL (for learning).
+
+#### Why this topic is important
+Propagation alone is incomplete; the kernel needs branching, heuristics, restarts and global constraints (all-different, cumulative, etc.) to search efficiently for a satisfying assignment, and symmetry breaking to avoid redundant work over structured inputs.
+
+#### Sources to Study
+1. [[24_Handbook_Constraint_Programming_Elsevier_2006/book-guidelines|Handbook of Constraint Programming]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Backtracking-Search|Backtracking Search]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Global-Constraints|Global Constraints]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Symmetry-in-Constraint-Programming|Symmetry in Constraint Programming]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Finite-Domain-Constraint-Programming-Systems|Finite Domain Constraint Programming Systems]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Integration-of-Constraint-Programming-and-Operations-Research|Integration of Constraint Programming and Operations Research]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Distributed-Constraint-Programming|Distributed Constraint Programming]]
+   - [[24_Handbook_Constraint_Programming_Elsevier_2006/Uncertainty-and-Change-in-Constraint-Problems|Uncertainty and Change in Constraint Problems]]
+2. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Exploration-and-Search-in-Constraint-Programming|Pelleau et al. — Exploration and Search in Constraint Programming]]
+3. [[25_Handbook_Satisfiability_Armin_Biere_2021/Symmetry-Minimal-Unsatisfiability-and-Autarkies|Handbook of Satisfiability — Symmetry, Minimal Unsatisfiability and Autarkies]]
+4. [[25_Handbook_Satisfiability_Armin_Biere_2021/Branching-Heuristic-Theory|Handbook of Satisfiability — Branching Heuristic Theory]]
+
+#### Additional external sources
+- Ohrimenko, Stuckey & Codish, "Propagation via Lazy Clause Generation" (Constraints 2009) — the bridge between topics 2 and 8–9; Régin on global constraint filtering algorithms; van Hoeve & Katriel, "Global Constraints" (Handbook of CP).
+
+#### Key Concepts and Definitions
+1. Backtracking with propagation (MAC), variable/value ordering, dom/wdeg, restarts.
+2. Global constraints with dedicated propagators (all-different/matching, cumulative).
+3. Symmetry breaking (static lex-leader, dynamic).
+4. Lazy clause generation: explanations from propagators feed a CDCL core.
+
+#### Relevant Questions
+1. Which variable-ordering heuristic transfers from SAT (VSIDS) to CSP, and which do not?
+2. How much of program-input symmetry (permuting array elements) can be broken automatically?
+3. When does a global constraint pay for itself over its decomposition?
+
+---
+
+## 10. Propagator Engineering: Scheduling, Views, and Set Domains (Core Topic)
+
+#### Pre-requisites
+8. Propagation; Rust systems experience.
+
+#### Why this topic is important
+This is the implementation blueprint of a propagation kernel: propagator scheduling, views/derived propagators (reduce code by composing), set-valued domains, and efficient data structures. Directly usable for the CSP kernel's Rust architecture.
+
+#### Sources to Study
+1. [[42_Constraint Propagation_Guido_Tack_PhD_2009/book-guidelines|Constraint Propagation — Models, Techniques, Implementation (Tack)]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Implementation-Architecture-of-a-Propagation-Kernel|Implementation Architecture of a Propagation Kernel]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Efficient-Propagator-Scheduling|Efficient Propagator Scheduling]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Views-and-Derived-Propagators|Views and Derived Propagators]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Implementing-Views-Efficiently|Implementing Views Efficiently]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Range-Iterators-for-Set-Valued-Domain-Operations|Range Iterators for Set-Valued Domain Operations]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Deriving-Propagators-for-Boolean-Set-Constraints|Deriving Propagators for Boolean Set Constraints]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Empirical-Evaluation-and-Benchmarking|Empirical Evaluation and Benchmarking]]
+   - [[42_Constraint Propagation_Guido_Tack_PhD_2009/Open-Problems-and-Future-Directions|Open Problems and Future Directions]]
+2. [[24_Handbook_Constraint_Programming_Elsevier_2006/Finite-Domain-Constraint-Programming-Systems|Handbook of CP — Finite Domain Constraint Programming Systems]]
+3. [[39_Equality-Saturation-RossThesis2012/The-Peggy-Implementation|Ross — The Peggy Implementation]] (fixpoint-engine implementation notes; peripheral)
+
+#### Additional external sources
+- Schulte & Stuckey, "Efficient Constraint Propagation Engines" (TOPLAS 2008); Gecode documentation; Stuckey et al. on Chuffed (lazy clause generation implementation).
+
+#### Key Concepts and Definitions
+1. Propagator queue with priorities; idempotence and subsumption; event-based wake-up.
+2. Views: $x \mapsto ax+b$, negation, offsets — one propagator, many uses.
+3. Set-domain representation by range lists and iterator-based operations.
+4. Trail-based or copying-based state restoration.
+
+#### Relevant Questions
+1. What are the trade-offs between trailing and copying for backtracking state in Rust?
+2. How do views reduce the propagator zoo while preserving propagation strength?
+3. How would you represent interval and set domains to make propagation cache-friendly?
+
+---
+
+## 11. Abstract Domains for Constraint Solving and Solver Cooperation (Core Topic)
+
+#### Pre-requisites
+8. Propagation; [[learning-roadmap-static-analysis|static-analysis]] topics 4 and 6 (Galois connections, numeric domains).
+
+#### Why this topic is important
+The project's key architectural idea: the CSP kernel *and* the abstract interpreter share domains (intervals, octagons, polyhedra) and can cooperate through products. Abstract-interpretation-based CP explains propagators as abstract transformers and provides modular composition of solvers (delayed/shared products).
+
+#### Sources to Study
+1. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/book-guidelines|Abstract Domains in Constraint Programming]]
+   - [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Links-Between-Abstract-Interpretation-and-Constraint-Programming|Links Between Abstract Interpretation and Constraint Programming]]
+   - [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Abstract-Interpretation-Reformulation-of-Constraint-Programming|Abstract Interpretation Reformulation of Constraint Programming]]
+   - [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Unified-Abstract-Domains-for-Constraint-Programming|Unified Abstract Domains for Constraint Programming]]
+   - [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/The-Octagon-Abstract-Domain|The Octagon Abstract Domain]]
+   - [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Octagonal-Constraint-Solving|Octagonal Constraint Solving]]
+   - [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/The-AbSolute-Solver|The AbSolute Solver]]
+2. [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/book-guidelines|Modular Constraint Solver Cooperation via Abstract Interpretation]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Abstract-Interpretation-as-a-Foundation-for-Constraint-Solving|Abstract Interpretation as a Foundation for Constraint Solving]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Domain-Transformers|Domain Transformers]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Interval-Propagators-Completion-IPC|Interval Propagators Completion (IPC)]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Delayed-Product-DP|Delayed Product (DP)]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Shared-Product-and-Modular-Composition|Shared Product and Modular Composition]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Case-Study-Flexible-Job-Shop-Scheduling|Case Study: Flexible Job Shop Scheduling]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Implementation-and-Empirical-Evaluation|Implementation and Empirical Evaluation]]
+   - [[79_Modular_Constraint_Solver_Cooperation_via_Abstract_Interpretation_Pierre_Talbot_2020/Relation-to-Other-Cooperation-Frameworks|Relation to Other Cooperation Frameworks]]
+3. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Number-Theoretic-and-Interval-Abstract-Domains|Cousot — Number-Theoretic and Interval Abstract Domains]]
+4. [[24_Handbook_Constraint_Programming_Elsevier_2006/Continuous-and-Interval-Constraints|Handbook of CP — Continuous and Interval Constraints]]
+
+#### Key Concepts and Definitions
+1. Constraint solving as iteration of abstract transformers in an abstract domain; solutions as concrete elements of $\gamma(a)$.
+2. Octagon/interval domains as CP domains; AbSolute solver (abstract domain + split).
+3. Domain transformers, delayed product, shared product: composing solvers modularly.
+4. Sound but incomplete propagators vs. complete search by splitting.
+
+#### Relevant Questions
+1. How does a reduced product of interval and octagon domains improve propagation, and what does it cost?
+2. Which parts of the abstract interpreter's transfer functions can be reused as propagators?
+3. What does modular solver cooperation buy when one solver is over-approximating (AI) and one is exact (search)?
+
+---
+
+## 12. Integer, Non-Linear and Continuous Constraints (Core Topic)
+
+#### Pre-requisites
+8. Propagation; 11. Abstract domains; real analysis and basic linear algebra.
+
+#### Why this topic is important
+The project explicitly requires integer and non-linear equation handling. This topic covers interval/continuous constraint solving, relaxations, spatial branch-and-bound and polynomial bounding (Bernstein), which give sound pruning for non-linear constraints where SMT non-linear arithmetic is too expensive or incomplete.
+
+#### Sources to Study
+1. [[24_Handbook_Constraint_Programming_Elsevier_2006/Continuous-and-Interval-Constraints|Handbook of CP — Continuous and Interval Constraints]]
+2. [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/book-guidelines|Reformulation and Convex Relaxation in Global Optimization]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Global-Optimization-and-the-Branch-and-Select-Framework|Global Optimization and the Branch-and-Select Framework]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Spatial-Branch-and-Bound-sBB-Algorithms|Spatial Branch-and-Bound (sBB) Algorithms]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Convex-and-Linear-Relaxation-Techniques|Convex and Linear Relaxation Techniques]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Reformulation-to-Standard-Forms|Reformulation to Standard Forms]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Exact-Problem-Reformulations|Exact Problem Reformulations]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Convex-Envelopes-for-Monomials-of-Odd-Degree|Convex Envelopes for Monomials of Odd Degree]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Reduction-Constraints-for-Sparse-Bilinear-Programs|Reduction Constraints for Sparse Bilinear Programs]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Classification-of-Optimization-Problems|Classification of Optimization Problems]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/Convexity-and-Function-Set-Classification|Convexity and Function/Set Classification]]
+   - [[66_Reformulation_ConvexRelaxation_Global_Optimization_Segio_Liberty_2004/The-OS-Software-Framework|The OS Software Framework]]
+3. [[74_Reachability_Analysis_Bernstein expansion_2012/book-guidelines|Reachability Analysis via Bernstein Expansion]]
+   - [[74_Reachability_Analysis_Bernstein expansion_2012/The-Bernstein-Expansion-of-Polynomials|The Bernstein Expansion of Polynomials]]
+   - [[74_Reachability_Analysis_Bernstein expansion_2012/Computing-Affine-Bound-Functions-from-Bernstein-Coefficients|Computing Affine Bound Functions from Bernstein Coefficients]]
+   - [[74_Reachability_Analysis_Bernstein expansion_2012/Mapping-General-Polyhedra-to-the-Unit-Box|Mapping General Polyhedra to the Unit Box]]
+   - [[74_Reachability_Analysis_Bernstein expansion_2012/Approximation-Error-and-Computational-Complexity|Approximation Error and Computational Complexity]]
+4. [[78_Reachability_Analysis_Linear_Systems_with_Uncertain_Parameters_Polynomial_Zonotopes_Huang_2024/Multi-Affine-Zonotope-Optimization|Huang — Multi-Affine Zonotope Optimization]]
+5. [[59_Grimstad_Global_Spline_Optimization/book-guidelines|Global Spline Optimization]] — B-spline surrogates and spatial B&B ([[59_Grimstad_Global_Spline_Optimization/book-guidelines|application-heavy; use only the optimization chapters]])
+6. [[36_Abstract_Domain_In_Constrain_Programming_2015_Wiley/Octagonal-Constraint-Solving|Pelleau et al. — Octagonal Constraint Solving]]
+7. [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/CSP-over-Infinite-and-Numeric-Domains|CSP Complexity — CSP over Infinite and Numeric Domains]]
+8. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Number-Theoretic-and-Interval-Abstract-Domains|Cousot — Number-Theoretic and Interval Abstract Domains]]
+9. [[10_boolos_burgess_computability_logic_2007/Decidable-Fragments-of-Arithmetic|Boolos–Burgess — Decidable Fragments of Arithmetic]] (why non-linear integer constraints are undecidable)
+
+#### Additional external sources
+Not covered by an on-hand book — **gap**: Benhamou & Granvilliers, "Continuous and Interval Constraints" (Handbook of CP ch. 16 — on hand); Hansen & Walster, *Global Optimization Using Interval Analysis*; Jaulin et al., *Applied Interval Analysis*; Tawarmalani & Sahinidis, *Convexification and Global Optimization in Continuous and Mixed-Integer Nonlinear Programming*; Fränzle et al., "Efficient Solving of Large Non-linear Arithmetic Constraint Systems with Complex Boolean Structure" (iSAT, JSAT 2007); Gao et al., dReal (CADE 2013).
+
+#### Key Concepts and Definitions
+1. Interval arithmetic and HC4/box consistency; interval Newton; dependency (wrapping) problem.
+2. Convex/linear relaxation, McCormick envelopes; spatial branch-and-bound with bounds tightening.
+3. Bernstein expansion: range enclosure of polynomials over a box; affine bounding.
+4. Undecidability of Diophantine constraints (Hilbert's 10th) vs. decidability of real closed fields.
+
+#### Relevant Questions
+1. How does a McCormick envelope give a sound linear relaxation of a bilinear term?
+2. When does Bernstein bounding beat plain interval arithmetic, and what does it cost in dimension?
+3. What should the CSP kernel return when a non-linear constraint is only shown *possibly* satisfiable by a relaxation?
+
+---
+
+## 13. CSP Tractability: Algebraic, Structural, and Parameterized Theory (Optional / Extension)
+
+#### Pre-requisites
+7. CSP foundations; algebra background (universal algebra is developed in the sources).
+
+#### Why this topic is important
+The project lists Structural Tractability and Algebraic Graph Theory as conceptual connections. This theory identifies *which* constraint languages and graph structures admit polynomial-time solving (the Feder–Vardi / dichotomy programme), guiding decisions about when generated CSPs are provably easy and when to expect hardness.
+
+#### Sources to Study
+1. [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/book-guidelines|The Constraint Satisfaction Problem: Complexity and Approximability]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/The-Algebraic-Approach-to-CSP|The Algebraic Approach to CSP]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Absorption-Theory|Absorption Theory]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Hybrid-Tractability|Hybrid Tractability]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Backdoor-Sets-and-Fixed-Parameter-Tractability|Backdoor Sets and Fixed-Parameter Tractability]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Digraph-CSP|Digraph CSP]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Valued-CSP|Valued CSP]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Counting-CSP|Counting CSP]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Holant-Problems|Holant Problems]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Approximation-Algorithms-for-CSP|Approximation Algorithms for CSP]]
+   - [[34_The_Constraint_Satisfaction_Problem_Complexity_and_Approximability/Counting,-Parameterization,-and-Optimization-Variants-of-CSP|Counting, Parameterization, and Optimization Variants of CSP]]
+2. [[24_Handbook_Constraint_Programming_Elsevier_2006/Tractability-and-Computational-Complexity-of-CSPs|Handbook of CP — Tractability and Computational Complexity of CSPs]]
+3. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/book-guidelines|Pseudo-Boolean Reasoning and Compilation]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Graph-Width-Measures-for-CNF-Formulae-and-Encodings|Graph Width Measures for CNF Formulae and Encodings]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Knowledge-Compilation|Knowledge Compilation]]
+   - [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Succinctness-and-Tractability-of-Pseudo-Boolean-Languages|Succinctness and Tractability of Pseudo-Boolean Languages]]
+4. [[25_Handbook_Satisfiability_Armin_Biere_2021/Worst-Case-Complexity-and-Tractability|Handbook of Satisfiability — Worst-Case Complexity and Tractability]]
+5. [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/Order-Minimal-Structures-and-Definability|Tabuada — Order-Minimal Structures and Definability]] (definability and decidability of numeric structures)
+
+#### Key Concepts and Definitions
+1. Constraint language $\Gamma$ and $\mathrm{CSP}(\Gamma)$; polymorphisms and the algebraic dichotomy conjecture (Bulatov/Zhuk).
+2. Structural tractability: tree-width/hypertree width bounded ⇒ polynomial CSP.
+3. Backdoor sets and fixed-parameter tractability; hybrid tractability.
+4. Valued/counting/Holant generalizations; approximability.
+
+#### Relevant Questions
+1. What does a polymorphism tell us about a constraint language's tractability?
+2. When is bounded tree-width of the constraint graph decisive, and can the compiler compute it cheaply for generated CSPs?
+3. Which of your verification constraint languages fall in known tractable classes (e.g. difference constraints, 2-SAT, Horn)?
+
+---
+
+## 14. Constraint Logic Programming and Constraints in Languages (Optional / Extension)
+
+#### Pre-requisites
+[[learning-roadmap-automated-reasoning|automated-reasoning]] topics 7–8 (unification and resolution, logic programming as proof search); 8. Propagation.
+
+#### Why this topic is important
+CLP generalizes SLD resolution to constraint solving over a domain — the model for a prover whose search calls a constraint store, and for CHC solvers built on Horn clauses with constraints. Integrity constraints and multiset specification give further logic-programming angles.
+
+#### Sources to Study
+1. [[24_Handbook_Constraint_Programming_Elsevier_2006/Constraint-Logic-Programming|Handbook of CP — Constraint Logic Programming]]
+2. [[24_Handbook_Constraint_Programming_Elsevier_2006/Constraints-in-Procedural-Concurrent-and-Rule-Based-Languages|Handbook of CP — Constraints in Procedural, Concurrent, and Rule-Based Languages]]
+3. [[18_JW_Lloyd_Foundations_logic_programming_1987/SLD-Resolution|Lloyd — SLD-Resolution]], [[18_JW_Lloyd_Foundations_logic_programming_1987/Integrity-Constraint-Checking|Integrity Constraint Checking]]
+4. [[09_proof_theory_logic_programming_dale_miller_2025/Specifying-Computations-with-Multisets-and-Automata|Miller — Specifying Computations with Multisets and Automata]]
+5. [[76_ThetaSubsumption_article/Search-Methods-Over-the-Hypothesis-Space|ILP article — Search Methods Over the Hypothesis Space]] (constraint-guided search over clause space)
+
+#### Additional external sources
+- Jaffar & Lassez, "Constraint Logic Programming" (POPL 1987); Jaffar & Maher, "CLP: A Survey" (JLP 1994); Marriott & Stuckey, *Programming with Constraints* (MIT Press 1998); Frühwirth, *Constraint Handling Rules*.
+
+#### Key Concepts and Definitions
+1. CLP$(\mathcal X)$ scheme: constraint store, resolution + constraint solving, entailment checking.
+2. Constraint store operations (tell/ask), incremental solving, and backtracking.
+3. Constraint Handling Rules (CHR) as a rule-based propagation language.
+
+#### Relevant Questions
+1. How does CLP resolution differ from SLD, and what obligation does it place on the constraint solver?
+2. Why are CHCs (constrained Horn clauses) a natural CLP-shaped encoding of verification conditions?
+
+---
+
+## 15. Automata and Symbolic-Automata Domains for Structured Data (Core Topic)
+
+#### Pre-requisites
+7–8. CSP/propagation; [[learning-roadmap-type-theory|type-theory]] topic 15 and [[learning-roadmap-static-analysis|static-analysis]] topic 10.
+
+#### Why this topic is important
+The CSP kernel must support abstract data structures as *complex domains* represented by automata/grammars (DFA-style). Symbolic automata (labelled by predicates over an effective Boolean algebra, e.g. integer intervals) let one domain constrain both the structure and the numeric content of strings/lists/trees; set constraints and constraint-carrying tree automata bridge to propagation.
+
+#### Sources to Study
+1. [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/book-guidelines|The Power of Symbolic Automata and Transducers]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Effective-Boolean-Algebras|Effective Boolean Algebras]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Symbolic-Finite-Automata|Symbolic Finite Automata]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Minterms-and-Alphabet-Equivalence-Classes|Minterms and Alphabet Equivalence Classes]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Parametric-Complexity-of-Symbolic-Algorithms|Parametric Complexity of Symbolic Algorithms]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Variants-of-Symbolic-Automata|Variants of Symbolic Automata]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Symbolic-Automata-in-Practice|Symbolic Automata in Practice]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Symbolic-Finite-Transducers|Symbolic Finite Transducers]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Symbolic-Transducers-in-Practice|Symbolic Transducers in Practice]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Variants-of-Symbolic-Transducers|Variants of Symbolic Transducers]]
+   - [[75_The_power_of_symbolic_automata_Transducers_LorisDAntoni_MSResearch/Open-Problems-in-Symbolic-Models|Open Problems in Symbolic Models]]
+2. [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/book-guidelines|Tree Automata Techniques and Applications]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Automata-with-Constraints|Automata with Constraints]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Tree-Set-Automata-and-Set-Constraints|Tree Set Automata and Set Constraints]]
+   - [[33_TATA_Tree_Automata_TechniquesApplications_Comon_Dauchet_2008/Alternating-Tree-Automata|Alternating Tree Automata]]
+3. [[92_Pushdown_Automata_Inclusion_Problems_NguyenVanTang/book-guidelines|Pushdown Automata Inclusion Problems]]
+   - [[92_Pushdown_Automata_Inclusion_Problems_NguyenVanTang/Antichain-Based-Decision-Procedures|Antichain-Based Decision Procedures]]
+   - [[92_Pushdown_Automata_Inclusion_Problems_NguyenVanTang/Extensions-of-Visibly-Pushdown-Automata-and-Their-Limits|Extensions of Visibly Pushdown Automata and Their Limits]]
+4. [[67_Principles_of_Model_Checking_2008/Automata-over-Finite-and-Infinite-Words|Baier–Katoen — Automata over Finite and Infinite Words]]
+5. [[24_Handbook_Constraint_Programming_Elsevier_2006/Constraints-over-Structured-Domains|Handbook of CP — Constraints over Structured Domains]]
+6. [[20_AUTOMATA_TRANSDUCERS_Loris_DAntoni_thesis/book-guidelines|D'Antoni thesis — Automata and Transducers]] (untagged for this area; related background)
+
+#### Additional external sources
+- Pesant, "A Regular Language Membership Constraint for Finite Sequences of Variables" (CP 2004) and Beldiceanu et al. on the `regular`/automaton global constraint; Bjørner et al. on Z3's string/sequence theory; Gervet on set constraints.
+
+#### Key Concepts and Definitions
+1. Effective Boolean algebra $\mathcal A$; SFA transitions $q \xrightarrow{\varphi} q'$; minterms for determinization/minimization.
+2. `regular` global constraint: sequence of variables must be accepted by an automaton.
+3. Set constraints and tree set automata; alternating automata; constraint-carrying automata.
+4. Antichain-based inclusion checking.
+
+#### Relevant Questions
+1. How can a DFA/symbolic automaton be encoded as a propagating constraint on a sequence of integer variables?
+2. Which operations (intersection, complement, emptiness, model extraction) must an automata domain support to be used inside a CSP kernel, and at what cost?
+3. How does the propagation strength of the `regular` constraint compare with decomposing it into transition clauses?
+
+---
+
+## 16. Bounded and Symbolic Model Checking, BDDs, and Knowledge Compilation (Optional / Extension)
+
+#### Pre-requisites
+1–2. SAT; [[learning-roadmap-static-analysis|static-analysis]] topic 17 (model checking).
+
+#### Why this topic is important
+Symbolic representations (BDDs, other compiled forms) and bounded model checking are how SAT/CP technology is applied to reachability: unrolling a transition relation into a formula is the simplest counterexample-search architecture and the baseline for the CSP kernel.
+
+#### Sources to Study
+1. [[67_Principles_of_Model_Checking_2008/book-guidelines|Principles of Model Checking]]
+   - [[67_Principles_of_Model_Checking_2008/Model-Checking-Fundamentals|Model Checking Fundamentals]]
+   - [[67_Principles_of_Model_Checking_2008/Transition-Systems-as-System-Models|Transition Systems as System Models]]
+   - [[67_Principles_of_Model_Checking_2008/State-Space-Explosion|State-Space Explosion]]
+   - [[67_Principles_of_Model_Checking_2008/Safety-Properties-and-Invariants|Safety Properties and Invariants]]
+   - [[67_Principles_of_Model_Checking_2008/Automata-Based-LTL-Model-Checking|Automata-Based LTL Model Checking]]
+   - [[67_Principles_of_Model_Checking_2008/Symbolic-Model-Checking-with-Binary-Decision-Diagrams|Symbolic Model Checking with Binary Decision Diagrams]]
+   - [[67_Principles_of_Model_Checking_2008/Markov-Chains-and-Probabilistic-Verification|Markov Chains and Probabilistic Verification]]
+   - [[67_Principles_of_Model_Checking_2008/Markov-Decision-Processes|Markov Decision Processes]]
+2. [[25_Handbook_Satisfiability_Armin_Biere_2021/Bounded-Model-Checking-and-Formal-Verification|Handbook of Satisfiability — Bounded Model Checking and Formal Verification]]
+3. [[50_Pseudo-Boolean_Reasoning_Compilation_Romain_Wallon_2020/Knowledge-Compilation|Wallon — Knowledge Compilation]]
+4. [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/book-guidelines|Verification and Control of Hybrid Systems]]
+   - [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/Timed-Automata-and-Quotient-Based-Abstraction|Timed Automata and Quotient-Based Abstraction]]
+   - [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/Barrier-Certificates-and-Reachable-Set-Computation|Barrier Certificates and Reachable Set Computation]]
+   - [[45_Paulo_Tabuada_Verification_and_Control_Hybrid_Systems_2009/Exact-Symbolic-Models-for-Control|Exact Symbolic Models for Control]]
+5. [[74_Reachability_Analysis_Bernstein expansion_2012/Reachability-Analysis-for-Hybrid-and-Polynomial-Dynamical-Systems|Reachability Analysis for Hybrid and Polynomial Dynamical Systems]]
+6. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Graph-Theory-and-Path-Problems|Cousot — Graph Theory and Path Problems]]
+
+#### Additional external sources
+- Biere et al., "Symbolic Model Checking without BDDs" (TACAS 1999); Sheeran, Singh & Stålmarck, "Checking Safety Properties Using Induction and a SAT-Solver" (FMCAD 2000; $k$-induction); Bryant (1986) on ROBDDs; Darwiche & Marquis, "A Knowledge Compilation Map" (JAIR 2002).
+
+#### Key Concepts and Definitions
+1. Bounded model checking: unroll $I(s_0)\wedge\bigwedge T(s_i,s_{i+1})\wedge\lnot P(s_k)$.
+2. $k$-induction and completeness thresholds.
+3. BDDs: canonical form, variable ordering; knowledge compilation languages and their succinctness.
+4. State-space explosion and reduction techniques.
+
+#### Relevant Questions
+1. How does BMC's unrolled formula compare with a path-based CSP over program states?
+2. When are BDDs (canonical forms) preferable to CDCL, and when do they blow up?
+3. What is the relation between $k$-induction and finding an inductive invariant?
+
+---
+
+## 17. CEGAR, CHC Solving, and Loop Acceleration (Core Topic)
+
+#### Pre-requisites
+6. SMT; 11. Abstract domains; 16. BMC; [[learning-roadmap-static-analysis|static-analysis]] topic 16 (CEGAR).
+
+#### Why this topic is important
+This is where the two halves meet: constrained Horn clauses are a solver-friendly encoding of verification conditions; CEGAR uses the counterexample search to refine the abstraction (proving absence) or confirm the bug (proving presence). Loop acceleration and clause learning add strength beyond plain unrolling/widening.
+
+#### Sources to Study
+1. [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/book-guidelines|Acceleration Driven Clause Learning for CHC]]
+   - [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/Constrained-Horn-Clauses-(CHCs)|Constrained Horn Clauses (CHCs)]]
+   - [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/Loop-Acceleration|Loop Acceleration]]
+   - [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/The-ADCL-Calculus|The ADCL Calculus]]
+   - [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/Implementing-ADCL-in-LoAT|Implementing ADCL in LoAT]]
+   - [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/Related-Approaches-to-CHC-SAT-and-Loop-Summarization|Related Approaches to CHC-SAT and Loop Summarization]]
+   - [[69_Acceleration_Driven_Clause_Learning_for_CHC_Frohn_2023/Empirical-Evaluation|Empirical Evaluation]]
+2. [[55_MinkowskiSum_Domain_Dissertation_Marius-Greitschus_2018/book-guidelines|Minkowski-Sum Domain Dissertation]]
+   - [[55_MinkowskiSum_Domain_Dissertation_Marius-Greitschus_2018/Counterexample-Guided-Abstraction-Refinement-(CEGAR)|Counterexample-Guided Abstraction Refinement (CEGAR)]]
+   - [[55_MinkowskiSum_Domain_Dissertation_Marius-Greitschus_2018/Elimination-of-Spurious-Transitions|Elimination of Spurious Transitions]]
+3. [[76_ThetaSubsumption_article/book-guidelines|Theta-Subsumption / ILP article]] — ILP system features and search (clause/hypothesis learning): [[76_ThetaSubsumption_article/Representative-ILP-Systems|Representative ILP Systems]], [[76_ThetaSubsumption_article/Building-an-ILP-System|Building an ILP System]], [[76_ThetaSubsumption_article/Applications-of-ILP|Applications of ILP]], [[76_ThetaSubsumption_article/ILP-System-Features|ILP System Features]], [[76_ThetaSubsumption_article/Open-Limitations-and-Future-Directions|Open Limitations and Future Directions]]
+4. [[38_Compositional_Shape_Analysis_by_means_of_Bi-Abduction_Calcagno/Related-Work-and-Positioning|Calcagno et al. — Related Work and Positioning]]
+5. [[39_Equality-Saturation-RossThesis2012/Loop-and-Branch-Optimizations-Discovered-by-Saturation|Ross — Loop and Branch Optimizations Discovered by Saturation]] (loop reasoning by rewriting; peripheral)
+6. [[09_proof_theory_logic_programming_dale_miller_2025/Specifying-Computations-with-Multisets-and-Automata|Miller — Specifying Computations with Multisets and Automata]]
+
+#### Additional external sources
+Not covered by an on-hand book — **gap**: Clarke et al., "Counterexample-Guided Abstraction Refinement" (CAV 2000); Bjørner, Gurfinkel, McMillan & Rybalchenko, "Horn Clause Solvers for Program Verification" (2015); Hoder, Bjørner & de Moura, "μZ" (CADE 2011); Gurfinkel et al., SeaHorn/Spacer ("Solving Constrained Horn Clauses using IC3", FMCAD 2011 / CAV 2014); McMillan, "Lazy Abstraction with Interpolants" (CAV 2006); Bradley, "SAT-Based Model Checking without Unrolling" (IC3/PDR, VMCAI 2011).
+
+#### Key Concepts and Definitions
+1. Constrained Horn clause: $\varphi \wedge P_1(\vec t_1)\wedge\dots \Rightarrow H(\vec t)$; solution = interpretation of predicates; unsat = derivation of `false`.
+2. CEGAR loop: abstract, check, concretize counterexample, refine on spuriousness.
+3. Loop acceleration: replace iterated transition by a closed-form summary; ADCL learns accelerated clauses.
+4. Property-directed reachability (IC3/PDR) as an alternative fixpoint-by-SAT.
+
+#### Relevant Questions
+1. How do CHC satisfiability (an inductive invariant exists) and CHC unsatisfiability (a counterexample derivation exists) correspond to the two proof modes of your compiler?
+2. What makes acceleration exact where widening over-approximates, and what class of loops qualifies?
+3. What information must the CSP kernel return so the abstraction can be refined (unsat core, path, interpolant)?
+
+---
+
+## 18. Symbolic Execution and the Counterexample-Search Architecture (Core Topic — external sources needed)
+
+#### Pre-requisites
+6. SMT; 9. Search; 15. Automata domains; 17. CEGAR; [[learning-roadmap-static-analysis|static-analysis]] topics 1 and 9.
+
+#### Why this topic is important
+Symbolic execution turns each program path into a path condition solved by the backend, giving path coverage and concrete counterexamples ("counterfacts"). It is the operational glue between the abstract interpreter (which prunes infeasible paths), the constraint kernel (which solves path conditions) and the type/refinement checker (which supplies the properties). **No book in `vaults/` covers symbolic execution directly**; the topics above supply the solver-side machinery.
+
+#### Sources to Study
+1. [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Forward-Reachability-Semantics|Cousot — Forward Reachability Semantics]] and [[26_Principles_of_Abstract_Interpretation_Cousot_2021/Trace-Semantics-of-Programs|Trace Semantics of Programs]] (paths as concrete semantics)
+2. [[55_MinkowskiSum_Domain_Dissertation_Marius-Greitschus_2018/Path-Programs-and-Loop-Invariants|Greitschus — Path Programs and Loop Invariants]]
+3. [[39_Equality-Saturation-RossThesis2012/Translation-Validation|Ross — Translation Validation]] (equivalence checking by solver)
+4. [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/Unification-for-Units-of-Measure|Gundry — Unification for Units of Measure]]
+
+#### Additional external sources
+**Gap — recommended additions to `sources/`:** King, "Symbolic Execution and Program Testing" (CACM 1976); Cadar & Sen, "Symbolic Execution for Software Testing: Three Decades Later" (CACM 2013); Godefroid, Klarlund & Sen, "DART" (PLDI 2005) and Cadar et al., "KLEE" (OSDI 2008); Baldoni et al., "A Survey of Symbolic Execution Techniques" (ACM CSUR 2018); Pasareanu & Visser on symbolic PathFinder; Torlak & Bodik, Rosette ("Growing Solver-Aided Languages with Rosette", Onward! 2013); de Moura & Bjørner on Z3 as a backend; Leino, Dafny/Boogie verification-condition pipeline.
+
+#### Key Concepts and Definitions
+1. Symbolic state $(\sigma, \pi)$: symbolic store and path condition; forking at branches; feasibility by solver.
+2. Path explosion mitigation: state merging, subsumption via abstraction, search strategies.
+3. Concolic execution; concretization.
+4. Solver-aided languages and verification-condition generation.
+
+#### Relevant Questions
+1. How does abstract-interpretation-derived invariant information prune the symbolic execution tree?
+2. Which path constraints should go to the SMT solver and which to the CSP kernel (non-linear, structured domains)?
+3. How does a counterexample from symbolic execution translate into a refinement-type failure witness?
+
+---
+
+## Summary of gaps and pruning notes
+
+Explicit external-source recommendations are attached to topics **6 (SMT — the biggest gap: DPLL(T), simplex, Nelson–Oppen, non-linear arithmetic)**, **9 (lazy clause generation, global constraint filtering)**, **10 (propagation-engine papers)**, **12 (interval/global-optimization textbooks and non-linear SAT solvers)**, **15 (regular constraint)**, **16 (BMC, $k$-induction)**, **17 (CEGAR, Horn clause solvers, IC3)** and **18 (symbolic execution — no on-hand book)**. Books carrying a stray or peripheral `sat-smt-csp` tag and used only lightly: [[59_Grimstad_Global_Spline_Optimization/book-guidelines|Global Spline Optimization]], [[39_Equality-Saturation-RossThesis2012/book-guidelines|Equality Saturation]], [[38_Compositional_Shape_Analysis_by_means_of_Bi-Abduction_Calcagno/book-guidelines|Bi-Abduction]] and [[83_Type_Inference_Haskell_Dependent_Types_Gundry_2013/book-guidelines|Type Inference, Haskell and Dependent Types]].
