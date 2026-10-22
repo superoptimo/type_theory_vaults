@@ -1,361 +1,330 @@
 ---
 title: "Higher-Order Quantification"
-source: "Proof Theory and Logic Programming — Dale Miller (2025)"
-chapter: "Chapter 9, Higher-order quantification"
-pages: "pp. 181–206 (PDF pages 189–214)"
-tags: [proof-theory, logic-programming, higher-order-logic, lambda-prolog, focusing, cut-elimination, unification, leibniz-equality, tactics]
+source_book: "Proof Theory and Logic Programming: Computation as Proof Search (Dale Miller, 2025)"
+chapters: "Chapter 9, Higher-order quantification, Sections 9.1-9.5 and 9.9-9.10 (book pp. 181-195 and 204-207; PDF pp. 189-203 and 212-215); Sections 9.6-9.8 (programming, hiding) only pointed to"
+tags:
+  - proof-theory
+  - higher-order-logic
+  - linear-logic
+  - focused-proofs
+  - cut-elimination
+  - type-theory
+  - automated-reasoning
+  - rust
+  - lean
 ---
-
-# Higher-Order Quantification
 
 [[book-guidelines|↩ Back to guidelines]]
 
-## Why quantify over a predicate at all?
+# Higher-Order Quantification
 
-Everything through Chapter 8 quantified over *individuals*: $\forall x. B$ where $x$ ranges over some data domain — natural numbers, lists, nodes in a graph. The quantifier picks an element of a set and the formula says something about it. That's the quantification every working programmer already has an intuition for: it's a `for all x: T` loop, or a generic function parameter.
+## 1. The problem this chapter solves
 
-This chapter asks a stranger question: what if $x$ doesn't range over data, but over *properties* — over predicates themselves? $\forall P. B$ where substituting for $P$ doesn't hand you a number or a list, but a whole relation, a function into propositions.
+Up to Chapter 8, quantifiers range over *individuals*: types built from primitive types $S$ other than $o$. Chapter 9 lifts that restriction. The quantifiers $\forall_\tau, \exists_\tau$ may now bind variables of any simple type $\tau$, including types containing $o$, the type of formulas. A variable can stand for a predicate, a formula, or a function from formulas to formulas. The resulting logic is called $\mathcal L_2^\omega$ (the same connectives as $\mathcal L_2$, with unrestricted $\tau$).
 
-Why would you want that? A few motivating angles, all of which the chapter cashes out concretely:
+Why want it? Three payoffs, each developed later in the book:
 
-- **Hiding an implementation detail.** Suppose you want to specify "reverse" using an auxiliary helper predicate — an accumulator relation — but you don't want that helper visible or callable from outside the specification. First-order logic gives you no way to say "this predicate exists but is private to this clause." Quantifying over the predicate itself does: $\forall rv. (\ldots \text{clauses mentioning } rv \ldots) \Rightarrow \text{reverse } L\ K$ makes $rv$ a bound variable, scoped locally, indistinguishable from the outside.
-- **Defining connectives, not just data.** If you can quantify over $p : o$ (the type of propositions itself), you can *define* logical constants like $\top$ or $0$ purely in terms of the quantifier — no new primitive symbols needed. $\forall p. p$ turns out to be a faithful rendering of "the false-est thing," because a formula true for every proposition $p$ can prove nothing.
-- **Programming over programs.** If a predicate can be an argument, you can write higher-order combinators: "hold for every element of this list" (`forevery`), "combine two search strategies" (tacticals like `then`/`orelse`). This is exactly the leap from first-order functions to higher-order functions in programming — `map`, `filter`, `fold` — except the values being passed around are relations/predicates, and "calling" them means proving a goal.
-- **Reasoning about programs by manipulating the logic, not by induction.** This is the big payoff of the chapter: once a specification hides a predicate behind $\forall rv$, you can *instantiate* that quantifier with a cleverly chosen predicate expression and derive a completely different — but logically equivalent — fact, purely by substitution and cut-elimination. No induction required. We'll walk through the reverse-is-symmetric proof, which is the single most striking example.
+- **Programming.** Predicates become arguments (`mappred`, tacticals). A logic program can take other programs as inputs.
+- **Hiding.** $\forall rev.\,(\text{clauses defining } rev)\supset\ldots$ makes a specification's auxiliary predicate private. This is the logical form of an abstract data type.
+- **Definability.** Connectives can be defined from quantifiers. [[Linear-Logic|Linear logic]]'s units and additives fall out of $\forall_o$ and $\exists_o$.
 
-If you've been building a mental model of Lean's elaborator resolving implicit arguments by choosing terms to plug into metavariables, this chapter is going to feel very familiar. Instantiating $\forall rv. B$ with a term is *exactly* the same move as Lean's unifier deciding what a metavariable should be — a "hole" that ranges over predicates (or, in Lean's case, over terms of a `Prop`- or type-valued family) getting filled by higher-order unification. Keep that parallel running throughout; it's made explicit at the end.
+The price: *everything that made first-order proof search tidy stops being true*. Atomic formulas are no longer stable under substitution, the subformula property degenerates, and cut elimination needs a much stronger induction. The chapter is largely the story of paying that price and recovering a usable focused system anyway. That is the part that matters to an implementer.
 
-## The formal move: $\mathcal{L}_2^\omega$-formulas
+The book also dispatches an objection up front. Since arithmetic embeds in $\mathcal L_2^\omega$, Gödel's incompleteness applies. Miller's reply: the only meaning given to connectives is the sequent calculus itself, so "provable" is always recursively enumerable and incompleteness of a model-theoretic semantics is not the concern. "Soundness" and "completeness" in this book mean *one proof system matches another*, not a match against a model.
 
-Chapters 6–8 built the linear-logic system $\mathcal{L}_2$ with quantifiers $\forall^\tau$ and $\exists^\tau$, but always with a restriction: $\tau$ was drawn only from the *first-order* types — built from the primitive individual types $S$, never from $o$ (the type of propositions) and never containing a function-arrow $\to$ pointing at $o$. That restriction is what made those quantifiers "ordinary" for-all-individuals quantifiers.
+## 2. Two kinds of "higher order"
 
-This chapter drops the restriction. Now $\forall^\tau$ and $\exists^\tau$ can quantify a variable of *any* type built from $\to$ and the primitive types $S \cup \{o\}$ — including types like $i \to o$ (predicates on individuals) or $(i \to o) \to o$ (predicates on predicates). Formulas built this way, using the full stock of $\mathcal{L}_2$'s logical connectives plus unrestricted quantification, are called $\mathcal{L}_2^\omega$-formulas ("L-two-omega" — the $\omega$ marks "arbitrarily high type/order," the same superscript convention used for $C^\omega$ and $I^\omega$, the higher-order counterparts of the classical and intuitionistic sequent systems $C$ and $I$ from earlier chapters).
+There are two ways to add types.
 
-If you only add higher-order *types* to variables but never let a formula's own logical connectives migrate into instantiated terms, the proof theory barely changes — it's the same story as first-order logic, just with a more elaborate substitution mechanism ($\beta$-conversion instead of plain term substitution). The real complexity shows up once $\tau$ is allowed to mention $o$. That's where instantiating a quantifier can turn a small formula into a formula riddled with connectives that weren't visible in the original.
+1. Allow $\tau$ to contain the arrow $\to$, but not $o$ (e.g. $\forall_{i\to i}$). Then substitution only changes *terms*; the logical structure of formulas is untouched. The proof theory is "essentially the same as first-order logic". $\lambda$-conversion is busier, but only inside terms.
+2. Allow $\tau$ to mention $o$ (e.g. $\forall_o p$, $\forall_{i\to o} P$). Now a substitution can inject *logical connectives* where a variable used to be. This is the genuinely new thing.
 
-## What breaks: the subformula property, and logical connectives showing up where they shouldn't
+Everything below is about (2).
 
-**Instantiation can explode formula structure.** In first-order logic, substituting a term $t$ for $x$ in $B[t/x]$ always yields a $\beta$-normal formula — substitution and normalization commute trivially because terms don't carry logical structure. In the higher-order setting this stops being true. If $B$ has $n$ occurrences of logical connectives, instantiating $\forall^o p.\, p \Rightarrow p$ (two connective-occurrences: one $\forall$, one $\Rightarrow$... actually the book's own count: two logical connectives in the quantified expression) with $B$ replaces it with something containing $2n+1$ occurrences of logical connectives. The book gives a worked mini-example in §9.5: $\forall p. \forall q.\, p \Rightarrow q$ (three connective occurrences) is first instantiated with $\forall p.\, p \multimap p$ to get $\forall q.\,(\forall p.\, p \multimap p) \Rightarrow q$, then instantiated again with $p \multimap q$ to get $(\forall p.\, p \multimap p) \Rightarrow (p \multimap q)$ — now four connective occurrences, more than the two-connective quantified body you started substituting into.
+## 3. The rules, and what is different about them
 
-**The subformula property collapses.** Recall from earlier chapters (§3.7): a cut-free proof has the subformula property if every formula appearing anywhere in the proof is a subformula of something in the end-sequent — including formulas produced by instantiating a quantifier, which count as "subformulas" of the quantified formula by convention. That convention is what makes cut-elimination's termination and consistency arguments work in the first-order setting. In the higher-order setting it's vacuous: literally *every* formula is a "subformula" of $\forall p.\, p$, because you can instantiate $p$ with anything. A notion meant to bound what can appear in a proof, bounds nothing.
+The quantifier rules are verbatim the ones from Figure 4.1, with $\tau$ unrestricted.
 
-**Logical connectives can hide inside non-logical contexts.** In first-order logic, a connective occurrence is always either top-level in a formula or nested only under other connectives — never underneath a predicate symbol applied to arguments, because predicates take individual terms, not formulas, as arguments. Once predicates can be *variables* of higher type, that firewall disappears: an atomic formula like $\text{mappred}\ P\ L\ K$ still looks atomic (its head symbol is the non-logical constant $\text{mappred}$), but if $P$ gets substituted with something like $\lambda x \lambda y.\, x = y \lor R\ x\ y$, the *instance* of that atomic formula contains an $\lor$ buried inside it. This is precisely the mechanism that makes higher-order logic programming expressive (§9.6) — and precisely what makes the earlier chapters' proof-theoretic machinery (built around "atomic formulas stay atomic under substitution") break.
+$$\frac{\Sigma :: \Gamma, B[t/x] \vdash \Delta}{\Sigma :: \Gamma, \forall_\tau x.B \vdash \Delta}\,\forall L \qquad \frac{\Sigma, c:\tau :: \Gamma \vdash \Delta, B[c/x]}{\Sigma :: \Gamma \vdash \Delta, \forall_\tau x.B}\,\forall R$$
 
-**Why this matters for cut-elimination.** Everything in Chapter 7's cut-elimination proof for $\mathcal{L}_2$ leaned on atomic formulas staying atomic under substitution — that's what let the induction on a numeric "cut measure" terminate. Once substitution can turn an atomic formula into a compound one (or vice versa is irrelevant, but the forward direction is what bites), that induction has no floor to stand on. The chapter's whole technical arc — near-focused proofs, the off-focus measure, the appeal to Girard's *candidats de réductibilité* — exists to patch exactly this hole.
+$$\frac{\Sigma, c:\tau :: \Gamma, B[c/x] \vdash \Delta}{\Sigma :: \Gamma, \exists_\tau x.B \vdash \Delta}\,\exists L \qquad \frac{\Sigma :: \Gamma \vdash \Delta, B[t/x]}{\Sigma :: \Gamma \vdash \Delta, \exists_\tau x.B}\,\exists R$$
 
-## Leibniz equality: definitional equality as a formula
+Here $\Sigma$ is the signature (declared constants and their types), $c$ is a fresh eigenvariable, and $t$ is any $\Sigma$-term of type $\tau$. Call the classical and intuitionistic systems with these rules $C^\omega$ and $I^\omega$.
 
-One immediate, load-bearing use of higher-order quantification: defining equality *inside* the logic rather than baking it in as a primitive. For terms $t, s$ of type $\tau$, **Leibniz equality** is
+The rules did not change. What changed is the *cost and shape of $B[t/x]$*. The book stresses that substitution always returns a $\lambda$-normal form. In first-order logic that is cheap: a first-order term replaces a variable and no redex appears. In higher-order logic, $t$ may be a $\lambda$-abstraction sitting in head position of $x\,\vec{s}$, and $\beta$-reduction cascades.
 
-$$\forall^{\tau \to o} P.\, (P\,t \supset P\,s)$$
+### 3.1 Instantiation can grow a formula
 
-("every property $P$ that holds of $t$ also holds of $s$"). In the linear setting there's a choice of implication, giving two candidate definitions, $E_1 = \forall P. (P\,t \Rightarrow P\,s)$ and $E_2 = \forall P.(P\,t \multimap P\,s)$; Exercise 9.15 asks for a proof that they're provably equivalent (both directions have $\Downarrow \mathcal{L}_2^\omega$-proofs).
+Instantiate $\forall_o p.\,p \Rightarrow p$ with a formula $B$ containing $n$ connectives. The quantified formula has two connective occurrences ($\forall$ and $\Rightarrow$). The instance $B \Rightarrow B$ has $2n+1$. The book's second example: $\forall p.\forall q.\,p\Rightarrow q$ (three connectives) instantiated with $\forall p.\,p\multimap p$ and then $p \multimap q$ yields $(\forall p.\,p\multimap p)\Rightarrow(p\multimap q)$ (four).
 
-This is a genuinely useful stand-in for a distinction the elaborator project cares about directly: **Leibniz equality is a proof-theoretic surrogate for definitional vs. propositional equality.** Lean's kernel has a primitive, computational notion of definitional equality (`isDefEq`, driven by reduction — $\beta,\iota,\zeta,\delta$-unfolding) that it uses silently during type-checking, and a separate, logic-level `Eq` (propositional equality, `Eq.mpr`/`rfl`/`Eq.subst`) that the *user* reasons about with tactics. Leibniz equality *is* essentially `Eq.subst`/`▸` reified as a formula: "if $P$ holds of $t$, transport that fact to $s$." Exercise 9.3 in the book even asks you to prove Leibniz equality is an equivalence relation (reflexive, symmetric, transitive) purely by manipulating the quantified formula in $I^\omega$ — structurally the same content as Lean's `Eq.refl`/`Eq.symm`/`Eq.trans`, but derived from the quantifier instead of assumed as primitive.
+Here is the mechanism in Rust: a tiny formula language with flexible heads and a substitution that does the $\beta$-step. I checked this compiles and prints `1 -> 5`.
 
-Exercise 9.2 also flags something sharp: the formula $\forall^o p.(p \supset p)$, added as a hypothesis, can *simulate the cut rule* — its instantiation pattern mirrors an instance of $\supset L$ so closely that having it around as an axiom lets you smuggle in cut-like reasoning without an explicit cut rule. This foreshadows §9.9's warning about flexible-headed clauses causing uncontrolled nondeterminism.
+```rust
+use std::collections::HashMap;
 
-## Near-focused proofs: patching focusing for higher-order terms
+#[derive(Clone, Debug)]
+enum Head { Const(String), Var(String) }   // rigid vs flexible
 
-### What breaks, precisely
+#[derive(Clone, Debug)]
+enum F {
+    Atom(Head, Vec<String>),               // head applied to first-order args
+    Imp(Box<F>, Box<F>),
+    ForallO(String, Box<F>),               // quantifier over a predicate variable
+}
 
-Recall $\Downarrow\mathcal{L}_2$ from Chapter 6: the focused proof system where `init` only fires on an atomic formula, and the "decide" rules only ever leave atomic formulas in the right-bounded zone once you're mid-phase. Both invariants relied on: substituting into an atomic formula gives you another atomic formula. The book gives the killing example directly. This is a valid $\Downarrow_{\mathcal{L}_2}^+$ proof:
+/// A predicate-variable instance: \x1..xn. body
+struct Lam { params: Vec<String>, body: F }
 
-$$\dfrac{}{q:i\to o,\ p:i\to o,\ a:i :: \cdot;\ \cdot \Downarrow p\,a \vdash p\,a;\ \cdot} \ \mathsf{init}$$
+fn connectives(f: &F) -> usize {
+    match f {
+        F::Atom(..) => 0,
+        F::Imp(a, b) => 1 + connectives(a) + connectives(b),
+        F::ForallO(_, b) => 1 + connectives(b),
+    }
+}
 
-Now instantiate $p$ with $\lambda w.\, q w \Rightarrow q a$. The conclusion becomes
+fn rename(f: &F, m: &HashMap<String, String>) -> F {
+    match f {
+        F::Atom(h, args) => F::Atom(h.clone(),
+            args.iter().map(|a| m.get(a).cloned().unwrap_or(a.clone())).collect()),
+        F::Imp(a, b) => F::Imp(Box::new(rename(a, m)), Box::new(rename(b, m))),
+        F::ForallO(v, b) => F::ForallO(v.clone(), Box::new(rename(b, m))),
+    }
+}
 
-$$q : i \to o, a : i :: \cdot;\ \cdot \Downarrow (qa \Rightarrow qa) \vdash (qa \Rightarrow qa);\ \cdot$$
-
-— and this is *not* a valid $\Downarrow \mathcal{L}_2$-proof, because `init` is only licensed on atomic formulas, and $qa \Rightarrow qa$ is compound. More generally, substituting a term into a variable of function-into-$o$ type can corrupt a focused proof in two ways: `init`/`init?` can end up focused on non-atomic formulas, and the "decide" rules and most left-introduction rules can end up with non-atomic formulas sitting in the right-bounded zone where only atoms are supposed to live.
-
-### The fix: relax, then repair
-
-The near-focused system $\Downarrow N$ (Figure 9.1) is $\Downarrow \mathcal{L}_2$ with exactly three relaxations:
-
-1. Formulas in sequents are now arbitrary $\mathcal{L}_2^\omega$-formulas.
-2. The two `init` rules allow the focused formula $B$ to be *any* formula, not just an atom.
-3. The three "decide" rules allow the right-bounded zone $\Delta$ to hold arbitrary formulas, not just atoms.
-
-Definition: a **$\Downarrow \mathcal{L}_2^\omega$-proof** is a $\Downarrow N$ proof in which every left-introduction rule and decide rule *happens* to keep its right-bounded zone atomic — i.e., $\Downarrow\mathcal{L}_2^\omega$ is the "well-behaved subset" of $\Downarrow N$ proofs where the atomicity discipline holds despite not being enforced by the rules.
-
-The technical payoff of the section is: **every $\Downarrow N$ proof can be reorganized into a $\Downarrow\mathcal{L}_2^\omega$ proof** (Proposition 9.9). This is not obvious — you have to actively push non-atomic `init`/decide occurrences out of the proof by local rewriting. The argument runs in stages:
-
-- **Lemma 9.5** — eliminate `init?` entirely, replacing it with a `decide?`/`init` pair (an `init?` step is really a degenerate decide followed by initial).
-- **Lemma 9.6** — reduce every remaining `init` to an *atomic* `init`. This is the heart of the argument, via the **off-focus measure**: count, for each `init` occurrence, the number of top-level logical-connective occurrences in the focused formula (a "top-level" occurrence is one not buried under a non-logical constant or variable), then sum across the whole proof. If this measure is nonzero, some `init` is focused on a compound formula; the book shows, case by case on the top connective ($\&$, $\Rightarrow$, $?$, and symmetric cases for $\bot, \multimap, \top$), how to locally rewrite the surrounding derivation to push the connective's introduction rule *above* the `init`, strictly decreasing the measure. Repeat until it hits zero — termination is guaranteed because the measure is a natural number that strictly decreases at each rewrite.
-- **Lemma 9.7 / Lemma 9.8** — the same "permute the introduction rule above the offending step" technique, applied to `decide?` and to $\multimap L$, using Proposition 7.2 (reordering independent right-introduction steps) to push atomic formulas into the phase before the compound one, then float the decide/$\multimap L$ step up over that reordered phase.
-- **Proposition 9.9** — chain all four lemmas: a $\Downarrow N$ proof reduces to one with no `init?`, only atomic `init`, and only atomic `decide?`/$\multimap L$ — which, by definition, *is* a $\Downarrow\mathcal{L}_2^\omega$ proof.
-
-This gives **Corollary 9.10**, a new route to the admissibility of generalized initial rules (formulas, not just atoms, behaving like `init`), independent of the argument used for Theorem 7.4.
-
-<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="13">
-  <rect x="10" y="20" width="220" height="80" rx="8" fill="none" stroke="#666666" stroke-width="1.5"/>
-  <text x="120" y="45" text-anchor="middle" fill="#333333">⇓N proof</text>
-  <text x="120" y="65" text-anchor="middle" fill="#666666" font-size="11">init on any formula</text>
-  <text x="120" y="80" text-anchor="middle" fill="#666666" font-size="11">decide zones unrestricted</text>
-
-  <rect x="260" y="20" width="220" height="80" rx="8" fill="none" stroke="#666666" stroke-width="1.5"/>
-  <text x="370" y="40" text-anchor="middle" fill="#333333">off-focus measure</text>
-  <text x="370" y="58" text-anchor="middle" fill="#666666" font-size="11">= Σ top-level connectives</text>
-  <text x="370" y="76" text-anchor="middle" fill="#666666" font-size="11">at each init occurrence</text>
-
-  <rect x="510" y="20" width="200" height="80" rx="8" fill="none" stroke="#666666" stroke-width="1.5"/>
-  <text x="610" y="45" text-anchor="middle" fill="#333333">⇓L₂^ω proof</text>
-  <text x="610" y="65" text-anchor="middle" fill="#666666" font-size="11">init/decide always</text>
-  <text x="610" y="80" text-anchor="middle" fill="#666666" font-size="11">on atomic formulas</text>
-
-  <path d="M230 60 H258" stroke="#666666" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <path d="M480 60 H508" stroke="#666666" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="370" y="130" text-anchor="middle" fill="#666666" font-size="11">rewrite (Lemma 9.6): measure &gt; 0 ⇒ push connective's</text>
-  <text x="370" y="146" text-anchor="middle" fill="#666666" font-size="11">rule above init, strictly decreasing the measure</text>
-  <text x="370" y="180" text-anchor="middle" fill="#666666" font-size="11">terminates because the measure is a natural number (Prop. 9.9)</text>
-  <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L6,3 L0,6 Z" fill="#666666"/>
-    </marker>
-  </defs>
-</svg>
-
-## Theorem 9.13 and Theorem 9.14: cut-elimination, but harder
-
-$\Downarrow N^+$ is $\Downarrow N$ plus the four cut rules from Figure 7.1 (the same cut rules used for $\mathcal{L}_2$).
-
-**Theorem 9.13 (Cut-elimination for $\Downarrow N^+$).** If a sequent has a $\Downarrow N^+$ proof, it has a $\Downarrow N$ proof.
-
-The book states this theorem and *explicitly does not prove it*. Two reasons are given, and both are worth internalizing rather than skating past:
-
-1. The Chapter 7 argument leaned on the notion of *atomic formula* and the technical device of *path* (tracking a formula's descendants through a derivation) — both defined in terms of "stays atomic under substitution," which — as the whole previous section showed — is exactly the property that fails for higher-order substitution.
-2. The numeric measure used in Chapter 7 to drive the cut-elimination induction (shrinking with each permutation/reduction step) does not shrink monotonically once instantiation can arbitrarily inflate formula size, per the "$2n+1$" blowup discussed above.
-
-Proving Theorem 9.13 properly requires **Girard's *candidats de réductibilité*** (reducibility candidates), a technique from strong normalization proofs for polymorphic $\lambda$-calculus (System F), that substitutes a semantic, model-theoretic argument for the purely syntactic induction that worked at first order. This is a genuinely deep piece of machinery — the same family of technique used to prove strong normalization for System F and, downstream, for the termination guarantees underlying dependently-typed kernels like Lean's. The book flags it and moves on; treat that as an honest signal about where the real difficulty in higher-order proof theory lives, not a gap to paper over.
-
-**Theorem 9.14 (Cut-admissibility for $\Downarrow\mathcal{L}_2^\omega$).** The four cut rules are admissible in $\Downarrow\mathcal{L}_2^\omega$. This *is* proved, and cleanly, riding on top of 9.13 and 9.9: take a cut between two $\Downarrow\mathcal{L}_2^\omega$-proofs, note it's automatically also a $\Downarrow N^+$-proof (since $\Downarrow\mathcal{L}_2^\omega \subset \Downarrow N \subset \Downarrow N^+$), invoke Theorem 9.13 to strip the cut and land in $\Downarrow N$, then invoke Proposition 9.9 to push back down into $\Downarrow\mathcal{L}_2^\omega$. Three previously-proved results, chained.
-
-**Substitution stability (Lemma 9.11 / Proposition 9.12).** One more piece completes the toolkit: substituting a term into a $\Downarrow N^+$-proof (or, via 9.9, into a $\Downarrow\mathcal{L}_2^\omega$-proof) for a free signature variable yields another proof of the substituted-into sequent. This sounds routine but is exactly the fact the reverse-symmetry proof below depends on — it licenses "if this quantified formula is provable, so is any instance of it," which is the entire mechanism of that proof.
-
-## Defining connectives with higher-order quantification (§9.5)
-
-Once $\forall p$ and $\exists p$ range over propositions themselves, several linear-logic constants that were introduced as primitives turn out to be *definable*:
-
-$$\vdash 0 \equiv \forall p.\, p \qquad \vdash \top \equiv \exists p.\, p$$
-$$\vdash 1 \equiv \forall p.\, p \multimap p \qquad \vdash \bot \equiv \exists p.\, p \otimes p^{\perp}$$
-$$\vdash A \mathbin{\&} B \equiv \exists p.\, {!}(p \multimap A) \otimes {!}(p \multimap B) \otimes p \qquad \vdash A \oplus B \equiv \forall p.\,(A \multimap p) \Rightarrow (B \multimap p) \Rightarrow p$$
-
-The pattern worth noticing (the book calls it out explicitly): every one of these equivalences pairs a connective with a quantifier of *opposite polarity* — $0$ (an additive, negative unit) is a universal statement, $\top$ (positive) is existential, and so on. Intuitively $\forall p.\,p$ *should* behave like "the least provable thing," because to prove it you'd need $p$ to hold for literally every proposition — an impossible demand, matching $0$'s role as the unprovable additive unit. Symmetrically, $\exists p.\,p$ just needs *some* witness proposition to hold, the lightest possible existential commitment, matching $\top$'s "always true, trivially."
-
-The chapter also derives $(\forall p.\, p \Rightarrow p) \multimap (\forall p.\, p \multimap p)$ from the fact that $1 \equiv \forall p.\, p \Rightarrow p$, and works a nearly-complete proof of a related implication that instantiates two type-$o$ quantifiers with $\forall p.\, p \multimap p$ and $p \multimap q$ in successive $\forall L$ steps — a small, concrete rehearsal for the much larger instantiation move used in reverse-symmetry.
-
-## Higher-order programming (§9.6)
-
-With predicates as first-class quantifiable objects, you can write genuinely higher-order logic programs — the direct analogue of higher-order *functions*. Figure 9.2/9.3's examples, in λProlog syntax:
-
-```
-type forevery, forsome  (A -> o) -> list A -> o.
-type mappred             (A -> B -> o) -> list A -> list B -> o.
-type sublist              (A -> o) -> list A -> list A -> o.
-type ref, sym, trans      (A -> A -> o) -> A -> A -> o.
-
-forevery P nil.
-forevery P (X :: L) :- P X, forevery P L.
-
-forsome P (X :: L) :- P X ; forsome P L.
-
-mappred P nil nil.
-mappred P (X :: L) (Y :: K) :- P X Y, mappred P L K.
-
-sublist P (X :: L) (X :: K) :- P X, sublist P L K.
-sublist P (X :: L) K :- sublist P L K.
-sublist P nil nil.
-
-ref   R X X.
-ref   R X Y :- R X Y.
-sym   R X Y :- R X Y ; R Y X.
-trans R X Y :- R X Y.
-trans R X Z :- R X Y, trans R Y Z.
+/// B[lam/p]: replace every flexible atom `p args` by the beta-reduced body.
+fn subst(f: &F, p: &str, lam: &Lam) -> F {
+    match f {
+        F::Atom(Head::Var(v), args) if v == p => {
+            let m = lam.params.iter().cloned().zip(args.iter().cloned()).collect();
+            rename(&lam.body, &m)          // beta step: a *connective* appears here
+        }
+        F::Atom(..) => f.clone(),
+        F::Imp(a, b) => F::Imp(Box::new(subst(a, p, lam)), Box::new(subst(b, p, lam))),
+        F::ForallO(v, b) if v != p => F::ForallO(v.clone(), Box::new(subst(b, p, lam))),
+        F::ForallO(..) => f.clone(),
+    }
+}
 ```
 
-Read these exactly as you'd read `Iterator::all`, `Iterator::any`, `Iterator::zip`, or a `filter`+`take` combination in Rust — `forevery P L` is `L.iter().all(|x| P(x))`, `forsome P L` is `L.iter().any(|x| P(x))`, `mappred P L K` is the relational shadow of `zip(L, K).all(|(x,y)| P(x,y))`. `ref`/`sym`/`trans` build the reflexive/symmetric/transitive closure of a relation exactly the way you'd write a generic `fn closure<R: Rel>(r: R) -> impl Rel` combinator in Rust: they take a relation *as a value* and hand back a new relation.
+The line to look at is the first `match` arm of `subst`: `F::Atom(Head::Var(..), ..)` is a *leaf*, and it is replaced by a *tree*. In a first-order setting the only leaves that get replaced are term variables, and they are replaced by terms, which are not formulas. That is the exact point at which every first-order invariant stops holding. (The sketch has no capture-avoidance; a real one needs it, and a real implementation also needs a normalizer, since substituting into an applied variable $P\,t$ creates redexes.)
 
-The book stresses a subtlety with real teeth: `mappred P L K` is *atomic* — its head symbol `mappred` is a non-logical constant, so by the syntactic definition it's an atom. But once `P` is instantiated with something containing $\lor$ or $\Rightarrow$, that atomic formula's *instance* has logical connectives buried inside it, invisible from the outside. This is the concrete cash-out of the "logical connectives in non-logical contexts" phenomenon flagged in the introduction — and it's precisely what makes higher-order logic programming expressive: passing a predicate as an argument is passing a whole piece of logical structure through what syntactically looks like a plain function call.
+**What breaks without noticing this.** Any size-based termination argument (induction on formula size, as used in the first-order cut-elimination of Chapter 7) is dead on arrival. After instantiation the premise formulas can be *bigger* than the quantified one they came from.
 
-### Tactics and tacticals as combinators
+### 3.2 The subformula property collapses
 
-The chapter revisits Milner's tactic/tactical idea (originally an ML programming pattern for goal-directed proof construction, later reformulated by Felty and Miller as pure higher-order logic programs) and gives a compact λProlog encoding. The goal structure:
+In first-order logic a cut-free proof only mentions subformulas of the endsequent, with the convention that instances $B[t/x]$ count as subformulas of $\forall x.B$. That is useful: it bounds the search space. In $\mathcal L_2^\omega$ the same convention makes *every* formula a subformula of $\forall_o p.\,p$. The property is still technically true and no longer informative.
 
-```
-kind goal        type.
-type trueg       goal.
-type allg        (A -> goal) -> goal.
-type cc          goal -> goal -> goal.   infixr cc 3.
-type primgoal    goal -> o.
-```
+For proof search this is the headline: you cannot restrict candidate formulas by looking at the goal. The book's bibliographic notes (§9.10) are blunt that finding instantiations for predicate variables in proof search is "a difficult and largely open problem".
 
-`trueg` is "no sub-goals left," `cc` conjoins two goal structures, `allg` universally quantifies a goal (needed whenever a tactic must introduce a fresh eigenvariable), and `primgoal` singles out which goal terms are "primitive" — i.e., actually meaningful to a tactic, as opposed to structural scaffolding. A concrete primitive goal wraps an object-level sequent:
+### 3.3 Connectives can sit under non-logical symbols
 
-```
-type seq   list fm -> fm -> goal.
-primgoal (seq Gamma B).
-```
+In first-order logic, a connective occurrence is either top-level or under only other connectives. Now it can also be inside the argument of a variable or non-logical constant, e.g. `call (A /\ B)`, or `P (Q => R)`. The book defines a connective as *top-level* if it is not within the scope of a variable or non-logical constant. This is what higher-order programming exploits (goals as data), and it is also why we need the "off-focus measure" in §5 below.
 
-A **tactic** is just a binary relation `goal -> goal -> o`: `tac G Gs` reads "the primitive goal `G` reduces to the (possibly compound) sub-goal `Gs`." Concretely, `andR`/`orR`/`impR` are tactics that literally *are* right-introduction inference rules reified as clauses:
+## 4. Quantifying at type $o$: Leibniz equality and cut simulation
 
-```
-type andR, orR, impR, allR, init   goal -> goal -> o.
+### 4.1 Leibniz equality
 
-andR (seq Gamma (and B C)) ((seq Gamma B) cc (seq Gamma C)).
-orR  (seq Gamma (or B C))  (seq Gamma B).
-orR  (seq Gamma (or B C))  (seq Gamma C).
-impR (seq Gamma (imp B C)) (seq (B :: Gamma) C).
-allR (seq Gamma (all B))   (allg x \ seq Gamma (B x)).
-init (seq Gamma B) trueg :- memb B Gamma.
-```
+Two terms are equal if they satisfy exactly the same predicates:
 
-And the **tacticals** — higher-order combinators over tactics — are where the Rust-combinator analogy becomes almost literal:
+$$t \doteq s \;:=\; \forall_{\tau\to o} P.\,(P\,t \supset P\,s).$$
 
-```
-type maptac  (goal -> goal -> o) -> goal -> goal -> o.
-type idtac    goal -> goal -> o.
-type repeat  (goal -> goal -> o) -> goal -> goal -> o.
-type then, orelse
-             (goal -> goal -> o) -> (goal -> goal -> o) ->
-              goal -> goal -> o.
+Exercise 9.3 asks you to show this is an equivalence relation in $I^\omega$. Symmetry: instantiate $P$ with $\lambda x.\,(P\,x \supset P\,t)$. Reflexivity is the identity, and transitivity is chaining. In $\mathcal L_2^\omega$ you can choose $\Rightarrow$ (reusable) or $\multimap$ (linear) for the implication, and Exercise 9.15 shows the two versions are provably equivalent.
 
-maptac Tac trueg trueg.
-maptac Tac (I1 cc I2) (O1 cc O2) :- maptac Tac I1 O1, maptac Tac I2 O2.
-maptac Tac (allg I) (allg O) :- pi t \ maptac Tac (I t) (O t).
-maptac Tac I O :- primgoal I, Tac I O.
+That is exactly Lean's own `Prop` impredicativity in action. I checked this file type-checks:
 
-idtac I I.
-then   Tac1 Tac2 I O :- Tac1 I M, maptac Tac2 M O.
-orelse Tac1 Tac2 I O :- Tac1 I O ; Tac2 I O.
-repeat Tac I O :- orelse (then Tac (repeat Tac)) idtac I O.
+```lean
+def LeibEq {α : Type} (a b : α) : Prop := ∀ P : α → Prop, P a → P b
+
+theorem LeibEq.refl {α} (a : α) : LeibEq a a := fun _ h => h
+
+theorem LeibEq.symm {α} {a b : α} (h : LeibEq a b) : LeibEq b a :=
+  fun P pb => h (fun x => P x → P a) (fun pa => pa) pb   -- the instantiation of P
+
+theorem LeibEq.trans {α} {a b c : α} (h₁ : LeibEq a b) (h₂ : LeibEq b c) : LeibEq a c :=
+  fun P pa => h₂ P (h₁ P pa)
 ```
 
-If you've written a parser-combinator library in Rust, this is a shock of recognition: a tactic is `type Tactic = fn(Goal) -> Option<Goal>` (or `Result`-shaped, since failure is meaningful); `then` is exactly `and_then`/sequencing (apply `Tac1`, then map `Tac2` over whatever sub-goals it left, via `maptac` playing the role of `Iterator::map`/`Result::map` recursively distributed over goal structure); `orelse` is exactly `Option::or_else`/`<|>` in a parser-combinator library — try the first, fall back to the second; `repeat` is exactly a `many`/`*`-combinator, expressed via `orelse (then Tac (repeat Tac)) idtac` — "apply `Tac`, then recursively `repeat` it, or if that fails, do nothing" — precisely how `many` is defined recursively in `nom` or similar Rust parser combinators. The higher-order logic program isn't *analogous* to the combinator pattern — it's the same idea in a different execution substrate (proof search rather than function application), and the parallel is worth sitting with because it also predicts what's hard: unification of predicate arguments (`Tac1`, `Tac2`) plays the role that closures/trait objects play in the Rust version.
+The `symm` proof *is* "instantiate the predicate variable with a compound formula". Note what this shows about the relationship between definitional equality and this one. Leibniz equality is a *propositional* notion of equality proved inside the logic; it is not the $\beta\eta$ conversion that the proof system uses on terms. The book makes the same point in §9.10: the system is not extensional, since $\forall x.\,p\,x \equiv q\,x$ may be provable while $p = q$ is not; e.g. $\lambda x.\,p\,x \,\&\, q\,x$ and $\lambda x.\,q\,x \,\&\, p\,x$ are not $\beta\eta$-convertible.
 
-## Proving reverse is symmetric — without induction (§9.7)
+### 4.2 Hidden cuts
 
-This is the chapter's set-piece, and it earns the emphasis.
+Exercise 9.2 is the sharpest observation in the chapter. Compare the cut rule with an instance of $\supset L$:
 
-### The specification
+$$\frac{\Sigma :: \Gamma_1 \vdash B \quad \Sigma :: \Gamma_2, B \vdash C}{\Sigma :: \Gamma_1,\Gamma_2 \vdash C}\;\text{cut} \qquad\qquad \frac{\Sigma :: \Gamma_1 \vdash B \quad \Sigma :: \Gamma_2, B \vdash C}{\Sigma :: B \supset B,\Gamma_1,\Gamma_2 \vdash C}\;\supset L$$
 
-Reversing a list by repeatedly moving the head of one list onto the head of another:
+So if the assumption $\forall_o p.\,(p \supset p)$ is available, you can instantiate it with any cut formula $B$ and get a *cut-free* proof of what a cut would have proved. Higher-order assumptions can therefore conceal cuts. The same trick works with $\forall_\tau P.\,(P\,t \supset P\,s)$ (Exercise 9.4). Baaz and Leitsch observed this; Benzmüller et al. show it also happens with Church's extensionality and choice axioms.
 
-$$(a{::}b{::}c{::}\text{nil},\ \text{nil}) \to (b{::}c{::}\text{nil},\ a{::}\text{nil}) \to (c{::}\text{nil},\ b{::}a{::}\text{nil}) \to (\text{nil},\ c{::}b{::}a{::}\text{nil})$$
+**Consequence.** "Cut-free" no longer means "analytic". A cut-free proof in $\mathcal L_2^\omega$ may still have an arbitrarily clever lemma smuggled in by instantiation. This is why cut-free proofs here are not as "computationally honest" as in the first-order case.
 
-Name the pairing relation $rv$ (relating the "remaining input" list to the "accumulated output" list). The one clause driving the whole computation:
+## 5. Definability of connectives by quantification (§9.5)
 
-$$\forall X.\forall P.\forall Q.\ (rv\ P\ (X{::}Q) \multimap rv\ (X{::}P)\ Q)$$
+With quantification over $o$ you do not need many connectives as primitives. These are provable in $\mathcal L_2^\omega$ (with the book's $\dashv\vdash$ for two-way provable equivalence):
 
-and the full specification of `reverse`, with $rv$ hidden behind a universal quantifier so it's a genuinely local/private helper:
+| Defined | Via quantifiers |
+|---|---|
+| additive false $0$ | $\forall p.\,p$ |
+| additive true $\top$ | $\exists p.\,p$ |
+| multiplicative true $1$ | $\forall p.\,p \multimap p$ |
+| multiplicative false $\bot$ | $\exists p.\,p \otimes p^\perp$ |
+| $A \,\&\, B$ | $\exists p.\;!(p\multimap A)\otimes !(p\multimap B)\otimes p$ |
+| $A \oplus B$ | $\forall p.\,(A\multimap p)\Rightarrow(B\multimap p)\Rightarrow p$ |
 
-$$\forall L.\forall K.\Big[\ \forall rv.\big((\forall X\forall P\forall Q.\ rv\ P\ (X{::}Q) \multimap rv\ (X{::}P)\ Q)\big) \Rightarrow \big(rv\ \text{nil}\ K \multimap rv\ L\ \text{nil}\big) \multimap \text{reverse}\ L\ K\ \Big]$$
+Two things worth noticing. First, the definitions go through *opposite polarities*: a negative connective like $\&$ is expressed with an existential and a positive $\oplus$ with a universal (the book notes that all these equivalences are between formulas of opposite polarity). Second, the level of machinery needed climbs: units need only quantifiers (plus $\multimap$ and $\otimes$ for the multiplicative ones), additive binary connectives additionally need exponentials.
 
-Notice the deliberate polarity choices: the step-clause sits behind an *intuitionistic* implication ($\Rightarrow$) because it's reusable any number of times, while the base case $rv\ \text{nil}\ K$ sits behind a *linear* implication ($\multimap$) because it must be consumed exactly once — this is Chapter 6-8's linear-logic discipline doing real specification work, not decoration.
+The $\oplus$ line is the familiar Church/Böhm-Berarducci encoding of a sum type, "a sum is whatever lets you eliminate into any $p$". The classical-intuitionistic variants in Lean's impredicative `Prop`:
 
-### The proof, step by step
-
-**Claim:** if `reverse L K` is provable, so is `reverse K L` — reverse is symmetric.
-
-**Informal argument first** (always precede the symbols, and the book does exactly this): take the trace table above and flip both rows and columns. What you get is a valid trace of reversing $K$ back to $L$ — the two lists have just swapped which one is "input" and which is "output." That's the whole intuition. Now formalize it.
-
-Assume `reverse L K` is provable. Backchaining on the clause above is the *only* way to prove an atomic goal like this (that's what makes the whole argument work — there's no ambiguity about how the proof must have gone), so the body of the clause, instantiated at $L, K$, must itself be provable:
-
-$$\forall rv.\big((\forall X\forall P\forall Q.\ rv\ P\ (X{::}Q) \multimap rv\ (X{::}P)\ Q)\big) \Rightarrow \big(rv\ \text{nil}\ K \multimap rv\ L\ \text{nil}\big)$$
-
-By **Proposition 9.12** (substitution/instantiation stability for $\Downarrow\mathcal{L}_2^\omega$-proofs — the fact carefully built up over the whole chapter), you're free to instantiate the quantifier $\forall rv$ with *any* well-typed predicate expression and the result stays provable. Choose
-
-$$rv \mapsto \lambda x \lambda y.\ (rv\ y\ x)^{\perp}$$
-
-— literally: "swap the two arguments, then negate." The argument-swap captures "flip the columns" from the informal proof; the negation captures "flip the rows." Substituting this in and simplifying (via the contrapositive rule for negation and linear implication, Exercise 6.25) turns the instantiated formula, after algebra, into:
-
-$$\big(\forall X\forall P\forall Q.\ rv\ Q\ (X{::}P) \multimap rv\ (X{::}Q)\ P\big) \Rightarrow \big(rv\ \text{nil}\ L \multimap rv\ K\ \text{nil}\big)$$
-
-— which is *exactly the same shape* as the original clause body, except $L$ and $K$ have traded places. Universally re-generalizing over $rv$ hands you back the body of the `reverse` clause with $L, K$ swapped — i.e., a proof of `reverse K L`.
-
-**No induction anywhere.** The entire argument is: one substitution into a quantified formula, licensed by a proof-theoretic metatheorem (instantiation stability, itself downstream of cut-elimination-style reasoning), plus propositional simplification. This is worth sitting with, because it's genuinely elegant — you're not unfolding the recursive structure of `reverse` at all; you're treating the *proof that `reverse L K` holds* as an opaque object and transforming it by picking a different witness for a hidden quantifier. The property "reverse is symmetric" falls out of the *shape* of the specification (how $rv$ is quantified and how negation interacts with argument order), not out of any case analysis on lists.
-
-**This is the single most direct payoff of the whole book for the elaborator project.** Lean's elaborator, when it resolves an implicit argument or a metavariable, is doing structurally the same thing: it has a "hole" (here, the quantified $rv$; there, a metavariable `?m`) that must be filled by a term of the right (possibly higher-order, possibly predicate/`Prop`-valued) type, and it picks that term via *unification*, not by re-deriving the surrounding proof from scratch. Much of what makes Lean's `simp`/`rw`/definitional-unfolding machinery feel "smarter than brute-force induction" on certain goals is exactly this: an appropriately chosen higher-order instantiation collapses a goal that looks like it needs induction into one that's just substitution-and-simplify. The reverse-symmetry proof is a hand-worked instance of the same phenomenon a pattern-unification-based elaborator exploits automatically.
-
-## Exploiting hiding: deriving one implementation from another (§9.8)
-
-A more general principle sits behind the reverse-symmetry trick: **if a predicate is hidden inside a $\forall$-quantified specification, you can massage the specification into an equivalent-looking but structurally different one by instantiating that quantifier cleverly — again, no induction, purely by cut-elimination plus higher-order substitution.**
-
-The book demonstrates this on a second version of `reverse`, first as a plain first-order Horn-clause program with a *visible* auxiliary predicate `rev`:
-
-```
-type reverse  list A -> list A -> o.
-type rev      list A -> list A -> list A -> o.
-
-reverse L K :- rev L nil K.
-rev nil L L.
-rev (X :: M) N L :- rev M (X :: N) L.
+```lean
+def Or' (A B : Prop) : Prop := ∀ p : Prop, (A → p) → (B → p) → p
+def False' : Prop := ∀ p : Prop, p
+theorem Or'.inl {A B : Prop} (a : A) : Or' A B := fun _ f _ => f a
+theorem Or'.toOr {A B : Prop} (h : Or' A B) : A ∨ B := h (A ∨ B) Or.inl Or.inr
 ```
 
-then rewritten with `rev` hidden behind a quantifier as a single self-contained clause:
+For a Rust reader the analogue is continuation-passing: the type `forall P. (A -> P) -> (B -> P) -> P`. Rust has no rank-2 polymorphism over types in the language, so the best you can write is a trait with a generic method, `trait Either<A,B> { fn fold<P>(self, f: impl FnOnce(A)->P, g: impl FnOnce(B)->P) -> P; }` (which is the same encoding, with the type parameter `P` chosen *by the caller*; that is exactly why it works as a universal quantifier).
+
+The book's worked derivation shows $(\forall p.\,\forall q.\,p \Rightarrow q) \vdash \forall p.\forall q.\,p\multimap q$, built by two $\forall L$ steps with instances $\forall p.\,p\multimap p$ and $p\multimap q$. That derivation is a compact demonstration of a quantifier being instantiated by a *formula with its own binder*.
+
+## 6. Why focusing breaks, and near-focused proofs (§9.3)
+
+Here is the technical heart. Chapter 6 gave a focused system $\Downarrow\mathcal L_2$. Its rules lean on a global invariant: **the right-bounded zone of a sequent in a focused phase contains only atomic formulas**, and $init$ is only used on atoms. Under first-order substitution this invariant is stable: an atom stays an atom.
+
+### 6.1 The failure
+
+Take this $\Downarrow\mathcal L_2$ proof:
+
+$$\frac{}{q:i\to o,\;p:i\to o,\;a:i :: \cdot;\cdot \Downarrow p\,a \vdash p\,a;\cdot}\;init$$
+
+Substitute $p := \lambda w.\,q\,w \Rightarrow q\,a$. The result is
+
+$$q:i\to o,\;a:i :: \cdot;\cdot \Downarrow q\,a\Rightarrow q\,a \vdash q\,a\Rightarrow q\,a;\cdot,$$
+
+which is **not** provable in the focused system, because $init$ is restricted to atoms and $q\,a \Rightarrow q\,a$ is not one. Two things go wrong when a predicate variable at target type $o$ is instantiated:
+
+1. $init$ and $init^?$ can end up on non-atomic formulas.
+2. The conclusions of decide rules and most left-introduction rules can end up with non-atomic formulas in the right-bounded zone.
+
+This is the real obstruction behind the failing of the substitution lemma: Proposition 7.7 (substituting for a variable of primitive type other than $o$) works, but there is no analogue for variables of higher type.
+
+**Why you should care.** In the thing you will build, this is exactly the "substitution of a metavariable solution into a partially built proof" step. If your proof-search engine is focused and your metavariables can have predicate type, instantiating a metavariable invalidates the focused invariant of the partial derivation.
+
+### 6.2 The repair: $\Downarrow N$
+
+Define the **near-focused** system $\Downarrow N$ (Figure 9.1). It is the same rule set as $\Downarrow\mathcal L_2$ with three changes:
+
+1. sequents may contain any $\mathcal L_2^\omega$ formula;
+2. $init$ and $init^?$ may focus on a *general* formula $B$ (no atomicity side condition);
+3. the three decide rules do not require the right-bounded zone $\Delta$ to be atomic.
+
+A $\Downarrow\mathcal L_2^\omega$ proof is then *defined* as a $\Downarrow N$ proof in which every left-introduction and decide rule has an atomic right-bounded zone. Substitution is easy in $\Downarrow N$ (Lemma 9.11, for the version with cut) because nothing demands atoms. The work is to show you lose nothing: any $\Downarrow N$ proof can be turned into a proper focused one (Proposition 9.9).
+
+Steps, in the order the book proves them:
+
+| Step | Statement | Idea |
+|---|---|---|
+| Lemma 9.5 | $init^?$ is not needed | replace it by $decide^?$ followed by $init$, pushing the right-hand copy of $B$ through the left-introduction phase (induction on the phase) |
+| Lemma 9.6 | every $init$ can be made atomic | define the *off-focus measure* = number of top-level connectives on the formula focused by $init$; for a non-atomic $B$, expand it (e.g. $B_1\,\&\,B_2$ splits into two atomic-er inits under $\&R$) and show the measure strictly drops |
+| Lemma 9.7 | $decide^?$ can be made atomic | same style: permute so non-atomic right formulas are introduced *before* the decide |
+| Lemma 9.8 | $\multimap L$ can be made atomic | permute the $\multimap L$ over a partial right-introduction phase (uses Prop. 7.2) so the left premise's right zone is atomic |
+| **Prop. 9.9** | $\Downarrow N$ provable $\Rightarrow$ $\Downarrow\mathcal L_2^\omega$ provable | with the above, an easy induction shows every right-bounded zone is atomic |
+| Cor. 9.10 | $\Sigma :: \Psi, B;\cdot\vdash B;\Upsilon$ and its three siblings are provable for *any* formula $B$ | each has a $\Downarrow N$ proof, so Prop. 9.9 transfers |
+
+Prop. 9.9 and Cor. 9.10 give a second proof that *generalized initial* is admissible, replacing the structural induction of Theorem 7.4.
+
+The pattern is a recurring one in proof-system engineering: *prove things in a more permissive system where the induction goes through, then prove a conservativity theorem down to the disciplined system.* If you design a kernel with a restricted core and a looser elaboration language, this is the same architecture.
+
+```mermaid
+flowchart LR
+    A["Focused proofs of L2<br/>(atoms only in right zone)"] -->|"substitute predicate variable<br/>of target type o"| B["Not a focused proof<br/>(init on non-atom,<br/>non-atomic right zone)"]
+    B -->|"read it as"| C["Near-focused proof in ⇓N<br/>(side conditions dropped)"]
+    C -->|"Prop 9.9: Lemmas 9.5 to 9.8<br/>(init, decide?, ⊸L made atomic)"| D["Focused proof in ⇓L2^ω"]
+```
+
+## 7. Proof theory of $\mathcal L_2^\omega$ (§9.4)
+
+Let $\Downarrow N^+$ be $\Downarrow N$ plus the four cut rules of Figure 7.1.
+
+- **Lemma 9.11** (substitution into $\Downarrow N^+$ proofs) has a straightforward induction.
+- **Proposition 9.12** (substitution into $\Downarrow\mathcal L_2^\omega$ proofs): a $\Downarrow\mathcal L_2^\omega$ proof is a $\Downarrow N$ proof; apply Lemma 9.11; then Prop. 9.9 returns a focused proof. This is how the repaired invariants earn their keep.
+- **Theorem 9.13** (cut elimination for $\Downarrow N^+$): a $\Downarrow N^+$ proof can be turned into a $\Downarrow N$ proof. *Not proved in the book.*
+- **Theorem 9.14** (cut admissibility for $\Downarrow\mathcal L_2^\omega$): any $\Downarrow\mathcal L_2^\omega$ proof is a $\Downarrow N^+$ proof; eliminate cuts (Thm 9.13); focus again (Prop. 9.9). Hence the four cut rules are admissible.
+
+Why can't Chapter 7's argument be reused? Miller gives two reasons. First, the focused system and the *path* technique of Chapter 7 both depend on atomic formulas, which are not stable under higher-order substitution. Second, the *measure of a cut* (§7.3) does not decrease: substituting for a predicate variable can make the cut formula arbitrarily bigger. Terminating the cut-elimination procedure needs Girard's *candidats de réductibilité* (reducibility candidates), the technique used to prove strong normalization of System F. That is not a coincidence: a logic with $\forall_o$ over formulas is the logical twin of System F. By Gödel's second theorem, cut admissibility (which implies consistency) must use induction stronger than that used for the first-order system.
+
+Consistency follows as in §3.7: if $\bot$ (or $0$) is provable then cut-free proof search would find a proof of the empty sequent, which no rule can produce.
+
+## 8. Flexible versus rigid atoms, and the clause classes (§9.9)
+
+Chapter 5 introduced *synthetic rules* (compiling clauses of clausal order $\le 2$ into rules involving only atoms). In $\mathcal L_2^\omega$ that idea is "problematic" for two reasons, and each leads to a design decision in $\lambda$Prolog.
+
+**Problem 1: clausal order is unstable.** The clause `call G :- G.` has order 1 (the order function is $\mathrm{order}(B_1\supset B_2)=\max(\mathrm{order}(B_1)+1,\mathrm{order}(B_2))$). Instantiating $G$ with a formula of order $n$ gives a clause of order $n+1$. So an instance of a Horn clause need not be a Horn clause.
+
+**Problem 2: flexible heads create nondeterminism.** Call an atom *rigid* if its topmost symbol is a non-logical constant, *flexible* if it is a variable. A substitution instance of a rigid atom is rigid. But suppose the program contains $\forall_o p.\,p \supset p$. Its backchaining behavior is the useless "repetition rule"
+
+$$\frac{\Sigma :: \Gamma \vdash B}{\Sigma :: \Gamma \vdash B}$$
+
+assembled from $\forall L$, $\supset L$, $init$. Leibniz equality $\forall_{\tau\to o}P.\,P\,a \supset P\,b$ gives the rule from $\Gamma \vdash P\,b$ to $\Gamma \vdash P\,a$ for *any* $P$. If the goal is an atom $A$ containing $n$ occurrences of $b$, there are $2^n$ choices of $\lambda x.B$ such that $(\lambda x.B)\,b$ reduces to $A$ (each occurrence of $b$ either abstracted or not). That is the combinatorial blow-up you get from higher-order unification with a flexible head.
+
+**The solution: demand rigid heads.** The definitions in the book, with $A_r$ ranging over rigid atoms:
+
+$$\textbf{Higher-order Horn:}\quad G ::= t \mid A \mid G_1\wedge G_2 \mid G_1\vee G_2 \mid \exists x.G \qquad D ::= A_r \mid G\supset A_r \mid \forall x.D \mid D_1\wedge D_2$$
+
+$$\textbf{Higher-order hereditary Harrop:}\quad G ::= t \mid A \mid G_1\wedge G_2 \mid G_1\vee G_2 \mid \forall x.G \mid \exists x.G \mid D\supset G \qquad D\ \text{as above}$$
+
+(Here $t$ is the true goal. In Horn clauses the connectives $\supset$ and $\forall$ may not occur *within* atomic formulas; in hereditary Harrop formulas $\supset$ may not.) Uniform proofs are complete for classical logic on $D$-vs-$G$ sequents in the Horn case (Miller and Nadathur 1986, Nadathur and Miller 1990) and for intuitionistic logic in the Harrop case (Miller et al. 1991). Note the book's own `call G :- G` clause is allowed: its head `call G` is rigid, even though its *body* is a variable goal.
+
+Two consequences stated explicitly:
+
+- a left-introduction phase on a $D$-formula has a *bounded, shape-determined* length, and later higher-order instantiations do not change that shape, which is what restores determinism to backchaining;
+- a set of such formulas is *consistent*: for a propositional symbol $q$ not occurring in the set, $q$ is not provable. With a flexible head such as $\forall p.\,p$ this fails trivially.
+
+**Rigid versus flexible, in code.** The `Head` enum from §3.1 is already the right type for this check. A program-well-formedness pass for a higher-order logic-programming system would be:
+
+```rust
+fn head_is_rigid(f: &F) -> bool {
+    match f {
+        F::Atom(Head::Const(_), _) => true,
+        F::Atom(Head::Var(_), _) => false,
+        F::Imp(_, concl) => head_is_rigid(concl),      // G ⊃ A_r
+        F::ForallO(_, body) => head_is_rigid(body),    // ∀x.D
+    }
+}
+```
+
+This is a syntactic, linear-time admission check at clause-load time, and it is cheap precisely because *rigidity is stable under substitution*. That stability is the whole reason the restriction works.
+
+## 9. Where unification enters (what the book says, and does not say)
+
+The chapter does not develop a unification algorithm; the book's preface sets that aside. §9.10 only locates the territory. Huet's (pre)unification of simply typed $\lambda$-terms is the classical algorithm, used in TPS and in interpreters for $\lambda$Prolog. In general it is undecidable and may lack most general unifiers. Moving to Miller's **higher-order pattern unification** (1991) loses expressiveness but regains decidability and most general unifiers. Isabelle and Elf (the implementation of LF) use unification of typed $\lambda$-calculi.
+
+For the reader's elaborator this is the direct link: the proof-search side of this chapter says *why* rigid heads matter (no flexible-head blow-up), and the unification side (pattern fragment) is what makes the metavariables that stand for predicates tractable.
+
+## 10. Where this leads
+
+The rest of Chapter 9 (programming with `forevery`, `mappred`, tacticals; hiding via $\forall rev$; the symmetry-of-reverse proof by instantiating a hidden predicate with $\lambda x\lambda y.(rv\,y\,x)^\perp$) is covered in the next topic on higher-order programming and hiding of specifications. Chapters 10-13 depend on $\mathcal L_2^\omega$ twice over: the multiset-rewriting encodings of automata hide state by $\exists$ at predicate type, and the operational semantics of the $\pi$-calculus relies on binder scope and higher-order abstract syntax. Both quietly assume Theorem 9.14.
+
+## 11. Closing synthesis, and how it feeds the project
 
 ```
-reverse L K :- pi rev \ (
-  (pi L \ rev nil L L) =>
-  (pi L \ pi M \ pi N \ pi X \
-     rev (X :: M) N L :- rev M (X :: N) L) =>
-     rev L nil K).
+ L2 (first-order quantification, Ch 6-8)
+   |  lift tau to include o
+   v
+ L2^omega  --- instantiation grows formulas, atoms not stable ---> invariants of ⇓L2 fail
+   |                                                                |
+   |  near-focused system ⇓N (permissive)  <--- Prop 9.9 ---------- |  (conservativity back to ⇓L2^omega)
+   v
+ Substitution (Prop 9.12) -> Cut admissibility (Thm 9.14, Girard candidates)
+   |
+   +--> definability of units, &, (+)  (9.5)        +--> rigid-head Horn / Harrop (9.9) --> lambdaProlog
 ```
 
-(`pi` is λProlog's notation for $\forall$ inside a program term; `=>` is intuitionistic implication.) Given a proof of `reverse L K` from this specification, the same instantiation trick applies: substitute $\text{rev} \mapsto \lambda L \lambda K \lambda M.\ \text{aux}\ K \multimap rv\ L\ M$ (introducing two fresh local predicates, `aux` and `rv`) into the provable body, simplify, and generalize over the new predicates — the result is (up to logical equivalence) a *different* specification of `reverse` using linear implication instead of intuitionistic:
+Mapped onto the Focus Areas from your learning goals:
 
-```
-reverse L K :- pi rv \ pi aux \ (
-  (pi L \ rv nil L :- aux L) =>
-  (pi L \ pi M \ pi N \ pi X \
-     rv (X :: M) L :- acc N, acc (X :: N) -o rv M L) =>
-    aux nil -o rv L K).
-```
+- **Automated Reasoning** (`automated-reasoning`): this is the "quantifiers, constructive higher-order logic, focused sequent calculus, linear logic" bullet in a single chapter. The concrete takeaways are (i) *prove in a permissive system, then show conservativity into the disciplined one* ($\Downarrow N \to \Downarrow\mathcal L_2^\omega$), and (ii) *restrict heads to rigid atoms so that backchaining stays deterministic*. (ii) is directly the design constraint for the clause/resolution engine of your theorem prover.
+- **Type Theory** (`type-theory`): $\forall_o p.\,p$ is the logical shadow of System F's $\Pi A.\,A$. The impredicative encodings in §5 correspond to Church encodings (the Lean snippets above rely on `Prop` being impredicative). Substitution being the load-bearing operation (and its failure to preserve normal-form shape) is the same plumbing as capture-avoiding substitution and metavariable instantiation. A kernel's `isDefEq` plays the role that $\beta\eta$-conversion plays here, and the book's remark about the non-extensional equality ($\forall x.\,p\,x\equiv q\,x$ vs $p=q$) is the proof-theoretic form of the definitional-versus-propositional-equality distinction.
+- **Unification and metavariables** (both areas): when a predicate-typed metavariable is solved during elaboration, the solved term can be a $\lambda$-abstraction containing connectives; that is §3 above. Rigid-versus-flexible is the same split Lean's unifier makes between a metavariable-headed application (postponed or pattern-solved) and a constant-headed one (decomposed). Treat any metavariable in head position as a constraint to defer, not a goal to solve eagerly.
+- **Trusted kernels and proof certificates** (`automated-reasoning`, `type-theory`): the cut-admissibility theorem is a certificate-checking statement. A proof-producing prover can use a rich, near-focused-style certificate language and have the kernel normalize it. It also has a cost: the termination argument needs strength beyond first-order arithmetic, so a kernel for this logic cannot be justified by the same simple induction as the first-order one.
 
-The book is careful about what this proves and what it doesn't: this derivation shows only that provability of `reverse L K` from the first spec *implies* provability from the second — a one-directional entailment, obtained purely propositionally. Exercise 9.16 asks for the converse, and flags that it "will likely be an inductive argument" — i.e., the direction that *does* need induction doesn't come for free from instantiation tricks; only the direction that follows from cut-elimination and substitution does. That's an important calibration: higher-order instantiation is powerful but not a universal substitute for induction — it exploits a specific structural symmetry (hiding + quantifier choice), and when that symmetry isn't present, you're back to needing an inductive argument.
+Not forced: the `sat-smt-csp` and `static-analysis` areas have no real hook in this topic (the book itself avoids constraint solving and unification algorithms), so no connection is manufactured.
 
-**What this generalizes to for the checker/verifier project:** if your Rust verifier's specification language lets you hide auxiliary relations behind quantifiers (rather than exposing every helper predicate as globally visible, which is the first-order default), you get a *for-free* algebraic manipulation toolkit for relating two different implementations that satisfy the same hidden-predicate shape — without re-running a full correctness proof from scratch each time.
-
-## Synthetic rules and higher-order logic: rigid vs. flexible atoms (§9.9)
-
-Chapter 5's synthetic inference rules compressed a whole clause into a single derived rule mentioning no logical connectives, for $\mathcal{L}_0$ formulas of clause order $\le 2$. The chapter closes by explaining precisely why that compression doesn't survive the jump to $\mathcal{L}_2^\omega$, and this section is the most directly relevant to the pattern-unification side of the elaborator project — so it's worth slowing down here.
-
-### Problem 1: clausal order isn't stable under instantiation
-
-```
-type call   o -> o.
-call G :- G.
-```
-
-This clause has clause order 1 by the Chapter 2 definition. But instantiate the variable $G$ with a formula of order $n$, and the resulting *instance* of the clause has order $n+1$. Clausal order — a purely syntactic measure that Chapter 5's synthetic-rule machinery used to bound how many left-introduction steps a phase could contain — isn't preserved by substitution once formulas can be substituted for propositional variables. The bound Chapter 5 relied on simply isn't a bound anymore.
-
-### Problem 2: rigid vs. flexible atomic heads
-
-New terminology, worth naming precisely because it's the crux: a formula $A$ is a **rigid atomic formula** if its topmost symbol is a non-logical *constant*; it's a **flexible atomic formula** if its topmost symbol is a *variable*. Crucially, substitution preserves rigidity — a rigid atom's instances are always rigid — but a flexible atom's identity as an atom at all depends entirely on what gets substituted for the head variable.
-
-Why does a flexible head matter? Because it lets a clause "fire" on a goal it has no business firing on. Take $\forall^o p.\, p \supset p$ as a program clause. Because its head is the variable $p$ (flexible), it can unify with *any* atomic goal $B$ whatsoever, producing the useless-but-technically-valid repetition rule
-
-$$\dfrac{\Sigma :: \Gamma \vdash B}{\Sigma :: \Gamma \vdash B}$$
-
-— a rule that proves nothing new but is always "applicable," blowing up the branching factor of proof search for zero benefit. Leibniz equality has the same disease in a sharper form: $\forall^\tau P.\, P\,a \supset P\,b$ (with $P : \tau \to o$ flexible-headed) licenses
-
-$$\dfrac{\Sigma :: \Gamma \vdash P\,b}{\Sigma :: \Gamma \vdash P\,a}$$
-
-and here's the concrete nondeterminism count the book gives: if the goal on top is the atomic formula $A$ containing $n$ occurrences of the constant $b$, there are $2^n$ distinct terms $\lambda x.\,B$ such that $(\lambda x.\,B)\,b$ $\beta$-reduces to $A$ — one for every subset of those $n$ occurrences you choose to abstract over. Proof search would have to consider all $2^n$ of them. This is *exactly* the higher-order unification blow-up that makes full higher-order unification undecidable and (when solutions exist) non-unique — the same problem Huet's pre-unification procedure grapples with, and the same problem that motivates restricting to a decidable, most-general-unifier-guaranteeing fragment.
-
-### The fix: restrict clause heads to rigid atoms
-
-This is where the book defines **higher-order Horn clauses** and **higher-order hereditary Harrop formulas**, generalizing Chapter 5's $\mathcal{L}_0$-based versions to arbitrary type, but with one non-negotiable restriction: every clause head must be a rigid atomic formula, $A_r$.
-
-$$G ::= t \mid A \mid G_1 \wedge G_2 \mid G_1 \vee G_2 \mid \exists x.\,G$$
-$$D ::= A_r \mid G \supset A_r \mid \forall x.\,D \mid D_1 \wedge D_2$$
-
-(Higher-order hereditary Harrop formulas extend $G$ with $\forall x.\,G$, $D \supset G$, keeping the same rigid-head restriction on $D$.) With heads pinned to rigid atoms, two things are recovered: you can once again bound how many left-introduction rules can appear in a left-introduction phase purely from the syntactic shape of $D$ — higher-order instantiation during that phase can't change the shape, because rigidity is stable under substitution — and you regain a basic consistency guarantee (a fresh propositional symbol not occurring in [[Linear-Logic-Programming#The program|the program]] can't be proved from it), which is not automatic once flexible-headed repetition rules are in play.
-
-**This is the direct anticipation of Miller's pattern-unification fragment**, even though the term "Miller patterns" doesn't appear in this chapter by name. The bibliographic notes at the end of the chapter connect the dots explicitly: full higher-order unification (Huet) is undecidable and lacks most-general unifiers; restricting to **higher-order pattern unification** (Miller 1991) trades away some expressiveness for decidability and unique most-general unifiers. The rigid-atomic-head restriction on clauses in §9.9 is the proof-theoretic side of the same coin — it's what keeps proof search from drowning in the flexible-head nondeterminism illustrated above, exactly as the pattern-unification restriction on *terms* keeps unification decidable. **For a metavariable-resolving elaborator built "in the spirit of Miller's pattern unification," this section is the closest the book comes to stating the design rationale in words**: you don't want your metavariables' scopes/heads to be unconstrained, because unconstrained higher-order unification is exactly the $2^n$-nondeterminism disaster worked out above. Restricting what can appear as a clause head (dually: what a metavariable's arguments/context can look like) is what makes the search space tractable — the same move, applied on two different sides of the same underlying unification problem.
-
-## Where this leads
-
-Chapter 9 is the hinge the rest of the book turns on. Higher-order quantification — hiding predicates, instantiating quantifiers to derive facts, and the rigid/flexible atom distinction that keeps proof search sane — is [[Linear-Logic-Programming#The encoding|the encoding]] vocabulary that Chapters 10–13 all lean on: whatever object logics, module systems, or further programming-language features those chapters formalize will be *specified* using exactly this apparatus (predicate abstraction, hidden auxiliary predicates, higher-order Horn/hereditary-Harrop clauses). If a later chapter says "we specify X by quantifying over a predicate that represents Y," that move is licensed by everything built here: the near-focusing reduction (Proposition 9.9) that makes [[Specifying-Computations-with-Multisets-and-Automata#The encoding|the encoding]]'s proof theory tractable, and the rigid-head restriction (§9.9) that keeps its proof search decidable-ish.
-
-For the standing project: this chapter is the most load-bearing single chapter in the book for the meta-programming elaborator. Higher-order instantiation (reverse-is-symmetric) is a hand-worked example of exactly the move a pattern-unification-based metavariable solver performs mechanically; Leibniz equality is the proof-theoretic ancestor of the definitional/propositional equality split the elaborator's kernel needs to track; and the rigid-vs-flexible-atom restriction in §9.9 is the direct proof-theoretic sibling of the "Miller pattern" restriction the elaborator's unifier should target for decidability and unique most-general solutions.
+**[[Classical-Intuitionistic-and-Minimal-Logics#Where this leads|Where this leads]] (one-line version).** Higher-order quantification gives the book hiding, higher-order programming, and the encodings of Chapters 10-13, and everything it buys is paid for by the near-focused detour and a Girard-style cut-elimination proof.

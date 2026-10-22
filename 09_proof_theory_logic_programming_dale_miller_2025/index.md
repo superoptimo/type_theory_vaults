@@ -2,120 +2,172 @@
 
 [[book-guidelines|↩ Back to guidelines]]
 
-1. **Terms, Types, and Formulas in the Simple Theory of Types** : [[Terms-Types-and-Formulas-in-the-Simple-Theory-of-Types|Link]]
-   - The untyped and simply typed $\lambda$-calculus
-   - $\alpha$, $\beta$, and $\eta$ conversion and normal forms
-   - Simple types and the order of a type : [[Terms-Types-and-Formulas-in-the-Simple-Theory-of-Types|Link]]
-   - Signatures and typed terms : [[Terms-Types-and-Formulas-in-the-Simple-Theory-of-Types|Link]]
-   - Formulas as terms of type $o$ : [[Terms-Types-and-Formulas-in-the-Simple-Theory-of-Types|Link]]
-   - Clausal order and polarity of subformula occurrences
-   - Sequents as pairs of formula collections : [[Terms-Types-and-Formulas-in-the-Simple-Theory-of-Types|Link]]
+1. **Computation as Proof Search** : [[Computation-as-Proof-Search|Link]]
+   - Computation as model versus computation as deduction : [[Computation-as-Proof-Search|Link]]
+   - Proof normalization versus proof search : [[Computation-as-Proof-Search|Link]]
+   - Sequents as computation states : [[Computation-as-Proof-Search|Link]]
+   - Resolution refutation as an unfortunate foundation : [[Computation-as-Proof-Search|Link]]
+   - Programming equals logic : [[Computation-as-Proof-Search|Link]]
+   - Don't-know and don't-care nondeterminism : [[Classical-Intuitionistic-and-Minimal-Logics|Link1]], [[Computation-as-Proof-Search|Link2]]
 
-2. **The Sequent Calculus** : [[The-Sequent-Calculus|Link]]
-   - Frege proofs versus sequent calculus proofs : [[Linear-Logic-Programming|Link1]], [[The-Sequent-Calculus|Link2]]
-   - Structural rules: exchange, contraction, weakening : [[The-Sequent-Calculus|Link1]], [[Linear-Logic|Link2]]
-   - Identity rules: initial and cut : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Introduction rules and eigenvariables : [[Classical-and-Intuitionistic-Logic|Link1]], [[The-Sequent-Calculus|Link2]]
-   - Additive versus multiplicative inference rules : [[The-Sequent-Calculus|Link1]], [[Linear-Logic|Link2]]
-   - Permutation of inference rules and invertibility : [[The-Sequent-Calculus|Link]]
-   - Focused versus unfocused proof systems : [[The-Sequent-Calculus|Link]]
-   - Cut-elimination and its consequences : [[Classical-and-Intuitionistic-Logic|Link1]], [[Focused-Proofs-and-Cut-Elimination-for-Linear-Logic|Link2]], [[Higher-Order-Quantification|Link3]], [[The-Sequent-Calculus|Link4]]
-   - The subformula property : [[Higher-Order-Quantification|Link]]
-   - Derivable versus admissible rules : [[Classical-and-Intuitionistic-Logic|Link]]
+2. **Simply Typed Lambda-Terms and Church's Types** : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Untyped $\lambda$-terms and conversion : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Simple types and the order of a type : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Signatures and typing judgments : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Formulas as terms of type $o$ : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Clausal order and polarity of subformulas : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Curry's paradox : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+   - Substitution and capture-avoiding binding
 
-3. **Classical and Intuitionistic Logic** : [[Classical-and-Intuitionistic-Logic|Link]]
-   - C-proofs and I-proofs as single- versus multiple-conclusion sequent systems : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Duality of the initial and cut rules : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Logical equivalence and formula replacement : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Invertible introduction rules : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Negation, false, and minimal logic : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Excluded middle and its proof
-   - Nondeterminism in proof search and don't-care versus don't-know choices : [[Classical-and-Intuitionistic-Logic|Link]]
+3. **Sequent Calculus Proof Systems** : [[Sequent-Calculus-Proof-Systems|Link]]
+   - Sequents with signatures and eigenvariables : [[Sequent-Calculus-Proof-Systems|Link]]
+   - Structural, identity, and introduction rules
+   - Additive and multiplicative rules : [[Sequent-Calculus-Proof-Systems|Link]]
+   - Derivations and proofs : [[Sequent-Calculus-Proof-Systems|Link]]
+   - Permutation of inference rules : [[Sequent-Calculus-Proof-Systems|Link]]
+   - Invertible rules : [[Sequent-Calculus-Proof-Systems|Link]]
+   - Frege proofs versus sequent proofs : [[Sequent-Calculus-Proof-Systems|Link]]
 
-4. **Goal-Directed Proof Search and Uniform Proofs** : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link]]
-   - Uniform proofs and abstract logic programming languages
-   - The disjunction and existence properties
-   - First-order Horn clauses (fohc) : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link]]
-   - First-order hereditary Harrop formulas (fohh) : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link]]
-   - Backchaining as focused rule application : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link]]
-   - The $\Downarrow$fohh focused proof system : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link]]
-   - Completeness of focused proofs for intuitionistic logic : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link1]], [[Classical-and-Intuitionistic-Logic|Link2]]
-   - Paths in a formula and their associated sequents
-   - A canonical Kripke model for intuitionistic provability : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link1]], [[Classical-and-Intuitionistic-Logic|Link2]]
-   - Synthetic inference rules : [[Goal-Directed-Proof-Search-and-Uniform-Proofs|Link1]], [[Linear-Logic|Link2]]
-   - Modular and hierarchical logic programming : [[Linear-Logic-Programming|Link]]
-   - Limitations of fohc and fohh (non-reachability, inequality, scoping)
+4. **Cut Elimination and Its Consequences** : [[Cut-Elimination-and-Its-Consequences|Link]]
+   - Cut as lemma use : [[Cut-Elimination-and-Its-Consequences|Link]]
+   - Consistency from cut elimination : [[Cut-Elimination-and-Its-Consequences|Link]]
+   - Subformula property : [[Cut-Elimination-and-Its-Consequences|Link1]], [[Higher-Order-Quantification|Link2]]
+   - Size explosion of cut-free proofs : [[Cut-Elimination-and-Its-Consequences|Link]]
+   - Duality of cut and initial : [[Cut-Elimination-and-Its-Consequences|Link]]
+   - Admissible versus derivable rules : [[Cut-Elimination-and-Its-Consequences|Link]]
+   - Logical equivalence and replacement of subformulas : [[Cut-Elimination-and-Its-Consequences|Link]]
 
-5. **Linear Logic** : [[Linear-Logic|Link]]
-   - Linear logic as a logic of resources : [[Collection-Analysis-for-Horn-Clauses|Link]]
-   - The exponentials $!$ and $?$ : [[Linear-Logic|Link]]
-   - Multiplicative additive linear logic (MALL)
-   - The eight MALL connectives and their units : [[Linear-Logic|Link1]], [[Higher-Order-Quantification|Link2]]
-   - Duality and polarity of connectives : [[Linear-Logic|Link]]
-   - Linear implication $\multimap$ and intuitionistic implication $\Rightarrow$ : [[Linear-Logic|Link]]
-   - Two-zone (bounded/unbounded) sequents : [[Linear-Logic|Link]]
-   - Lolli and the $L_1$ fragment
-   - Forum and the $L_2$ fragment
-   - Multiple-conclusion uniform proofs : [[Linear-Logic|Link]]
-   - Lazy splitting of contexts (the IO proof system)
-   - Conservativity of $L_2$ over $L_1$ and $L_0$
-   - Generalized synthetic inference rules : [[Linear-Logic|Link]]
+5. **Classical, Intuitionistic, and Minimal Logics** : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
+   - C-proofs and I-proofs : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
+   - Excluded middle and structural rules on the right : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
+   - Atomic initial rules : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
+   - Negation as implication of falsity : [[Linear-Logic|Link]]
+   - Minimal logic and ex falso quodlibet : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
+   - Gentzen's LK and LJ : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
+   - Search choices in Gentzen's calculus : [[Classical-Intuitionistic-and-Minimal-Logics|Link]]
 
-6. **Focused Proofs and Cut-Elimination for Linear Logic** : [[Focused-Proofs-and-Cut-Elimination-for-Linear-Logic|Link]]
-   - Generalized paths and their normal form
-   - Admissibility of the general initial rule : [[Focused-Proofs-and-Cut-Elimination-for-Linear-Logic|Link]]
-   - The four cut rules (cutl, cut!, cut?, key cut) and their elimination
-   - Rank, degree, and measure of a cut occurrence
-   - Soundness and completeness of $\Downarrow L_2$ with respect to $L$ : [[Classical-and-Intuitionistic-Logic|Link]]
-   - Andreoli's asynchronous and synchronous phases
+6. **Uniform Proofs and Abstract Logic Programming Languages** : [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link]]
+   - Goal-directed proof search : [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link]]
+   - Uniform proofs : [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link]]
+   - Abstract logic programming languages : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link1]], [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link2]]
+   - Disjunction and existence properties : [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link]]
+   - Harrop formulas : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link1]], [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link2]]
 
-7. **Linear Logic Programming** : [[Linear-Logic-Programming|Link]]
-   - Encoding multisets as formulas (conjunctive and disjunctive encodings) : [[Linear-Logic-Programming|Link]]
-   - Multiset rewriting on the left and on the right of sequents : [[Linear-Logic-Programming|Link]]
-   - Context management for implementing theorem provers : [[Linear-Logic-Programming|Link]]
-   - Using linear logic as a metalogic to specify sequent calculus proof systems
-   - Object logic versus metalogic : [[Linear-Logic-Programming|Link]]
+7. **Horn Clauses and Hereditary Harrop Formulas** : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
+   - First-order Horn clauses as program clauses and goals : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
+   - Hereditary Harrop formulas : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link1]], [[Uniform-Proofs-and-Abstract-Logic-Programming-Languages|Link2]]
+   - Clausal order of programs : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link1]], [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link2]], [[Operational-Semantics-in-Logic|Link3]]
+   - Dynamics of proof search for fohc and fohh : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
+   - Scoped clauses and modular programming : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
+   - Scope extrusion in classical logic : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
+   - Expressive limits of fohc and fohh : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
 
-8. **Higher-Order Quantification** : [[Higher-Order-Quantification|Link]]
-   - Quantification at all types, including predicate and propositional types
-   - The near-focused proof system $\Downarrow N$ : [[Linear-Logic|Link]]
-   - Instantiation of higher-order quantifiers and loss of the subformula property
-   - Leibniz equality : [[Higher-Order-Quantification|Link]]
-   - Cut-elimination via candidats de r\'eductibilit\'e
-   - Higher-order programming, tactics, and tacticals : [[Higher-Order-Quantification|Link]]
-   - Hiding predicates and specification details via existential quantification
-   - Proving the symmetry of reverse using higher-order substitution
-   - Higher-order Horn clauses and higher-order hereditary Harrop formulas
-   - Rigid versus flexible atomic formulas : [[Higher-Order-Quantification|Link]]
+8. **Focused Proof Systems and Backchaining** : [[Focused-Proof-Systems-and-Backchaining|Link]]
+   - Focus and the decide rule : [[Focused-Proof-Systems-and-Backchaining|Link]]
+   - Right-introduction and left-introduction phases : [[Focused-Proof-Systems-and-Backchaining|Link]]
+   - Paths in formulas : [[Focused-Proof-Systems-and-Backchaining|Link]]
+   - Synthetic inference rules : [[Focused-Proof-Systems-and-Backchaining|Link1]], [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link2]], [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link3]]
+   - Border sequents : [[Focused-Proof-Systems-and-Backchaining|Link1]], [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link2]]
+   - Admissibility of initial and cut in focused systems : [[Focused-Proof-Systems-and-Backchaining|Link]]
+   - Completeness of focused proofs : [[Focused-Proof-Systems-and-Backchaining|Link1]], [[Higher-Order-Quantification|Link2]]
+   - Disjunctive and existential goals as nonlogical constants : [[Focused-Proof-Systems-and-Backchaining|Link]]
 
-9. **Specifying Computations with Multisets and Automata** : [[Specifying-Computations-with-Multisets-and-Automata|Link]]
-   - Numerals and arithmetic encoded as multisets
-   - Words and letters encoded as $\lambda$-terms
-   - Encoding finite automata as linear logic theories : [[Specifying-Computations-with-Multisets-and-Automata|Link]]
-   - Encoding pushdown automata : [[Specifying-Computations-with-Multisets-and-Automata|Link]]
-   - Alternating finite automata via additive conjunction : [[Specifying-Computations-with-Multisets-and-Automata|Link]]
+9. **Kripke Semantics and Canonical Models** : [[Kripke-Semantics-and-Canonical-Models|Link]]
+   - Worlds and Kripke models : [[Kripke-Semantics-and-Canonical-Models|Link]]
+   - Satisfaction versus provability of implication : [[Kripke-Semantics-and-Canonical-Models|Link]]
+   - Canonical Kripke model : [[Kripke-Semantics-and-Canonical-Models|Link]]
+   - Cut admissibility as truth coinciding with provability : [[Kripke-Semantics-and-Canonical-Models|Link]]
 
-10. **Collection Analysis for Horn Clauses** : [[Collection-Analysis-for-Horn-Clauses|Link]]
-    - Static analysis via approximating data structures by multisets, sets, or lists
-    - Substituting for types, non-logical constants, and assumptions in proof theory : [[Collection-Analysis-for-Horn-Clauses|Link]]
-    - Multiset and set statements and their linear logic translations
-    - Automating collection analysis with specialized proof systems
+10. **Linear Logic** : [[Linear-Logic|Link]]
+    - Resource reading of connectives : [[Linear-Logic|Link1]], [[Sequent-Calculus-Proof-Systems|Link2]]
+    - Additive and multiplicative connectives : [[Sequent-Calculus-Proof-Systems|Link]]
+    - Exponentials and structural rules : [[Linear-Logic|Link1]], [[Sequent-Calculus-Proof-Systems|Link2]], [[Formal-Metatheory-of-Focused-Linear-Logic|Link3]]
+    - Duality and polarity : [[Linear-Logic|Link]]
+    - Linear and intuitionistic implication : [[Linear-Logic|Link]]
+    - One-sided and two-sided sequent systems : [[Linear-Logic|Link]]
+    - Girard's translation and cut-free translations from intuitionistic logic : [[Specifying-Proof-Systems-in-a-Metalogic|Link]]
+    - Origin of linear logic in LK versus LJ : [[Linear-Logic|Link]]
 
-11. **Encoding Security Protocols and Process Calculi** : [[Encoding-Security-Protocols-and-Process-Calculi|Link]]
-    - The $\pi$-calculus and its encoding into linear logic formulas : [[Encoding-Security-Protocols-and-Process-Calculi|Link]]
-    - Scope extrusion and restriction
-    - Communicating on a public network via multiset rewriting : [[Encoding-Security-Protocols-and-Process-Calculi|Link]]
-    - Static distribution of keys and dynamic creation of new symbols : [[Encoding-Security-Protocols-and-Process-Calculi|Link]]
-    - Agent clauses, agent theories, and agent state predicates
-    - The Needham–Schroeder Shared Key Protocol
-    - Agents as nested linear implications : [[Encoding-Security-Protocols-and-Process-Calculi|Link]]
+11. **Multi-Zone Sequents and Linear Logic Programming Languages** : [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link]]
+    - Left-unbounded and left-bounded zones : [[Multiset-Rewriting-in-Linear-Logic|Link]]
+    - The Lolli language
+    - The Forum language
+    - Multiple-conclusion uniform proofs : [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link]]
+    - Conservativity over fohh
+    - Lazy splitting of contexts by input and output lists : [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link]]
+    - Subexponentials : [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link]]
 
-12. **Formalizing Operational Semantics** : [[Formalizing-Operational-Semantics|Link]]
-    - Multiset rewriting, structural operational semantics, and abstract machines as three frameworks
-    - Encoding programs as terms with binding via $\lambda$-abstraction
-    - Big-step versus small-step semantics : [[Formalizing-Operational-Semantics|Link]]
-    - Binary clauses and continuation-passing style : [[Formalizing-Operational-Semantics|Link]]
-    - The Krivine machine and the SECD machine as abstract evaluation systems
-    - Specifying global state and concurrency primitives in linear logic : [[Formalizing-Operational-Semantics|Link]]
+12. **Formal Metatheory of Focused Linear Logic** : [[Formal-Metatheory-of-Focused-Linear-Logic|Link]]
+    - Generalized paths and introduction phases : [[Focused-Proof-Systems-and-Backchaining|Link]]
+    - Confluence of right-introduction phases : [[Focused-Proof-Systems-and-Backchaining|Link1]], [[Formal-Metatheory-of-Focused-Linear-Logic|Link2]]
+    - Admissibility of generalized initial : [[Formal-Metatheory-of-Focused-Linear-Logic|Link1]], [[Focused-Proof-Systems-and-Backchaining|Link2]]
+    - Four cut rules and the key cut : [[Formal-Metatheory-of-Focused-Linear-Logic|Link]]
+    - Cut elimination by induction on cut measures : [[Cut-Elimination-and-Its-Consequences|Link]]
+    - Soundness and completeness of focusing : [[Formal-Metatheory-of-Focused-Linear-Logic|Link]]
+
+13. **Multiset Rewriting in Linear Logic** : [[Multiset-Rewriting-in-Linear-Logic|Link]]
+    - Encoding multisets as formulas : [[Multiset-Rewriting-in-Linear-Logic|Link]]
+    - Rewriting on the left : [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link1]], [[Multiset-Rewriting-in-Linear-Logic|Link2]]
+    - Rewriting on the right : [[Formal-Metatheory-of-Focused-Linear-Logic|Link1]], [[Multiset-Rewriting-in-Linear-Logic|Link2]]
+    - Permutation of lists : [[Cut-Elimination-and-Its-Consequences|Link1]], [[Sequent-Calculus-Proof-Systems|Link2]]
+    - Numerals as multisets : [[Automata-Encoded-as-Multisets|Link1]], [[Multiset-Rewriting-in-Linear-Logic|Link2]]
+    - Petri net reachability
+
+14. **Specifying Proof Systems in a Metalogic** : [[Specifying-Proof-Systems-in-a-Metalogic|Link]]
+    - Context management in theorem provers
+    - Contraction-free implication rules
+    - Sequents as metalevel formulas : [[Specifying-Proof-Systems-in-a-Metalogic|Link]]
+    - Synthetic rules as object-level inference rules : [[Focused-Proof-Systems-and-Backchaining|Link1]], [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link2]], [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link3]]
+    - Object-level cut and initial : [[Specifying-Proof-Systems-in-a-Metalogic|Link]]
+
+15. **Higher-Order Quantification** : [[Higher-Order-Quantification|Link]]
+    - Higher-order linear logic : [[Classical-Intuitionistic-and-Minimal-Logics|Link1]], [[Linear-Logic|Link2]], [[Higher-Order-Quantification|Link3]], [[Higher-Order-Programming-and-Hiding-of-Specifications|Link4]]
+    - Instantiation and the loss of the subformula property : [[Cut-Elimination-and-Its-Consequences|Link1]], [[Higher-Order-Quantification|Link2]]
+    - Near-focused proofs : [[Higher-Order-Quantification|Link]]
+    - Cut elimination by candidates of reducibility : [[Cut-Elimination-and-Its-Consequences|Link]]
+    - Definability of connectives by quantification : [[Higher-Order-Quantification|Link]]
+    - Leibniz equality : [[Higher-Order-Quantification|Link]]
+    - Flexible versus rigid atoms : [[Higher-Order-Quantification|Link]]
+    - Higher-order Horn clauses and hereditary Harrop formulas : [[Horn-Clauses-and-Hereditary-Harrop-Formulas|Link]]
+
+16. **Higher-Order Programming and Hiding of Specifications** : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link]]
+    - Higher-order predicates : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link]]
+    - Tactics and tacticals : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link]]
+    - Hiding predicates by quantification : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link]]
+    - Reasoning about programs with cut and substitution : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link]]
+    - Symmetry of reverse : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link]]
+
+17. **Automata Encoded as Multisets** : [[Automata-Encoded-as-Multisets|Link]]
+    - Words as terms of type $o \to o$ : [[Simply-Typed-Lambda-Terms-and-Churchs-Types|Link]]
+    - Finite automata as linear logic theories : [[Automata-Encoded-as-Multisets|Link]]
+    - Pushdown automata : [[Automata-Encoded-as-Multisets|Link]]
+    - Closure under homomorphism : [[Automata-Encoded-as-Multisets|Link]]
+    - Alternating automata : [[Cut-Elimination-and-Its-Consequences|Link]]
+
+18. **Collection Analysis of Horn Clauses** : [[Collection-Analysis-of-Horn-Clauses|Link]]
+    - Approximating data structures by multisets and sets : [[Kripke-Semantics-and-Canonical-Models|Link]]
+    - Substituting for predicates and constructors
+    - Multiset and set judgments : [[Multi-Zone-Sequents-and-Linear-Logic-Programming-Languages|Link]]
+    - Automated proof of collection statements
+    - Approximating lists by lists : [[Collection-Analysis-of-Horn-Clauses|Link]]
+    - Complexity of multiset analysis
+
+19. **Process Calculi and Security Protocols** : [[Process-Calculi-and-Security-Protocols|Link]]
+    - Par as a forum for synchronization
+    - The finite $\pi$-calculus as linear logic : [[Process-Calculi-and-Security-Protocols|Link]]
+    - Agent clauses and agent theories : [[Process-Calculi-and-Security-Protocols|Link]]
+    - Encryption as an abstract data type
+    - Needham–Schroeder shared key protocol : [[Process-Calculi-and-Security-Protocols|Link]]
+    - Hiding agent states by existential quantification : [[Higher-Order-Programming-and-Hiding-of-Specifications|Link1]], [[Process-Calculi-and-Security-Protocols|Link2]]
+    - Agents as nested implications : [[Process-Calculi-and-Security-Protocols|Link]]
+
+20. **Operational Semantics in Logic** : [[Operational-Semantics-in-Logic|Link]]
+    - Multiset rewriting, structural semantics, and abstract machines
+    - Programs as higher-order abstract syntax : [[Operational-Semantics-in-Logic|Link]]
+    - Big-step call-by-value evaluation
+    - Small-step $\pi$-calculus transitions : [[Operational-Semantics-in-Logic|Link]]
+    - Binary clauses and continuation passing : [[Operational-Semantics-in-Logic|Link]]
+    - Abstract evaluation systems : [[Operational-Semantics-in-Logic|Link]]
+    - State and concurrency in linear logic : [[Operational-Semantics-in-Logic|Link]]
 
 ---

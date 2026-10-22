@@ -1,277 +1,421 @@
 ---
 title: "Linear Logic"
-source: "Proof Theory and Logic Programming: Computation as Proof Search — Dale Miller (2025)"
-chapter: "Chapter 6, Linear Logic"
-pages: "printed pp. 105–136 (PDF pp. 113–144)"
-tags: [type-theory, proof-theory, linear-logic, sequent-calculus, logic-programming, focusing]
+source_book: "Proof Theory and Logic Programming: Computation as Proof Search (Dale Miller, 2025)"
+chapters: "Chapter 6, Linear logic, Sections 6.1-6.5 (book pp. 105-125; PDF pp. 113-133), with context from Chapters 4-5"
+tags:
+  - proof-theory
+  - linear-logic
+  - sequent-calculus
+  - polarity
+  - automated-reasoning
+  - rust
+  - lean
 ---
 
 [[book-guidelines|↩ Back to guidelines]]
 
 # Linear Logic
 
-## Why a logic of resources, not truth
+## 1. The problem linear logic solves
 
-Chapter 5 built two logic programming languages out of intuitionistic logic — first-order Horn clauses (`fohc`, i.e. Prolog) and first-order hereditary Harrop formulas (`fohh`, i.e. λProlog) — and showed both were *complete* for goal-directed proof search via uniform proofs and backchaining. But Miller opens this chapter by cataloguing exactly what that machinery still can't do:
+Chapter 5 gave a clean account of proof search for Prolog and $\lambda$Prolog (the fragment $\mathcal L_0=\{t,\wedge,\supset,\forall\}$). Miller opens Chapter 6 by listing three weaknesses of that account:
 
-1. It only covers a *fragment* of intuitionistic logic ($L_0 = \{\mathsf t, \wedge, \supset, \forall\}$), not all of it.
-2. It's stuck with single-conclusion sequents, so it can't use classical negation and De Morgan duality to reason about programs.
-3. Most importantly: during `fohh` proof search, the left-hand side of a sequent (the "program") can only ever *grow*. Once a clause is in your context, it's there forever, indefinitely reusable. You can never say "this resource gets consumed" or "this fact becomes false after I use it."
+1. It only covers a fragment of intuitionistic logic, not a complete connective set.
+2. It is single-conclusion only, so negation and De Morgan dualities cannot be used to reason about programs.
+3. The dynamics of search are weak. In `fohh`, the left side of border sequents can only grow during search, and the right side only changes inside atoms. Sequents never evolve in rich ways, so a program cannot model state that changes.
 
-That third limitation is the real motivator, and it's worth sitting with before any symbols appear. Ordinary logic — classical or intuitionistic — treats a hypothesis $B$ as a *fact*: once true, forever true, and freely reusable in as many places in a proof as you like. That's exactly what the structural rule of **contraction** encodes ($\Gamma, B, B \vdash \Delta$ can always be weakened to needing just $\Gamma, B \vdash \Delta$, and vice versa — you can duplicate or discard $B$ at will). If you want to model computation as *proof search*, and you want that computation to track things like "I have one ticket, and using it destroys it" or "this mutex is locked until I release it," ordinary logic's assumption that hypotheses are infinitely reusable facts is the wrong substrate. **Linear logic**, introduced by Girard in 1987, is what you get when you strip contraction and weakening out of the default rules and then reintroduce them *only* for formulas you explicitly mark as reusable. A hypothesis becomes a *resource*: something that must be consumed exactly once to be used at all, unless you've tagged it as freely copyable.
+Linear logic answers all three. It gives a multiple-conclusion calculus covering all connectives, and it lets the context *shrink* as well as grow, so a proof can consume resources.
 
-If you've internalized Rust's ownership model, you already have the core intuition. A `String` you pass by value into a function is *moved* — the caller can't use it again, the function must do something with it (or explicitly drop it), and you can't just conjure a second copy unless the type implements `Clone`. That's linear logic's basic move: **most hypotheses behave like non-`Copy` values, consumed exactly once as a proof is built; only explicitly-marked hypotheses behave like `Copy`/`Clone` values, available at will.** This chapter formalizes that intuition into a full logic — with its own conjunctions, disjunctions, units, and two flavors of implication — and then, in its second half, turns that logic directly into two new logic programming languages, Lolli and Forum, that fix all three of the limitations above.
+The key observation is that the behavior of the **structural rules** (weakening $wL,wR$ and contraction $cL,cR$) is what makes proof search messy. Linear logic does not delete them. It moves them out of the sequent calculus's global rule set and onto individual formulas.
 
-**What this chapter builds, roughly in order:** (1) diagnose *why* classical/intuitionistic sequent calculus entangles contraction with connective choice; (2) tell the "origin story" — the two restrictions that turn Gentzen's LK into LJ literally *dictate* the shape of linear logic's exponentials; (3) lay out the full L proof system and its eight MALL connectives, plus $!$/$?$; (4) explain duality and polarity; (5) introduce two-zone sequents and the focused proof system for a first fragment $L_1$ (Lolli); (6) show how to embed `fohh` into it; (7) sketch an implementation technique (lazy context splitting); (8) generalize to multiple-conclusion sequents and $L_2$ (Forum); (9) prove $L_2$ conservative over $L_1$ and $L_0$; (10) generalize synthetic inference rules with a toggling-switch example.
+## 2. Why structural rules matter (Section 6.1)
 
----
+Miller makes four points. Each is a "what breaks without this" argument for the design of linear logic.
 
-## 6.1 — Structural rules, contraction, and the additive/multiplicative choice
+**Controlling contraction improves search.** Delete the contraction rules from the unfocused classical and intuitionistic systems and the height of a cut-free proof is bounded by the number of connective occurrences in the endsequent. Provability then becomes decidable. Gentzen's decision procedure for propositional intuitionistic logic works by limiting contraction. The focused system $\Downarrow\mathcal L_0$ tames the structural rules too: $wL$ is built into `init`, and $cL$ is built into `decide` and $\supset L$.
 
-### Contraction and invertibility are entangled
+**Invertible rules never need contraction.** The rule $\vee L$ is invertible (if the conclusion is provable, so are both premises), so $cL$ never has to be applied to a formula $B\vee C$. The rule $\wedge L$ is not invertible. A cut-free I-proof of $(p\wedge q)\supset(p\supset q\supset r)\supset r$ needs $cL$ on $p\wedge q$ to use both conjuncts. So contraction only matters on formulas whose introduction rule is non-invertible. That is an early hint of polarity (Section 4.5 below).
 
-Recall from Chapter 3 that an introduction rule is **invertible** if provability of the conclusion guarantees provability of every premise — you can always apply it "for free" without losing completeness. Miller points out a structural fact about C-proofs (classical) and I-proofs (intuitionistic) that sets up everything to come: whether a connective's left-introduction rule is invertible determines whether contraction is *ever* needed for occurrences of that connective.
+**Additive versus multiplicative.** A connective is *multiplicative* if one of its introduction rules splits the context between premises, and *additive* if the premises share the context. In LK and LJ you must choose one version per connective. Here $\wedge,\vee$ are additive and $\supset$ is multiplicative. With weakening and contraction available, the two versions are interderivable, so the choice is harmless. With weakening and contraction restricted, they behave differently, and you want both.
 
-Compare $\vee_L$ and $\wedge_L$:
+**Cut collides with structural rules.** Take $cut$ with a right premise ending in $cL$ on $C$. Cut elimination permutes the cut upward and duplicates the left premise:
 
-$$
-\dfrac{\Sigma :: B, \Gamma \vdash \Delta \qquad \Sigma :: C, \Gamma \vdash \Delta}{\Sigma :: B \vee C, \Gamma \vdash \Delta}\ \vee_L
-\qquad\qquad
-\dfrac{\Sigma :: B_i, \Gamma \vdash \Delta}{\Sigma :: B_1 \wedge B_2, \Gamma \vdash \Delta}\ \wedge_L
-$$
+$$\frac{\Gamma\vdash C\qquad \Gamma',C,C\vdash B}{\Gamma,\Gamma',C\vdash B}\ \text{cut}$$
 
-$\vee_L$ is invertible: nothing is lost by splitting into both cases, so contraction on $B \vee C$ is never needed. $\wedge_L$ is *not* invertible — it throws away $B_{3-i}$ to keep $B_i$ — so if a proof needs *both* conjuncts (Miller's example: a cut-free proof of $(p\wedge q) \supset (p \supset q \supset r) \supset r$), you need contraction on $p \wedge q$ to get two independent copies to pick from. **Contraction is only ever needed on formulas whose introduction rule is non-invertible.** This single observation is the seed of everything linear logic does with $!$ and $?$: mark exactly the formulas that need contraction, leave the rest genuinely resource-like.
+In classical proofs the left premise might also end in $cR$, so the cut can move to either side. Cut elimination becomes nondeterministic. The worst case is cut against weakening. If $\Xi_1$ proves $\vdash B$ and $\Xi_2$ proves $\vdash B$, then $wR$ on one side and $wL$ on the other, followed by cut, can reduce to either $\Xi_1$ or $\Xi_2$. Entirely different proofs of the same formula result. Functional programming rests on *deterministic* cut elimination (normalization), so such systems are a poor foundation for it.
 
-### Additive vs. multiplicative is a forced choice — until now
+## 3. The origin story: LK versus LJ (Section 6.2)
 
-Chapter 3 classified a two-premise rule as **additive** if the context ($\Gamma, \Delta$) is copied identically into both premises, and **multiplicative** if the context is *split* between the premises. In ordinary sequent calculus you must pick one variant per connective — $\wedge$ and $\vee$ are additive, $\supset$ is multiplicative, full stop. Miller flags this as unsatisfying: with weakening and contraction freely available, additive and multiplicative variants of a connective are provably *interchangeable*, so the choice looks arbitrary. But once you start restricting weakening and contraction (which is exactly what a resource-sensitive logic needs to do), the two variants stop being interchangeable and start behaving *differently*. Linear logic's answer, previewed here and made precise in §6.3, is not to choose — it keeps **both** an additive and a multiplicative version of conjunction and disjunction, as genuinely distinct connectives.
+Gentzen's LJ is LK restricted to at most one formula on the right. Miller restates this (Proposition 4.2) as two restrictions on a C-proof that keep every right side to exactly one formula:
 
-**What breaks without this distinction.** If you collapse additive and multiplicative conjunction back into one $\wedge$, you can no longer distinguish "I need $\Gamma$ resources to build *either* $B$ or $C$, but not both" (additive) from "I need $\Gamma_1$ resources for $B$ *and* $\Gamma_2$ more for $C$, both simultaneously" (multiplicative) — which is precisely the distinction a resource-cost model (or a type system distinguishing "borrow" from "consume") needs to make.
+1. No structural rules on the right: no $wR$, no $cR$.
+2. The multiplicative rules $\supset L$ and `cut` must send the right-hand formula to the *right* premise only.
 
-### Cut collides badly with weakening
+Read the $\supset L$ rule:
 
-Miller gives a concrete example of *why* unrestricted structural rules are hostile to deterministic computation: a cut whose right premise was derived by weakening admits two structurally different reductions (permute the cut past weakening on either side), which can produce two *entirely different* proofs of the same endsequent. Since Chapter 1 committed this book's parallel project (functional programming via Curry–Howard) to *deterministic* cut-elimination as its computational content, a setting where cut and the structural rules collide nondeterministically is a bad foundation. This is a second, independent reason (beyond resource semantics) to want tight control over weakening and contraction — and it's why focusing (Chapter 3's $\Downarrow$ notation, generalized fully to linear logic in Chapter 7) matters so much here.
+$$\frac{\Sigma::\Gamma_1\vdash\Delta_1,B\qquad \Sigma::C,\Gamma_2\vdash\Delta_2}{\Sigma::B\supset C,\Gamma_1,\Gamma_2\vdash\Delta_1,\Delta_2}\ \supset L$$
 
----
+In an I-proof, $\supset L$ does two jobs at once. It introduces a connective *and* it dictates where a side formula goes. No other intuitionistic connective does this, so implication has hidden internal structure.
 
-## 6.2 — The LK-vs-LJ origin story
+Linear logic exposes that structure. Structural rules survive only on the left in intuitionistic proofs, and only on some formulas. Linear logic marks exactly those formulas:
 
-This is the chapter's cleanest piece of motivation, and it's worth walking through exactly as the book does, because it derives the shape of $!$ and $?$ from something you already understand: the difference between classical and intuitionistic sequents.
+- $!B$ ("bang") on the left can be weakened and contracted.
+- $?B$ ("why not") on the right can be weakened and contracted.
 
-Recall Proposition 4.2 (Chapter 4): a **C-proof** (classical, multiple-conclusion) is restricted to being an **I-proof** (intuitionistic, single-conclusion) precisely by two conditions:
+No other formula occurrence gets structural rules. This gives encodings:
 
-1. **No structural rules on the right.** $w_R$ and $c_R$ are simply forbidden — you can never weaken or contract the right-hand side.
-2. **$\supset_L$ and cut are multiplicative in a specific asymmetric way**: the single right-hand formula of the conclusion must migrate to the *right* premise only, never the left:
-$$
-\dfrac{\Sigma :: \Gamma_1 \vdash \Delta_1, B \qquad \Sigma :: C, \Gamma_2 \vdash \Delta_2}{\Sigma :: B \supset C, \Gamma_1, \Gamma_2 \vdash \Delta_1, \Delta_2}\ \supset_L
-$$
+- C-sequents become $!B_1,\ldots,!B_n\vdash ?C_1,\ldots,?C_m$.
+- I-sequents become $!B_1,\ldots,!B_n\vdash B_0$, where $B_0$ is not a top-level $?$.
 
-Condition 2 means $\supset_L$ is doing *two* jobs at once: introducing a connective, and routing a side formula to a specific place. No other intuitionistic connective's rule does this — it's implication specifically that carries extra plumbing.
+Intuitionistic implication then decomposes as $B\supset C \;\leadsto\; (!B)\multimap C$. The restriction on $\supset L$ is explained. The right-premise rule for $!R$ requires the context to be entirely $!$'d on the left and $?$'d on the right. With [[Automata-Encoded-as-Multisets#The encoding|the encoding]] above, the right-hand side has exactly one non-$?$ formula, so $\Delta_1$ must be empty and the side formula lands in the right premise.
 
-Now generalize. Condition 1 says: *structural rules only ever happen on the left*. Condition 2 says: *there's a marked asymmetry in how implication moves formulas around*. Linear logic's answer is to stop treating "structural rules allowed" as an all-or-nothing property of a whole sequent side, and instead attach it to *individual formula occurrences*, using two new unary connectives:
+## 4. Resource reading and the sequent system $L$ (Section 6.3)
 
-- $!B$ ("$B$, of course") — freely weakenable and contractible **on the left**.
-- $?B$ ("$B$, why not") — freely weakenable and contractible **on the right**.
+### 4.1 First principles: formulas as resources
 
-With this vocabulary, a C-proof's sequents translate into linear-logic sequents of the shape $!B_1,\dots,!B_n \vdash {?}C_1,\dots,{?}C_m$ (everything marked reusable both sides — this is what "classical logic" degenerates to inside linear logic), and an I-proof's sequents translate into $!B_1,\dots,!B_n \vdash B_0$ (reusable hypotheses, but a single, non-$?$-marked, genuinely linear conclusion).
+Classical logic reads a formula as true or false, and that reading allows free reuse. Linear logic reads $\Gamma\vdash B$ as "from the resources $\Gamma$ I can produce $B$", and each hypothesis is consumed once. Miller's example is a font shop.
 
-And crucially: intuitionistic implication itself gets *decomposed*. Since $\supset_R$ moves $B$ from the goal into the left context (where it will be reused freely as a hypothesis), the natural linear-logic reading of $B \supset C$ is
-$$
-B \Rightarrow C \;:=\; (!B) \multimap C
-$$
-where $\multimap$ (**linear implication**, "lollipop") consumes its argument exactly once. Plugging this into the $\multimap_L$ rule for $(!B) \multimap C$ and comparing to $\supset_L$ above, you can mechanically re-derive *exactly* the asymmetric-routing restriction that defined I-proofs in the first place — the second restriction on I-proofs wasn't an arbitrary technical condition, it's a shadow of the fact that intuitionistic implication is secretly "consume $!B$, produce $C$ linearly."
+- **$\otimes$ (tensor)** is *both at once*. If $\Gamma_1$ built font $B_1$ and $\Gamma_2$ built $B_2$, the pair $B_1\otimes B_2$ costs $\Gamma_1,\Gamma_2$ together. Fonts costing 3 and 7 give a pair costing 10. The buyer gets both fonts.
+- **$\&$ (with)** is *your choice of one*. If each font needs the same $\Gamma$, then $B_1\& B_2$ costs just $\Gamma$. The buyer picks one font, and the other becomes inaccessible. Two fonts at 5 each still cost 5.
+- **$!B$** is an unbounded supply of $B$. The promotion rule $!R$ is the "unlimited french fries" argument. A restaurant can promise unlimited fries if the cook has unlimited oil, salt, and potatoes and can make one fry.
 
-**Rust framing.** This is the single cleanest place in the whole chapter to draw the ownership analogy explicitly. $B \multimap C$ is a function `fn(B) -> C` where the argument is *moved* — used up building the result, unavailable afterward. $!B \multimap C$, i.e. intuitionistic $B \Rightarrow C$, is `fn(&B) -> C` or, more precisely, a function that receives a `Clone`-able resource it can duplicate as many times as it needs (`fn(B) -> C where B: Clone`) — which is exactly what "ordinary," non-linear implication silently assumes about every hypothesis. Intuitionistic logic is what you get when *every* type is `Clone`. Linear logic makes cloning opt-in, per-hypothesis, marked with `!`.
+Without this distinction you cannot say "I have a coin" differently from "I have a coin and may spend it as often as I like." Classical logic collapses the two, and that collapse is why it cannot model state.
 
----
+### 4.2 The connectives
 
-## 6.3 — The L proof system: MALL, the exponentials, duality
+The proof system $L$ is built from Figures 6.1-6.4 of the book: propositional rules, identity rules, quantifier rules, and exponential rules. Binary connectives have type $o\to o\to o$, units have type $o$, negation and the exponentials have type $o\to o$, and $\forall_\tau,\exists_\tau$ have type $(\tau\to o)\to o$.
 
-### 6.3.1 Restaurant/font semantics for $\otimes$ and $\&$
+**MALL** (multiplicative additive linear logic) is the fragment from the propositional and identity rules. Each classical connective splits in two:
 
-Before the formal rules, Miller gives an informal pricing story that nails the additive/multiplicative distinction better than any amount of staring at inference rules. Suppose you've built two digital fonts, $B_1$ and $B_2$, and want to package and price them together.
+| Classical | Additive | Multiplicative |
+|---|---|---|
+| $t$ | $\top$ (top) | $1$ (one) |
+| $f$ | $0$ (zero) | $\bot$ (bottom) |
+| $\wedge$ | $\&$ (with) | $\otimes$ (tensor) |
+| $\vee$ | $\oplus$ (o-plus) | $\mathbin{⅋}$ (par) |
 
-- **$\otimes$ (tensor, multiplicative "and"):** if font $B_1$ cost $\Gamma_1$ resources and font $B_2$ cost $\Gamma_2$ resources *separately*, the bundle $B_1 \otimes B_2$ costs $\Gamma_1, \Gamma_2$ — resources accumulate. Buy the bundle, get simultaneous access to *both* fonts. €3 font + €7 font = €10 bundle.
-- **$\&$ (with, additive "and"):** if each font individually costs $\Gamma$ resources on its own, the bundle $B_1 \& B_2$ *still* costs $\Gamma$ — but the buyer only gets to pick **one** font; once picked, the other is gone. €5 font & €5 font = €5 bundle (you get whichever one you choose).
+Units: $1$ for $\otimes$, $\top$ for $\&$, $\bot$ for $\mathbin{⅋}$, $0$ for $\oplus$. Negation $(\cdot)^\perp$ is a first-class connective with the same rules as Gentzen's.
 
-This is exactly **internal vs. external choice** in the concurrency-theory sense, and it maps cleanly onto two different Rust idioms:
+The key two-sided rules, with $\Sigma$ the signature, are:
 
-- $\otimes$ is a `struct` (or tuple) holding both fields — `struct FontBundle { b1: Font, b2: Font }` — constructing it requires paying for both, and you own both afterward.
-- $\&$ is closer to a value that satisfies *multiple trait bounds simultaneously but only one is ever invoked*, or — even more directly — it's what a function signature `fn pick(bundle: impl HasB1 + HasB2) -> Font` expresses: the *producer* commits to being able to deliver either projection, and the *consumer* decides which one to actually take, at the cost of losing access to the other. That's the "external choice" reading: the *environment* (the proof/the caller) picks the branch, which is why $\&$R has **two premises that must both be provable** (you must be ready to honor either choice) while $\&$L only needs **one** branch chosen (i = 1 or 2) to proceed.
-- Dually, $\oplus$ (**plus**, additive "or") is **internal choice**: the *producer* commits to one branch and only needs to justify that one. $\oplus_R$ (right rule) picks $B_i$ and proves only that; $\oplus_L$ (left rule) must handle *both* possible incoming branches. This is precisely Rust's `enum`: constructing `Ok(x)` or `Err(e)` is the producer unilaterally picking a variant ($\oplus_R$), while `match` on the consuming side must provide a handler for every variant ($\oplus_L$'s two premises). **$\&$ is trait-object-style external choice (multiple capabilities offered, caller decides); $\oplus$ is enum-style internal choice (producer decides, caller must handle every case).**
-
-### 6.3.2 MALL and the eight connectives
-
-**Multiplicative additive linear logic (MALL)** is exactly the propositional connectives-plus-units from Figure 6.1/6.2 — additive and multiplicative conjunction/disjunction and their four units, no exponentials yet, no quantifiers. Because MALL has *no* weakening or contraction at all, the additive and multiplicative variants are genuinely inequivalent (unlike in classical/intuitionistic logic) — this is the payoff of §6.1's observation. Miller tabulates all eight:
-
-![Connectives](connectives_miller.svg)
-
-Rust doesn't have a clean native analogue for $\bot$ or $\wp$ (par) — Miller himself defers the intuition for right-multiple-formula sequents to Chapter 12's process-calculus reading (⅋ as parallel composition/synchronization). That's a fair place to say the Rust grounding runs out: ⅋ is fundamentally about *what it means to have more than one thing to prove at once*, which single-threaded ownership semantics doesn't have a direct picture for. Treat it as a placeholder connective for now — it earns its keep in §6.7 when multiple-conclusion sequents arrive.
-
-### 6.3.3 The exponentials: $!$ and $?$
-
-Four rules per exponential (Figure 6.4): weakening, contraction, dereliction, and the "real" introduction rule (promotion).
-
-$$
-\dfrac{\Sigma :: \Gamma \vdash \Delta}{\Sigma :: \Gamma, {!}B \vdash \Delta}\ {!}W
+$$\frac{\Sigma::\Gamma_1\vdash B,\Delta_1\quad \Sigma::\Gamma_2\vdash C,\Delta_2}{\Sigma::\Gamma_1,\Gamma_2\vdash B\otimes C,\Delta_1,\Delta_2}\ \otimes R
 \qquad
-\dfrac{\Sigma :: \Gamma, {!}B, {!}B \vdash \Delta}{\Sigma :: \Gamma, {!}B \vdash \Delta}\ {!}C
+\frac{\Sigma::\Gamma\vdash B,\Delta\quad \Sigma::\Gamma\vdash C,\Delta}{\Sigma::\Gamma\vdash B\mathbin{\&} C,\Delta}\ \&R$$
+
+$$\frac{\Sigma::\Gamma\vdash B,C,\Delta}{\Sigma::\Gamma\vdash B\mathbin{⅋}C,\Delta}\ ⅋R
 \qquad
-\dfrac{\Sigma :: \Gamma, B \vdash \Delta}{\Sigma :: \Gamma, {!}B \vdash \Delta}\ {!}D
+\frac{\Sigma::\Gamma,B_1,B_2\vdash\Delta}{\Sigma::\Gamma,B_1\otimes B_2\vdash\Delta}\ \otimes L$$
+
+Because MALL has no weakening or contraction, the additive and multiplicative versions are *not* interchangeable. Provability of MALL formulas is PSPACE-complete (Lincoln et al. 1992), and adding first-order quantifiers keeps it PSPACE-complete. Two sanity examples from the book: $\vdash 1\mathbin{⅋}1$ is not provable, and neither is its negation $\bot\otimes\bot$. The sequent $\vdash p\otimes q,\ p^\perp\otimes q,\ p\otimes q^\perp,\ p^\perp\otimes q^\perp$ is not provable even though every atom has a matching dual. The resources cannot be split consistently.
+
+### 4.3 Exponentials: linear logic is MALL plus $!$ and $?$
+
+Full linear logic adds the quantifiers and the exponentials. Each exponential has four rules (Figure 6.4):
+
+$$\frac{\Gamma\vdash\Delta}{\Gamma,!B\vdash\Delta}\ !W
 \qquad
-\dfrac{\Sigma :: {!}\Gamma \vdash B, {?}\Delta}{\Sigma :: {!}\Gamma \vdash {!}B, {?}\Delta}\ {!}R
-$$
-
-Weakening ($!W$) and contraction ($!C$) are exactly the two structural rules that were banned everywhere else — reintroduced, but *only* for $!$-marked formulas. Dereliction ($!D$) says: a resource with the "can be duplicated/discarded" privilege can always choose to be used exactly once instead — the privilege is optional to exercise. The interesting one is **promotion**, $!R$: you may only conclude $!B$ is provable on the right if *every* other formula in context is itself marked reusable (all $!$ on the left, all $?$ on the right). Miller's restaurant framing: to guarantee unlimited french fries, you don't guarantee one fry — you guarantee an unlimited supply of oil, salt, and potatoes, from which the cook can make one fry *repeatably*. Promotion is the rule that turns "provable once, from purely reusable ingredients" into "provable arbitrarily many times."
-
-**Rust framing.** $!B$ is `B: Clone` (or `B: Copy` for the strongest case) — a type whose values you're licensed to duplicate freely. Dereliction is just: a `Clone` type can still be used linearly (moved) if you want — cloning is a capability, not an obligation. Promotion is the deeper statement: you can only *derive* a general `Clone` capability for a compound value if it was built entirely from `Clone` ingredients in a `Clone`-only environment — which is structurally identical to why `#[derive(Clone)]` on a struct requires every field to itself implement `Clone`.
-
-### 6.3.4 De Morgan duality and polarity
-
-Linear logic has De Morgan duals for *everything*, exponentials included:
-
-<svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif" font-size="16">
-  <style> text { fill: #3a3a3a; } .hdr { font-weight: bold; fill: #2a2a2a; } </style>
-  <rect x="0" y="0" width="700" height="130" fill="none" stroke="#888888" stroke-width="1"/>
-  <text x="20" y="30" class="hdr">connective</text>
-  <text x="20" y="70" class="hdr">dual</text>
-  <line x1="10" y1="42" x2="690" y2="42" stroke="#888888" stroke-width="1"/>
-  <g font-size="17">
-    <text x="150" y="30">⊤</text><text x="200" y="30">&amp;</text><text x="250" y="30">1</text><text x="300" y="30">⊗</text>
-    <text x="350" y="30">⊥</text><text x="400" y="30">⅋</text><text x="450" y="30">0</text><text x="500" y="30">⊕</text>
-    <text x="550" y="30">!</text><text x="600" y="30">?</text><text x="650" y="30">∀</text><text x="690" y="30" font-size="14">∃</text>
-    <text x="150" y="70">0</text><text x="200" y="70">⊕</text><text x="250" y="70">⊥</text><text x="300" y="70">⅋</text>
-    <text x="350" y="70">1</text><text x="400" y="70">⊗</text><text x="450" y="70">⊤</text><text x="500" y="70">&amp;</text>
-    <text x="550" y="70">?</text><text x="600" y="70">!</text><text x="650" y="70">∃</text><text x="690" y="70" font-size="14">∀</text>
-  </g>
-  <line x1="10" y1="90" x2="690" y2="90" stroke="#888888" stroke-width="1"/>
-  <text x="20" y="115" font-size="13" font-style="italic">Negative (right-rule invertible):  ⊥, ⊤, ⅋, &amp;, ∀, ?</text>
-  <text x="360" y="115" font-size="13" font-style="italic">Positive (left-rule invertible):  1, 0, ⊗, ⊕, ∃, !</text>
-</svg>
-
-**Polarity** is the property this table encodes. A connective is **negative** if its right-introduction rule is invertible — provable without loss of information, no choice required — and **positive** if its left-introduction rule is invertible. Equivalently (and more operationally): a connective is *positive* if applying its right-rule requires an oracle/decision from outside (which disjunct for $\oplus_R$, how to split the context for $\otimes_R$, which term for $\exists_R$); it's *negative* if the right-rule can always fire without needing any such external input. $!$ is positive by this test (its right-rule, promotion, needs the whole surrounding context to already be uniform); $?$, its dual, is negative. Atoms are conventionally negative, by fiat, so that *every* formula has a polarity.
-
-**What breaks without polarity.** Polarity is what will let Chapter 7's focused proof system group together a maximal run of same-direction rule applications into one atomic "phase" (Andreoli's asynchronous/synchronous phases) without ever needing to backtrack over choices that were forced anyway. Positive connectives are exactly the ones where proof search *must* make a choice (and so belong in the backchaining/"synchronous" phase, where you commit to a formula and drive it to completion); negative connectives are exactly the ones proof search can always apply eagerly and for free (the "asynchronous"/goal-reduction phase). Without this classification, a proof-search procedure has no principled way to decide which rule to try next without exponential backtracking — polarity turns "what should I do next" from a search problem into a determined-by-syntax computation for roughly half the connectives.
-
-### 6.3.5 Two implications: $\multimap$ vs. $\Rightarrow$
-
-Linear implication is given first-class introduction rules (rather than just being *defined* as $B^\perp \wp C$):
-
-$$
-\dfrac{\Sigma :: \Gamma_1 \vdash B, \Delta_1 \qquad \Sigma :: \Gamma_2, C \vdash \Delta_2}{\Sigma :: \Gamma_1, \Gamma_2, B \multimap C \vdash \Delta_1, \Delta_2}\ {\multimap}_L
+\frac{\Gamma,!B,!B\vdash\Delta}{\Gamma,!B\vdash\Delta}\ !C
 \qquad
-\dfrac{\Sigma :: \Gamma, B \vdash C, \Delta}{\Sigma :: \Gamma \vdash B \multimap C, \Delta}\ {\multimap}_R
-$$
+\frac{\Gamma,B\vdash\Delta}{\Gamma,!B\vdash\Delta}\ !D
+\qquad
+\frac{!\Gamma\vdash B,?\Delta}{!\Gamma\vdash !B,?\Delta}\ !R$$
 
-and intuitionistic implication is, per §6.2, $B \Rightarrow C := (!B) \multimap C$ — same shape, but the left premise's context is required to be entirely reusable (all-$!$), giving it the characteristic "additive-ish" flavor where $B$ persists as a hypothesis rather than being consumed. Both are multiplicative, negative connectives (both defined via $\wp$). One curiosity worth flagging: naively writing left/right rules for $\Rightarrow$ that literally mention "$!B$ in the premise" violates the sequent-calculus discipline that a rule's premises shouldn't already contain occurrences of logical connectives not present in the conclusion — this is the technical wrinkle that motivates §6.4's entire two-zone reformulation.
+and the duals $?W$, $?C$, $?D$ and $?L$. In words:
 
----
+- $W$ and $C$ are weakening and contraction, restricted to marked formulas.
+- **Dereliction** ($!D$, $?D$), read bottom-up, says a formula may give up its right to be copied or dropped.
+- **Promotion** ($!R$, $?L$), read bottom-up, says you may *earn* that right by proving the formula from a context where everything already has it.
 
-## 6.4 — Two-zone sequents, the P proof system, and $\Downarrow L_1$
+Equivalences the book asks the reader to prove (Exercise 6.3) look like exponent laws, $x^{m+n}=x^m\times x^n$:
 
-### The zone split
+$$!\top\dashv\vdash 1,\qquad !(B\mathbin{\&}C)\dashv\vdash !B\otimes !C,\qquad ?0\dashv\vdash\bot,\qquad ?(B\oplus C)\dashv\vdash ?B\mathbin{⅋}?C.$$
 
-Rather than smuggling $!$ into implication's rules, Miller restructures the sequent itself. Define $L_1 = \{\top, \&, \multimap, \Rightarrow, \forall\}$ and build a proof system $P$ (Figure 6.6) over sequents of the shape
+Prefix sequences of $!$ and $?$ satisfy $\pi\pi B\dashv\vdash \pi B$, so up to equivalence only seven prefixes exist: empty, $!$, $?$, $!?$, $?!$, $!?!$, $?!?$ (Exercise 6.4).
 
-$$
-\Sigma :: \Psi; \Gamma \vdash B
-$$
+Two more facts shape later chapters:
 
-where $\Psi$ is the **left-unbounded zone** (informally: everything implicitly $!$-marked, freely reusable) and $\Gamma$ is the **left-bounded zone** (genuinely linear, consumed once). The reading is: $B_1,\dots,B_n; C_1,\dots,C_m \vdash E$ stands for the linear-logic sequent $!B_1,\dots,!B_n, C_1,\dots,C_m \vdash E$. Every $P$-rule now has the clean sequent-calculus shape — exactly one connective introduced, no stray connectives smuggled into premises — because the $!$-marking is handled structurally by *which zone* a formula sits in, not by writing $!$ explicitly. Two versions each of cut ($\text{cut}_l$, $\text{cut}_!$) and decide ($\text{decide}_l$, $\text{decide}_!$) exist, one per zone.
+- **Uniqueness of connectives.** If you add a second tensor $\hat\otimes$ with the same rules as $\otimes$, then $B\otimes C\dashv\vdash B\mathbin{\hat\otimes}C$. The rules *define* the connective uniquely. This holds for every connective except the exponentials.
+- **Sanity check for $!$.** With $B = p\otimes !(p\multimap p\otimes p)\otimes !(p\multimap 1)$, both $B\vdash B\otimes B$ and $B\vdash 1$ are provable. A single $p$ plus reusable "duplicate" and "delete" rules acts as a copyable and deletable resource (Exercise 6.12).
 
-This is a direct, load-bearing instance of a pattern from your elaborator/verifier work: **splitting a typing context into a linear part and an unrestricted part is exactly what substructural type systems (and Rust's own borrow checker, informally) do when distinguishing owned/moved bindings from `Copy`/shared ones.** A Rust function's parameter list is implicitly doing a version of this split already — parameters taken by value and not `Copy` behave like $\Gamma$; parameters behind `&` or of `Copy` types behave like $\Psi$. If you're building a Rust-embedded prover that needs to reason about resource-consuming operations (locks, file handles, "this Hoare-triple precondition gets consumed"), this two-zone sequent is close to the literal data structure your prover's context representation should use: two multisets, not one.
+### 4.4 Duality, negation normal form, and the one-sided system
 
-Additive rules copy a context formula into every premise regardless of zone; multiplicative rules split bounded-zone formulas across premises but *copy* unbounded-zone formulas into every premise (because $!$-marked formulas support contraction) — Miller shows this hybrid multiplicative behavior is literally derivable from ordinary linear logic's $\multimap_L$ plus a $!C$ contraction step. Proposition 6.13 makes the translation precise: $\Psi; \Gamma \vdash B$ has a $P$-proof iff $!(\Psi^\diamond), \Gamma^\diamond \vdash B^\diamond$ has an $L$-proof, where $(\cdot)^\diamond$ unfolds $\Rightarrow$ and $\multimap$ back into their $\wp$-based definitions.
+De Morgan duality is total in linear logic, exponentials and quantifiers included:
 
-### Focusing: $\Downarrow L_1$ and backchaining
+| connective | $\top$ | $\&$ | $1$ | $\otimes$ | $\bot$ | $⅋$ | $0$ | $\oplus$ | $!$ | $?$ | $\forall$ | $\exists$ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| dual | $0$ | $\oplus$ | $\bot$ | $⅋$ | $1$ | $\otimes$ | $\top$ | $\&$ | $?$ | $!$ | $\exists$ | $\forall$ |
 
-$P$ is unfocused and not yet the right shape for studying goal-directed search. Figure 6.7 gives the focused system $\Downarrow L_1$, structurally the linear-logic sibling of Chapter 5's $\Downarrow$fohh: right-introduction (goal-reduction) rules for the negative connectives $\top, \&, \multimap, \Rightarrow, \forall$ that fire unconditionally, plus a designated-formula slot $\Gamma \Downarrow D \vdash A$ for left-introduction (backchaining) once a program clause has been "decided" upon (via $\text{decide}_l$ or $\text{decide}_!$, one per zone, just as before). $\multimap_L$'s bounded-zone split is now the *only* place nondeterminism about resource allocation shows up — everything else is forced.
+Examples: $(B\mathbin{⅋}C)^\perp\dashv\vdash B^\perp\otimes C^\perp$, $(B\mathbin{\&}C)^\perp\dashv\vdash B^\perp\oplus C^\perp$, $(?B)^\perp\dashv\vdash !(B^\perp)$, and $\top^\perp\dashv\vdash 0$. Every formula has an equivalent *negation normal form* where negation applies only to atoms. That permits the **one-sided system** of Figure 6.5, with sequents $\Sigma::\vdash\Delta$ and about half the rules. Here $B^\perp$ in `init` and `cut` is no longer a connective but an operator that negates and renormalizes:
 
-Miller also gives a second, more operational characterization of backchaining as a relation $\|B\|_\Sigma$ — the smallest set of triples $\langle \Psi, \Gamma, B'\rangle$ built by "unfolding" a clause $B$ through its own $\&$, $\Rightarrow$, $\multimap$, $\forall$ structure (Figure 6.8's clauses 1–5), exactly generalizing Chapter 5's border-sequent unfolding to track *which* zone each unfolded premise lands in. This directly generalizes to the **BC** (backchaining) synthetic inference rule, collapsing an entire decide-then-unfold run into one derived step — the same "compile the clause into a derived rule" idea Chapter 5 introduced, now resource-aware.
+$$\frac{}{\Sigma::\vdash B,B^\perp}\ \text{init}
+\qquad
+\frac{\Sigma::\vdash B,\Delta\quad\Sigma::\vdash B^\perp,\Delta'}{\Sigma::\vdash\Delta,\Delta'}\ \text{cut}$$
 
-**What breaks without two-zone sequents.** Try to write $\Rightarrow_L$/$\Rightarrow_R$ over a *single* left context and you either violate the "no stray connectives in premises" discipline (as §6.3.5 flagged) or you lose the ability to distinguish, syntactically, "this hypothesis is available forever" from "this hypothesis will be gone after this step" — which is precisely the distinction the whole chapter exists to make precise. Two-zone sequents aren't an implementation convenience; they're the mechanism that makes intuitionistic-inside-linear well-typed as a sequent calculus at all.
+Miller uses two-sided sequents in most of the book and the one-sided one only sparingly.
 
-**The result:** the abstract logic programming language $\langle L_1, L_1, \vdash_L\rangle$ is named **Lolli**. Unlike `fohh`, whose bounded-analogue-of-a-context could only grow, $\Downarrow L_1$ proofs let the bounded zone $\Gamma$ change in arbitrary ways during search — grow, shrink, or transform — while the unbounded zone $\Psi$ (and the signature) can still only grow, exactly like before. This is limitation #3 from the chapter's opening, fixed.
+### 4.5 Polarity
 
----
+In MALL, the right rule of a connective is invertible iff the left rule (or the right rule of its De Morgan dual) is *not*. This sorts connectives:
 
-## 6.5 — Embedding `fohh` into Lolli
+- **Negative** (right rule invertible): $\bot,\top,⅋,\&,\forall$, and $?$.
+- **Positive** (left rule invertible): $1,0,\otimes,\oplus,\exists$, and $!$.
 
-Two translations from intuitionistic formulas into linear-logic ones are given. Girard's original (provability- and proof-preserving) translation is uniform: $t \mapsto \top$, $\wedge \mapsto \&$, $\supset \mapsto \Rightarrow$, $\forall \mapsto \forall$ — i.e., stay additive/intuitionistic-flavored throughout. But if you only care about *cut-free* proofs (which is all that matters for logic programming, since goal-directed search never needs cut), a sharper **polarized translation** with two mutually-defined maps $(\cdot)^+$/$(\cdot)^-$ does better — sending conjunction to $\otimes$ on the positive side but $\&$ on the negative side, and implication to $(B)^- \Rightarrow (C)^+$. Proposition 6.15: an I-proof of $\Delta \vdash B$ exists iff $\Delta^-; \cdot \vdash B^+$ has a cut-free $\Downarrow L_1$-proof.
+A second reading, which Miller finds more illuminating, is *oracle dependence*. A right rule for a positive connective needs outside information:
 
-The payoff is concrete syntax. Prolog's `A0 :- A1, ..., An`, traditionally read as $(A_1 \wedge \cdots \wedge A_n) \supset A_0$, becomes under the negative translation $(A_1 \otimes \cdots \otimes A_n) \multimap A_0$ — **the comma in Prolog *is* $\otimes$**, and `:-` is the converse of $\multimap$. And λProlog's `=>` operator, used for hypothetical/scoped reasoning, is confirmed to denote $\Rightarrow$ (not $\multimap$) by tracing through a `prov` predicate specifying natural-deduction implication-introduction. This is a genuinely nice payoff: two syntactic choices you might have taken for granted in Prolog/λProlog turn out to be forced by which linear connective they secretly denote.
+- $\oplus R$ must be told which disjunct to pick.
+- $\otimes R$ must be told how to split the context.
+- $1R$ must know the context is empty.
+- $\exists R$ must be given a witness term.
+- $!R$ needs the guarantee that the whole context is marked.
 
-**Load-bearing note for the standing project.** Lolli is not a toy — it is a real logic programming language whose search procedure is *this exact focused proof system*. If the Rust-embedded prover in your standing project needs a search strategy over resource-sensitive specifications (e.g. Hoare triples where preconditions get consumed by a statement's effect), Lolli's $\Downarrow L_1$ discipline — decide, then drive left/right introduction to atoms, splitting the bounded zone only where $\multimap_L$ demands it — is a directly implementable search algorithm, not just a theoretical curiosity.
+Negative right rules just fire. Atoms are conventionally negative (following Andreoli 1992), which connects polarity to the uniform proofs of Chapter 5.
 
----
+**What breaks without polarity.** You get no principled answer to "which rule do I try first in search?" Negative connectives can be decomposed eagerly without losing completeness. Positive ones require choice (backtracking). That is exactly the split that focused proofs formalize in the next chapters.
 
-## 6.6 — A model of resource consumption: lazy splitting
+Polarity is also tied to when $B\dashv\vdash !B$. If all atoms and negative connectives in $B$ sit under a $!$, then $B\dashv\vdash !B$ (Exercise 6.7). Positive connectives preserve "being a bang" (Exercise 6.6).
 
-$\multimap_L$ requires splitting the bounded zone $\Gamma$ into two sub-multisets — naively, $2^{|\Gamma|}$ possibilities to try. Section 6.6 sketches how a real implementation avoids this blowup: instead of committing to a split *before* searching the left premise, hand the *entire* bounded zone to the left-premise search as an **input** list, let it consume whatever it needs, and pass along whatever's left as an **output** list to the right premise. The **IO proof system** (Figure 6.9) formalizes this with sequents $[I \| O]$ (input/output pairs of "option formulas" — either a live formula $\langle B\rangle$ or a deletion marker $\circ$), a `pick` predicate that nondeterministically removes one live formula and marks it deleted, and a `subcontext` predicate checking one list is an "erasure" of another. Proposition 6.19 shows this lazy-splitting technique is *sound*: an IO-proof translates directly back into a $\Downarrow L_1$-proof by replacing $[I \| O]$ with the multiset difference $I - O$.
+### 4.6 Linear and intuitionistic implication
 
-This is squarely an implementation-mechanism section — the kind of thing that transfers almost verbatim into code. In Python-sketch terms, `pick` is just: iterate the input list, and at each live element, yield (that element, input-with-that-slot-marked-deleted) as one nondeterministic choice — precisely how you'd implement resource allocation in a Prolog-style resolution engine over a mutable "remaining resources" list rather than trying every subset split up front.
+Two implications are added as proper connectives:
 
----
+$$B\multimap C\;\equiv\;B^\perp\mathbin{⅋}C\qquad\qquad B\Rightarrow C\;\equiv\;(!B)\multimap C$$
 
-## 6.7 — Multiple-conclusion uniform proofs: $L_2$ and Forum
+Both are multiplicative and negative, since both are built on $⅋$. The rules for $\multimap$ are:
 
-$L_1$ can already *encode* all of linear logic if extended with just $\bot$ (Exercise 6.20) — but Miller goes further and adds $\bot$, $\wp$, and $?$ together, since all three are negative-polarity and represent the 0-ary, 2-ary, and "$\infty$-ary" multiplicative disjunction respectively. This gives
+$$\frac{\Sigma::\Gamma_1\vdash B,\Delta_1\quad\Sigma::\Gamma_2,C\vdash\Delta_2}{\Sigma::\Gamma_1,\Gamma_2,B\multimap C\vdash\Delta_1,\Delta_2}\ \multimap L
+\qquad
+\frac{\Sigma::\Gamma,B\vdash C,\Delta}{\Sigma::\Gamma\vdash B\multimap C,\Delta}\ \multimap R$$
 
-$$
-L_2 = L_1 \cup \{\bot, \wp, ?\} = \{\top, \&, \multimap, \Rightarrow, \forall, \bot, \wp, ?\}
-$$
+Write $B\mathbin{\circ\!\!-\!\!\circ} C$ for $(B\multimap C)\mathbin{\&}(C\multimap B)$. Since $\&R$ and $⅋R$ are invertible (Exercise 6.8), this formula is provable iff $B\dashv\vdash C$. Curry/uncurry laws hold, for example $(B\otimes C)\multimap H\dashv\vdash B\multimap C\multimap H$, $(B\oplus C)\multimap H\dashv\vdash (B\multimap H)\mathbin{\&}(C\multimap H)$, and $(\exists x.Bx)\multimap H\dashv\vdash\forall x.(Bx\multimap H)$.
 
-— the **Forum** presentation of linear logic (Miller 1996). ($\wp$ and $?$ are technically redundant given $\multimap$/$\bot$ — $?B \iff (B\multimap\bot)\Rightarrow\bot$ and $B \wp C \iff (B\multimap\bot)\multimap C$ — but keeping them makes specifications far more natural, and only mildly complicates Chapter 7's metatheory.)
+Negation becomes an abbreviation: $B^\perp \equiv B\multimap\bot$.
 
-### Uniform proofs, generalized
+**The rule-shape problem.** Naive rules for $\Rightarrow$ would mention $!B$ in the premise:
 
-Chapter 5's notion of uniform proof assumed a *single* right-hand formula to drive right-introduction toward. With multiple conclusions on the right, "goal-directed" has to mean something subtler: a cut-free proof is **uniform** if, for every subproof and every non-atomic right-hand formula occurrence, *some* permutation-equivalent proof exists that introduces that formula's top connective last. In other words: it shouldn't matter which order you introduce the (independent) right-hand connectives in — they're all simultaneously "up for grabs," which sequent calculus can only express via a permutation-invariance requirement rather than literal simultaneity.
+$$\frac{\Gamma\vdash !B,\Delta_1\ \ \Gamma_2,C\vdash\Delta_2}{\Gamma_1,\Gamma_2,B\Rightarrow C\vdash\Delta_1,\Delta_2}$$
 
-### Four zones
+But a good sequent-calculus rule has exactly one new connective in the conclusion and none introduced in the premises. The $!$ in the premise violates this, as do $!C$ and $!R$. Miller's fix is **zones** (Section 6.4), which keep the structural bookkeeping in the shape of the sequent instead of in connectives.
 
-The focused system $\Downarrow L_2$ (Figure 6.11) generalizes $\Downarrow L_1$'s two zones to **four**: left-unbounded $\Psi$, left-bounded $\Gamma$, right-bounded $\Delta$, right-unbounded $\Upsilon$ — sequents $\Sigma :: \Psi; \Gamma \vdash \Delta; \Upsilon$, read as $!\Psi, \Gamma \vdash \Delta, {?}\Upsilon$.
+## 5. Two zones: the bridge to logic programming (Section 6.4)
 
-![Four Zones](four_zones_miller.svg)
+For $\mathcal L_1=\{\top,\&,\multimap,\Rightarrow,\forall\}$ the proof system $P$ (Figure 6.6) uses sequents
 
-Right rules only exist for the un-focused $\Sigma::\Psi;\Gamma\vdash\Delta;\Upsilon$ shape; left rules, as always, apply only to the designated formula between $\Downarrow$ and $\vdash$. All right rules are additive (Chapter 3's terminology), all left rules multiplicative — a clean mirror image of $\Downarrow L_1$'s behavior, now doubled onto the right. Theorem 6.21 gives soundness relative to the unfocused $L$ system by unfolding $\Rightarrow$/$\multimap$ via $(\cdot)^\diamond$ exactly as before; completeness is deferred to Chapter 7's cut-elimination machinery.
+$$\Sigma::\Psi;\Gamma\vdash B,$$
 
-**What breaks without four zones.** Collapse right-bounded and right-unbounded into one zone and you lose the ability to state, syntactically, "these conclusions are alternatives still being decided among" (bounded, linear) versus "these conclusions are facts I can re-derive at will" (unbounded, reusable) — exactly the asymmetry that made `fohh`'s single-conclusion setting too weak to reason about negation and duality. Four zones is the minimal bookkeeping that lets both directions of the sequent independently track "what's linear" vs. "what's structural."
+where $\Psi$ is the **left-unbounded zone** (reusable) and $\Gamma$ the **left-bounded zone** (used exactly once). The informal meaning is the linear sequent $!\Psi,\Gamma\vdash B$. Selected rules:
 
----
+$$\frac{\Sigma::\Psi,B;\Gamma,B\vdash C}{\Sigma::\Psi,B;\Gamma\vdash C}\ \text{absorb}
+\qquad
+\frac{\Sigma::\Psi;\Gamma\vdash B\quad\Sigma::\Psi;\Gamma',C\vdash E}{\Sigma::\Psi;\Gamma,\Gamma',B\multimap C\vdash E}\ \multimap L$$
 
-## 6.8 — Conservativity: $\Downarrow L_2$ doesn't do anything extra on old formulas
+$$\frac{\Sigma::\Psi;\cdot\vdash B\quad\Sigma::\Psi;\Gamma,C\vdash E}{\Sigma::\Psi;\Gamma,B\Rightarrow C\vdash E}\ \Rightarrow L
+\qquad
+\frac{\Sigma::\Psi,B;\Gamma\vdash C}{\Sigma::\Psi;\Gamma\vdash B\Rightarrow C}\ \Rightarrow R$$
 
-Two clean results close the loop. Proposition 6.28: if $B$ is an $L_1$-formula and $\Sigma::\cdot;\cdot \vdash B; \cdot$ has a $\Downarrow L_2$-proof, that proof is *already* a $\Downarrow L_1$-proof — the extra connectives $\bot,\wp,?$ and the extra zones never actually get exercised when the formula in question doesn't mention them. Proposition 6.29 pushes the same fact down to $L_0 = \{\mathsf t, \wedge, \supset, \forall\}$, viewed as a renaming of $\{\top, \&, \Rightarrow, \forall\}$: $\Downarrow L_2$-proofs of $L_0$-formulas are already $\Downarrow L_0$-proofs. This is a strong sanity check on the whole tower — it says $L_0 \subset L_1 \subset L_2$ genuinely nests as proof systems, not just as syntax:
+Multiplicative rules behave hybrid: a formula in $\Psi$ appears in *all* premises (justified by contraction on the unbounded zone), while a formula in $\Gamma$ goes to exactly one. This is the linear version of "copy the shared program, split the resources." Now every rule introduces one connective, and the rules $\Rightarrow L$ and $cut_!$ require an empty bounded zone in a premise, which matches the $!R$ promotion condition.
+
+This section is only touched here because it is a hand-off to the next topic (multi-zone sequents and Lolli/Forum). It is the reason linear logic is useful for *programming* and not only for semantics.
+
+## 6. Embedding intuitionistic logic and Prolog (Section 6.5)
+
+The language $\langle\mathcal L_1,\mathcal L_1,\vdash_L\rangle$ is **Lolli**: $\lambda$Prolog's core plus $\multimap$. To show it extends $\mathcal L_0$, Miller gives translations from $\{t,\wedge,\supset,\forall\}$.
+
+**Girard's translation** preserves provability *and proofs*:
+
+$$\begin{aligned}
+(A)^0&=A\ (A\text{ atomic}),\quad (t)^0=\top,\quad (B_1\wedge B_2)^0=(B_1)^0\mathbin{\&}(B_2)^0,\\
+(B_1\supset B_2)^0&=(B_1)^0\Rightarrow(B_2)^0,\quad(\forall x.B)^0=\forall x.(B)^0.
+\end{aligned}$$
+
+**The cut-free translations** $(\cdot)^+$ and $(\cdot)^-$ are valid when only cut-free proofs are considered:
+
+$$\begin{aligned}
+(t)^+&=1, & (t)^-&=\top,\\
+(B_1\wedge B_2)^+&=(B_1)^+\otimes(B_2)^+, & (B_1\wedge B_2)^-&=(B_1)^-\mathbin{\&}(B_2)^-,\\
+(B_1\supset B_2)^+&=(B_1)^-\Rightarrow(B_2)^+, & (B_1\supset B_2)^-&=(B_1)^+\multimap(B_2)^-,\\
+(\forall x.B)^{\pm}&=\forall x.(B)^{\pm}, & (A)^{\pm}&=A.
+\end{aligned}$$
+
+When positive $\vee$ and $\exists$ are allowed, add $(B_1\vee B_2)^+=(B_1)^+\oplus(B_2)^+$ and $(\exists x.B)^+=\exists x.(B)^+$.
+
+**Proposition 6.15.** For formulas over $t,\wedge,\supset,\forall$: $\Sigma::\Delta\vdash B$ has an I-proof iff $\Sigma::\Delta^-;\cdot\vdash B^+$ has a cut-free proof in $\Downarrow\mathcal L_1$. It follows from the more general Proposition 7.18. Essentially, $\Downarrow\mathcal L_0$-proofs *are* $\Downarrow\mathcal L_1$-proofs of translated sequents.
+
+The practical consequence is syntax design. A Prolog clause $A_0 :- A_1,\ldots,A_n$ stands for $(A_1\wedge\cdots\wedge A_n)\supset A_0$ and, under the negative translation, becomes
+
+$$(A_1\otimes\cdots\otimes A_n)\multimap A_0.$$
+
+So the **comma is $\otimes$** and **`:-` is the converse of $\multimap$**. Existing Prolog and $\lambda$Prolog programs keep their meaning inside Lolli. Another example: the natural-deduction rule for implication, written in $\lambda$Prolog as `prov (A imp B) :- prov A => prov B`, translates to $\forall A.\forall B.((\text{prov}(A)\Rightarrow\text{prov}(B))\multimap\text{prov}(A\ \text{imp}\ B))$. So the `=>` symbol denotes $\Rightarrow$.
+
+## 7. Grounding in code
+
+### 7.1 Rust: formulas, duals, and polarity
+
+This is the first piece of a checker. The `dual` function is De Morgan negation normal form, and `polarity` is the oracle-dependence classification.
+
+```rust
+#[derive(Clone, Debug, PartialEq)]
+enum F {
+    Atom(&'static str),      // positive atom p
+    NegAtom(&'static str),   // p^perp
+    Top, Zero, One, Bot,
+    With(Box<F>, Box<F>),    // &
+    Plus(Box<F>, Box<F>),    // (+)
+    Tensor(Box<F>, Box<F>),  // (x)
+    Par(Box<F>, Box<F>),     // par
+    Bang(Box<F>),
+    Quest(Box<F>),
+    // Quantifiers omitted: they need binders (see Substitution notes).
+}
+
+#[derive(PartialEq, Debug)]
+enum Polarity { Positive, Negative }
+
+fn dual(f: &F) -> F {
+    use F::*;
+    match f {
+        Atom(p) => NegAtom(p),
+        NegAtom(p) => Atom(p),
+        Top => Zero, Zero => Top,
+        One => Bot,  Bot => One,
+        With(a, b)   => Plus(Box::new(dual(a)), Box::new(dual(b))),
+        Plus(a, b)   => With(Box::new(dual(a)), Box::new(dual(b))),
+        Tensor(a, b) => Par(Box::new(dual(a)), Box::new(dual(b))),
+        Par(a, b)    => Tensor(Box::new(dual(a)), Box::new(dual(b))),
+        Bang(a)  => Quest(Box::new(dual(a))),
+        Quest(a) => Bang(Box::new(dual(a))),
+    }
+}
+
+fn polarity(f: &F) -> Polarity {
+    use F::*;
+    match f {
+        One | Zero | Tensor(..) | Plus(..) | Bang(_) => Polarity::Positive,
+        // Atoms are negative by Andreoli's convention.
+        _ => Polarity::Negative,
+    }
+}
+
+/// Linear implication is just a definition: B -o C = B^perp par C.
+fn lolli(b: &F, c: F) -> F { F::Par(Box::new(dual(b)), Box::new(c)) }
+```
+
+Duality is an involution and flips polarity. Here is a check you can add as a test (atoms and `NegAtom` both come out negative in this encoding because of the atom convention, so the flip law holds only for non-atoms):
+
+```rust
+#[test]
+fn dual_flips_polarity_on_connectives() {
+    let t = F::Tensor(Box::new(F::Atom("a")), Box::new(F::One));
+    assert_eq!(polarity(&t), Polarity::Positive);
+    assert_eq!(polarity(&dual(&t)), Polarity::Negative);
+    assert_eq!(dual(&dual(&t)), t);
+}
+```
+
+### 7.2 Rust: why $\otimes R$ is the "oracle" rule
+
+Reading $\otimes R$ bottom-up, a prover must *guess* how to split the context. This is where positive-connective nondeterminism lives. Contexts are multisets, so enumerate subsets.
+
+```rust
+/// All ways to split a multiset into (left, right). 2^n splits.
+fn splits<T: Clone>(ctx: &[T]) -> Vec<(Vec<T>, Vec<T>)> {
+    let n = ctx.len();
+    (0..(1u32 << n))
+        .map(|mask| {
+            let mut l = Vec::new();
+            let mut r = Vec::new();
+            for (i, x) in ctx.iter().enumerate() {
+                if mask >> i & 1 == 1 { l.push(x.clone()) } else { r.push(x.clone()) }
+            }
+            (l, r)
+        })
+        .collect()
+}
+```
+
+The $2^n$ blowup is why Section 6.6 of the book (the next topic area) introduces *lazy splitting*: pass the whole context into one premise, let it consume what it needs, and hand the remainder to the other premise. Contrast `&R`, which copies the same $\Gamma$ to both premises and needs no guessing.
+
+### 7.3 Lean: the formulas, and an honest note on resource tracking
+
+Lean's dependent type theory has no built-in linear logic. Lean's context is a set where variables can be used freely, which is the structural-rule behavior linear logic removes. What Lean *can* do is encode the object logic. Here is the one-sided system's formula type and its negation normal form map, mirroring Section 6.3.4:
+
+```lean
+inductive LF where
+  | atom  : String → LF
+  | natom : String → LF
+  | top | zero | one | bot : LF
+  | with_  : LF → LF → LF
+  | plus   : LF → LF → LF
+  | tensor : LF → LF → LF
+  | par    : LF → LF → LF
+  | bang   : LF → LF
+  | quest  : LF → LF
+
+def LF.dual : LF → LF
+  | .atom p => .natom p      | .natom p => .atom p
+  | .top => .zero            | .zero => .top
+  | .one => .bot             | .bot => .one
+  | .with_ a b => .plus a.dual b.dual
+  | .plus a b  => .with_ a.dual b.dual
+  | .tensor a b => .par a.dual b.dual
+  | .par a b    => .tensor a.dual b.dual
+  | .bang a => .quest a.dual | .quest a => .bang a.dual
+
+theorem LF.dual_dual : ∀ f : LF, f.dual.dual = f := by
+  intro f
+  induction f <;> simp [LF.dual, *]
+```
+
+A one-sided derivability relation over multisets is then an inductive predicate whose constructors are exactly the rules of Figure 6.5, with `tensor` splitting the context via `List.Perm`-style append and `with_` duplicating it. This is the Lean-side analogue of the Rust checker above, and it is how one would mechanize the metatheory the book proves on paper.
+
+Closer to the real thing: Lean's `Type` universe behaves like the *intuitionistic* world with $!$ implicitly everywhere. That matches the book's reading $B\supset C\leadsto(!B)\multimap C$.
+
+### 7.4 Python: lazy splitting in five lines (preview)
+
+```python
+def prove_tensor(ctx, goals):
+    """Prove goals[0] (x) goals[1] ... by consuming ctx linearly; return leftover or None."""
+    for g in goals:
+        if g not in ctx:
+            return None
+        ctx = [c for i, c in enumerate(ctx) if i != ctx.index(g)]
+    return ctx
+```
+
+The leftover list is the "output context" that Section 6.6 of the book formalizes as an IO proof system. This is only a sketch, and it ignores `!`, `&`, and connective structure.
+
+## 8. Map of the section
 
 ```mermaid
-flowchart LR
-    L0["L0 = {t, ∧, ⊃, ∀}\n(fohh, Ch.5)"] -->|renaming ⊤,&,⇒,∀| L1["L1 = {⊤, &, ⊸, ⇒, ∀}\n(Lolli)"]
-    L1 -->|∪ {⊥, ⅋, ?}| L2["L2 = L1 ∪ {⊥, ⅋, ?}\n(Forum)"]
-    L2 -. "conservative over" .-> L1
-    L1 -. "conservative over" .-> L0
+flowchart TD
+  A["6.1 Structural rules: contraction, weakening, cut collisions"] --> B["6.2 LK vs LJ: ! and ? mark which formulas keep structural rules"]
+  B --> C["6.3 System L: MALL + exponentials"]
+  C --> D["Additive (&, ⊕, ⊤, 0) vs multiplicative (⊗, ⅋, 1, ⊥)"]
+  C --> E["Exponentials ! ?: W, C, D, promotion"]
+  C --> F["Duality, NNF, one-sided system"]
+  F --> G["Polarity: negative (⅋ & ⊥ ⊤ ∀ ?), positive (⊗ ⊕ 1 0 ∃ !)"]
+  C --> H["Implications: B ⊸ C = B^⊥ ⅋ C ; B ⇒ C = (!B) ⊸ C"]
+  H --> I["6.4 Two zones Ψ; Γ ⊢ B (system P for L1)"]
+  I --> J["6.5 Girard (·)^0 and cut-free (·)^+ (·)^-; Lolli ⊇ λProlog"]
 ```
 
-The metatheoretic significance for a Lean-style proof-checker builder: this is the exact shape a *conservative extension* proof takes — you don't have to re-verify every old proof when you extend the connective set, because the extension provably introduces no new proofs of old-language sequents. That's the same guarantee you'd want when e.g. extending an elaborator's core type theory with a new eliminator and needing to know old judgments still typecheck the same way.
+## 9. Synthesis
 
----
+**Depends on.** The sequent calculi and structural rules of Chapters 3-4 (the I- and C-proof systems), cut admissibility (Chapter 4), and the uniform-proof and backchaining analysis of $\mathcal L_0$ and `fohh` from Chapter 5.
 
-## 6.9 — Generalized synthetic inference rules, and a toggling switch
+**Used by.** The rest of Chapter 6 (multi-zone sequents, Lolli, Forum), Chapter 7's [[Formal-Metatheory-of-Focused-Linear-Logic|formal metatheory of focused linear logic]] (including the general Proposition 7.18 behind Prop. 6.15), and the applications in Chapters 10-13. Those include automata as multisets, Horn-clause collection analysis, security protocols, and operational semantics. Polarity is the concept that all of these reuse.
 
-Chapter 5's border sequent (right side atomic) and synthetic rule (a full decide→left-intro→right-intro cycle compiled into one derived rule) generalize immediately: a **border sequent** is now $\Sigma::\Psi;\Gamma\vdash A;\Upsilon$ with the right-*bounded* zone $A$ restricted to atoms (the right-unbounded zone $\Upsilon$ is untouched by this restriction). A **synthetic inference rule** is what you get moving from a border sequent up through one decide step, a left-introduction phase, then a right-introduction phase (whose open premises are themselves border sequents).
+**Open questions flagged by the book.** Why do I-proofs' shape motivate $!$ and $?$ and make $\supset L$ special? What does polarity say about which right rules need an oracle? Why do two zones let $\Rightarrow$ and $\multimap$ be proper connectives with one-connective-per-rule introduction rules? Each is answered in this article's Sections 3, 4.5, and 5.
 
-The worked example is genuinely illuminating: model a boolean switch using two clauses,
-```
-step1 :- off, on -o step2.
-step1 :- on, off -o step2.
-```
-i.e. $\text{off} \multimap (\text{on} \multimap \text{step2}) \multimap \text{step1}$ and its mirror. Because `off`/`on` are *linear* resources in the bounded zone, deriving `step1` from a context containing `on` genuinely **consumes** `on` and **produces** `off` — the switch actually flips, and the derivation is forced through a specific splitting of the bounded zone because any other split fails to close the proof. Miller contrasts this with the same clauses written using $\Rightarrow$ instead of $\multimap$: since $\Rightarrow$'s hypotheses are non-linear (reusable, never consumed), you'd end up with both `on` and `off` simultaneously true in context — "a poor implementation of a switch." **This is the cleanest illustration in the whole chapter of why resource-sensitivity is not a stylistic preference but a semantic necessity**: mutable state literally cannot be modeled faithfully by a logic where every hypothesis is freely duplicable.
+### Where this leads
 
-A second version puts the switch's state on the *right* of the sequent instead, using $\wp$ (written `||` in the book's λProlog-flavored syntax) — `step1 || off :- on || step2.` — producing $(\text{on}\wp\text{step2}) \multimap (\text{step1}\wp\text{off})$, and now the toggle is achieved by a *single* synthetic rule (one decide, not two), because both effects land on the multiple-conclusion right side simultaneously rather than requiring two separate proof fragments stitched together.
+Next comes the multiple-conclusion, four-zone focused system $\Downarrow\mathcal L_2$ for Forum, where $\bot,⅋,?$ are added and the bounded zone can change arbitrarily during search. That is the point at which sequents genuinely compute (a switch toggling off to on, a counter incrementing).
 
-**Direct hit on the standing project.** If your Rust verifier needs to check programs against Hoare-triple-style specifications, "resource $R$ is consumed, resource $R'$ is produced" is *exactly* the toggling-switch pattern — a statement's precondition/postcondition pair is a linear implication whose left side is what gets consumed and whose right side is what gets produced, and $\multimap_L$'s forced context-splitting during proof search is the mechanism that would check whether a given Hoare triple's resources actually balance.
+### Bearing on the project goals
 
----
+Focus Area: **Automated Reasoning** (`automated-reasoning`), with linear logic named explicitly in that area's scope.
 
-## Where this leads
-
-Chapter 7 takes the $\Downarrow L_2$ system built here and does the hard metatheoretic work only sketched in this chapter: four distinct cut rules (ordinary $\text{cut}_l$, $\text{cut}_!$, $\text{cut}_?$, and a special *key cut* for atoms), a measure-based induction to eliminate all of them, and — inverting the usual order — proving cut-elimination for the *focused* system first and deriving cut-elimination for the unfocused $L$ system as a corollary. Chapter 8 then cashes out everything built here as actual programs: multiset encodings, a Lolli-based theorem-prover specification, and $L_2$ used as a *metalogic* to specify sequent-calculus proof systems for object-level intuitionistic logic — i.e., linear logic reasoning about proof search itself, which is precisely the kind of self-hosting a Rust-embedded prover's search engine would eventually want to reach. Chapters 9–13 extend everything here to higher-order quantification and apply it to encode automata, security protocols, and full operational semantics — all riding on the resource-consuming, two-(then-four-)zone sequent machinery this chapter introduced.
+- **Proof search and clause simplification.** Polarity and [[Sequent-Calculus-Proof-Systems#Invertibility|invertibility]] are the engine behind a *focused* prover. Eagerly apply negative (invertible) rules, and branch only on positive ones. The `splits` function in 7.2 is the context-splitting cost that a Rust proof search must avoid, and the book's lazy-splitting answer is in the next topic area.
+- **Proof certificates and trusted kernels.** The rule of thumb "each rule introduces exactly one connective; structural behavior lives in the sequent's shape" is the same discipline that keeps a small trusted kernel auditable. Two-zone sequents are a clean representation of a context with reusable and consumed hypotheses.
+- **Judgments and contexts (workbench thread).** $\Psi;\Gamma$ is a context with two usage disciplines, the proof-theoretic ancestor of a type-checking context that tracks linear or affine usage. Rust's ownership is the nearest everyday analogue: a `T` moved is a linear resource, and `Rc<T>` or `Clone` plays the role of $!$.
+- **Hoare logic and symbolic execution.** Consuming and producing resources while proving is the proof-theoretic shape that separation-logic-style reasoning later uses. The book itself does not develop that link, so treat it as a pointer and not as content from these pages.
+- **Metavariables and unification.** Not engaged here. The quantifier rules use eigenvariables and substitution exactly as in classical and intuitionistic logic, so nothing new surfaces for the elaborator in this section.
